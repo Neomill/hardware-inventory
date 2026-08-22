@@ -2,6 +2,7 @@ import { ChevronDown, UserRound, Warehouse } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { ROUTES } from "@/app/routes";
+import { APP_SHORT_NAME } from "@/config/app";
 import {
   PRIMARY_NAV,
   SECONDARY_NAV,
@@ -14,6 +15,10 @@ type SidebarProps = {
   onNavigate?: () => void;
 };
 
+/** The design stacks the wordmark on two lines, so split it once here. */
+const [BRAND_TOP, ...brandRest] = APP_SHORT_NAME.split(" ");
+const BRAND_BOTTOM = brandRest.join(" ");
+
 /** Signed-in user is stubbed for the POC; authentication is out of scope. */
 const CURRENT_USER = { name: "Juan Dela Cruz", role: "Owner" };
 
@@ -25,9 +30,13 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <Warehouse className="h-6 w-6" aria-hidden />
         </span>
         <span className="text-lg font-extrabold uppercase leading-5 tracking-wide">
-          Hardware
-          <br />
-          Store
+          {BRAND_TOP}
+          {BRAND_BOTTOM ? (
+            <>
+              <br />
+              {BRAND_BOTTOM}
+            </>
+          ) : null}
         </span>
       </div>
 

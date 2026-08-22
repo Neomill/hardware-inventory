@@ -171,8 +171,11 @@ up. Revisit if the store adopts barcode labelling.
 **OLAER HARDWARE**. `dashboard.png`, `products.png`, `sales 2`,
 `sales 3`, `sales 4`, `sales 5`, and `sales 6` show **HARDWARE STORE**.
 
-`src/config/app.ts` currently holds the generic name. The real store name
-needs confirmation from the owner, then lives in one constant.
+**Resolved 2026-08-22.** The brand is **Olaer Store**. It lives in
+`APP_NAME` and `APP_SHORT_NAME` in `src/config/app.ts`, and the sidebar
+renders the wordmark as OLAER / STORE on two lines. Every design
+reference is stale on this point, including the two showing
+OLAER HARDWARE.
 
 ---
 

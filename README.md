@@ -2,7 +2,7 @@
 
 Client-side POC for a single hardware store: dashboard, product lookup, POS, inventory and customer ledger.
 Frontend only — no backend, no authentication, no cloud sync. See [docs/PRD.md](docs/PRD.md), the
-[developer handbook](docs/product/00-developer-handbook.md) and [specs/01](specs/01/dashboard-functional-spec.md).
+[developer handbook](docs/product/00-developer-handbook.md) and [initialization spec](specs/01/01-project-initialization-spec.md).
 
 ## Stack
 
@@ -68,6 +68,11 @@ Two details make the static host work:
 
 ## Status
 
-Project setup and the application shell (sidebar navigation, top bar, routing, footer) are in place.
-Feature modules render placeholders; the dashboard specified in
-[specs/01](specs/01/dashboard-functional-spec.md) is the next milestone.
+Project setup, the application shell (sidebar navigation, top bar, routing, footer) and the Dashboard
+are in place. Products, Sales, Inventory, Customer Ledger and Settings still render placeholders.
+
+Next milestone is the domain and data layer in
+[specs/02](specs/02/02-domain-and-data-layer-spec.md): integer-centavo money, stock derived from an
+inventory transaction log, repository interfaces and one coherent seed dataset. Locked product
+decisions live in [docs/business/10-decisions.md](docs/business/10-decisions.md); the design
+references are corrected by [specs/01/DESIGN-ERRATA.md](specs/01/DESIGN-ERRATA.md).
