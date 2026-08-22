@@ -4,6 +4,7 @@ import {
   ShoppingCart,
   Boxes,
   Users,
+  BarChart3,
   Settings,
   type LucideIcon,
 } from 'lucide-react'
@@ -24,6 +25,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: 'Sales (POS)', title: 'Sales (POS)', path: ROUTES.sales, icon: ShoppingCart },
   { label: 'Inventory', title: 'Inventory', path: ROUTES.inventory, icon: Boxes },
   { label: 'Customer Ledger', title: 'Customer Ledger', path: ROUTES.customers, icon: Users },
+  { label: 'Reports', title: 'Reports', path: ROUTES.reports, icon: BarChart3 },
 ]
 
 export const SECONDARY_NAV: NavItem[] = [

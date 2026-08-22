@@ -26,9 +26,9 @@ const COLUMNS: SummaryColumn<RecentSale>[] = [
     cellClassName: 'text-muted',
   },
   {
-    id: 'invoice',
-    header: 'Invoice',
-    cell: (sale) => sale.invoiceNumber,
+    id: 'saleNumber',
+    header: 'Sale No.',
+    cell: (sale) => sale.saleNumber,
     cellClassName: 'font-medium',
   },
   {

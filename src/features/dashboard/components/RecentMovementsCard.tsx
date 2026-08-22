@@ -58,7 +58,7 @@ const COLUMNS: SummaryColumn<InventoryMovement>[] = [
   },
   {
     id: 'user',
-    header: 'User',
+    header: 'Recorded By',
     cell: (movement) => movement.userName,
   },
 ]
@@ -70,8 +70,8 @@ type RecentMovementsCardProps = {
 export function RecentMovementsCard({ movements }: RecentMovementsCardProps) {
   return (
     <SectionCard
-      title="Recent Inventory Transactions"
-      action={<ViewAllLink to={ROUTES.inventoryTransactions} />}
+      title="Recent Stock Movements"
+      action={<ViewAllLink to={ROUTES.stockMovements} />}
     >
       <SummaryTable
         columns={COLUMNS}

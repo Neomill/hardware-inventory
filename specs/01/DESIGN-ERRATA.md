@@ -139,6 +139,9 @@ Supplier invoice    INV-NNNNN           INV-10021
 The dashboard's Recent Sales "INVOICE" column is renamed to "SALE NO."
 and adopts the sale number format.
 
+**Applied 2026-08-22.** See the UI Terminology Decisions table in
+`docs/business/07-glossary.md`.
+
 ---
 
 # E7 --- Zero-stock products offer an enabled Add button
@@ -184,6 +187,11 @@ OLAER HARDWARE.
 Reports appears in the sidebar of `sales 1 - root.png` and `sales 7`
 only. Per decision **D4** it is a permanent primary nav item, so the
 seven references that omit it are stale.
+
+**Applied 2026-08-22.** Reports is the sixth primary nav item, after
+Customer Ledger, routing to `/reports`. It renders top-aligned with the
+other five rather than floating above Settings as `sales 1` shows, which
+keeps the group unambiguous.
 
 ---
 

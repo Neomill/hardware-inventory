@@ -30,7 +30,7 @@ Dashboard
 ├── Inventory
 │ ├── Current Inventory
 │ ├── Receive Stock
-│ ├── Inventory Transactions
+│ ├── Stock Movements
 │ └── Product Stock Details
 │
 ├── Customer Ledger

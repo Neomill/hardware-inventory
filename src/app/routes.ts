@@ -16,10 +16,12 @@ export const ROUTES = {
 
   inventory: '/inventory',
   receiveStock: '/inventory/receive',
-  inventoryTransactions: '/inventory/transactions',
+  stockMovements: '/inventory/movements',
 
   customers: '/customers',
   customerDetail: (customerId: string) => `/customers/${customerId}`,
+
+  reports: '/reports',
 
   settings: '/settings',
 } as const

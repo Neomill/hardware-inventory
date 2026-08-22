@@ -6,6 +6,7 @@ import { CustomerLedgerPage } from '@/features/customers/pages/CustomerLedgerPag
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
 import { ProductsPage } from '@/features/products/pages/ProductsPage'
+import { ReportsPage } from '@/features/reports/pages/ReportsPage'
 import { SalesPage } from '@/features/sales/pages/SalesPage'
 import { SettingsPage } from '@/features/settings/pages/SettingsPage'
 
@@ -27,9 +28,10 @@ export function App() {
           <Route path="/sales/:saleId" element={<SalesPage />} />
           <Route path={ROUTES.inventory} element={<InventoryPage />} />
           <Route path="/inventory/receive" element={<InventoryPage />} />
-          <Route path="/inventory/transactions" element={<InventoryPage />} />
+          <Route path="/inventory/movements" element={<InventoryPage />} />
           <Route path={ROUTES.customers} element={<CustomerLedgerPage />} />
           <Route path="/customers/:customerId" element={<CustomerLedgerPage />} />
+          <Route path={ROUTES.reports} element={<ReportsPage />} />
           <Route path={ROUTES.settings} element={<SettingsPage />} />
           <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
         </Route>

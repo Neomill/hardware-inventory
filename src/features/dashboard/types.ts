@@ -9,7 +9,7 @@ export type RecentSale = {
   id: string
   /** ISO 8601 */
   occurredAt: string
-  invoiceNumber: string
+  saleNumber: string
   customerName: string
   total: number
   paymentMethod: PaymentMethod

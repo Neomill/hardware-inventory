@@ -1,18 +1,35 @@
 import type { DashboardSnapshot } from '@/features/dashboard/types'
 
 /**
- * Prototype data for the Dashboard. Timestamps are generated relative to the
- * current day so the widgets always read as "today" during a demo.
+ * Prototype data for the Dashboard. Timestamps and sale numbers are generated
+ * relative to the current day, so the widgets always read as "today" in a demo
+ * instead of showing a fixed date from the design reference.
  *
- * This is the only place dashboard figures are authored. Components never hold
+ * This is the only place dashboard figures are authored. Components hold no
  * business data, so swapping this for the real data layer touches one file.
  */
 
-function at(dayOffset: number, hours: number, minutes: number): string {
+function dayAt(dayOffset: number, hours: number, minutes: number): Date {
   const date = new Date()
   date.setDate(date.getDate() + dayOffset)
   date.setHours(hours, minutes, 0, 0)
-  return date.toISOString()
+  return date
+}
+
+function at(dayOffset: number, hours: number, minutes: number): string {
+  return dayAt(dayOffset, hours, minutes).toISOString()
+}
+
+/** Sale numbers read "#YYYYMMDD-NNNN"; supplier invoices keep the INV- prefix. */
+function saleNo(dayOffset: number, sequence: number): string {
+  const date = dayAt(dayOffset, 0, 0)
+  const stamp = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('')
+
+  return `#${stamp}-${String(sequence).padStart(4, '0')}`
 }
 
 export function getDashboardSnapshot(): DashboardSnapshot {
@@ -30,7 +47,7 @@ export function getDashboardSnapshot(): DashboardSnapshot {
       {
         id: 'sale-0015',
         occurredAt: at(0, 10, 28),
-        invoiceNumber: 'INV-2025-0521-0015',
+        saleNumber: saleNo(0, 15),
         customerName: 'Walk-in Customer',
         total: 1250,
         paymentMethod: 'cash',
@@ -38,7 +55,7 @@ export function getDashboardSnapshot(): DashboardSnapshot {
       {
         id: 'sale-0014',
         occurredAt: at(0, 10, 18),
-        invoiceNumber: 'INV-2025-0521-0014',
+        saleNumber: saleNo(0, 14),
         customerName: 'Juan Dela Cruz',
         total: 850,
         paymentMethod: 'partial',
@@ -46,7 +63,7 @@ export function getDashboardSnapshot(): DashboardSnapshot {
       {
         id: 'sale-0013',
         occurredAt: at(0, 10, 5),
-        invoiceNumber: 'INV-2025-0521-0013',
+        saleNumber: saleNo(0, 13),
         customerName: 'Walk-in Customer',
         total: 2200,
         paymentMethod: 'cash',
@@ -54,7 +71,7 @@ export function getDashboardSnapshot(): DashboardSnapshot {
       {
         id: 'sale-0012',
         occurredAt: at(0, 9, 52),
-        invoiceNumber: 'INV-2025-0521-0012',
+        saleNumber: saleNo(0, 12),
         customerName: 'Pedro Santos',
         total: 3500,
         paymentMethod: 'credit',
@@ -62,7 +79,7 @@ export function getDashboardSnapshot(): DashboardSnapshot {
       {
         id: 'sale-0011',
         occurredAt: at(0, 9, 40),
-        invoiceNumber: 'INV-2025-0521-0011',
+        saleNumber: saleNo(0, 11),
         customerName: 'Walk-in Customer',
         total: 630,
         paymentMethod: 'cash',
@@ -79,7 +96,7 @@ export function getDashboardSnapshot(): DashboardSnapshot {
 
     recentMovements: [
       {
-        id: 'txn-10021',
+        id: 'movement-10021',
         occurredAt: at(0, 10, 15),
         type: 'stock_in',
         description: 'Received from ABC Trading',
@@ -89,17 +106,17 @@ export function getDashboardSnapshot(): DashboardSnapshot {
         userName: 'Juan Dela Cruz',
       },
       {
-        id: 'txn-0013',
+        id: 'movement-0013',
         occurredAt: at(0, 9, 30),
         type: 'sale',
         description: 'Sold to Walk-in Customer',
-        reference: 'INV-2025-0521-0013',
+        reference: saleNo(0, 13),
         quantityDelta: -5,
         unit: 'pcs',
         userName: 'Maria Santos',
       },
       {
-        id: 'txn-10020',
+        id: 'movement-10020',
         occurredAt: at(-1, 16, 45),
         type: 'stock_in',
         description: 'Received from XYZ Supplies',

@@ -26,7 +26,7 @@ const COLUMNS: SummaryColumn<LowStockItem>[] = [
   },
   {
     id: 'reorder',
-    header: 'Reorder Level',
+    header: 'Reorder At',
     cell: (item) => formatNumber(item.reorderLevel),
   },
 ]
