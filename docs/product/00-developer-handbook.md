@@ -1,4 +1,4 @@
-# Hardware Store Management System
+# Olaer Store
 
 # Developer Handbook
 
@@ -8,7 +8,7 @@ Status: Living Document
 
 # 1. Purpose
 
-This handbook defines the engineering standards, architecture principles, design philosophy, and development workflow for the Hardware Store Management System.
+This handbook defines the engineering standards, architecture principles, design philosophy, and development workflow for the Olaer Store.
 
 Every developer and AI coding assistant must follow this handbook before implementing any feature.
 
@@ -18,7 +18,7 @@ This document is the source of truth for all engineering decisions.
 
 # 2. Product Vision
 
-Build a simple, reliable, offline-first hardware store management system that replaces paper-based workflows without disrupting the store's existing operations.
+Build a simple, reliable, offline-first Olaer Store that replaces paper-based workflows without disrupting the store's existing operations.
 
 The software should be intuitive enough that a cashier with little computer experience can learn it in less than one day.
 

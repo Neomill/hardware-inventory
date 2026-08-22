@@ -1,13 +1,12 @@
-# Hardware Store Management System
+# Olaer Store
 
 ## Purpose
 
-The Hardware Store Management System is a digital platform designed to replace the store's paper-based inventory, sales, and ledger processes.
+The Olaer Store is a digital platform designed to replace the store's paper-based inventory, sales, and ledger processes.
 
 The system aims to simplify daily operations, reduce manual work, improve inventory accuracy, and provide real-time visibility into sales and stock levels while remaining simple enough for employees with minimal computer experience.
 
 Version 1 focuses on supporting a single hardware store with one cashier and offline-first operation.
-
 
 ## Current Problems
 
@@ -70,6 +69,7 @@ No system access in Version 1.
 Helpers continue preparing customer orders.
 
 ## Scope
+
 Authentication
 
 Dashboard
@@ -87,4 +87,3 @@ Customer Ledger
 Reports
 
 Settings
-

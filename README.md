@@ -1,4 +1,4 @@
-# Hardware Store Management System
+# Olaer Store
 
 Client-side POC for a single hardware store: dashboard, product lookup, POS, inventory and customer ledger.
 Frontend only — no backend, no authentication, no cloud sync. See [docs/PRD.md](docs/PRD.md), the

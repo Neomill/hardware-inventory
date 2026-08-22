@@ -1,45 +1,45 @@
 # Project Initialization Specification
 
-**Project:** Hardware Store Management System\
+**Project:** Olaer Store\
 **Phase:** 1 --- Project Initialization\
 **Scope:** Setup only\
 **Status:** Initial project setup\
 **Backend:** Not included\
 **Data:** Mock/client-side only
 
-------------------------------------------------------------------------
+---
 
 ## 1. Objective
 
 Initialize a clean, production-oriented React frontend project that will
-serve as the foundation for the Hardware Store Management System POC.
+serve as the foundation for the Olaer Store POC.
 
 This phase must establish:
 
--   Development environment
--   TypeScript configuration
--   React application
--   Routing foundation
--   Tailwind CSS
--   shadcn/ui
--   State management
--   Form/validation libraries
--   Icon library
--   Basic project structure
--   Environment configuration
--   Code quality tooling
--   Git hygiene
+- Development environment
+- TypeScript configuration
+- React application
+- Routing foundation
+- Tailwind CSS
+- shadcn/ui
+- State management
+- Form/validation libraries
+- Icon library
+- Basic project structure
+- Environment configuration
+- Code quality tooling
+- Git hygiene
 
 Do **not** implement Dashboard, Products, Sales, Inventory, or Customer
 Ledger functionality in this phase.
 
-------------------------------------------------------------------------
+---
 
 ## 2. Existing Source of Truth
 
 The repository already contains project documentation:
 
-``` text
+```text
 docs/
 ├── 01-business-overview.md
 ├── 02-current-workflow.md
@@ -59,29 +59,31 @@ required by an actual discovery.
 The application implementation should treat these documents as the
 project requirements source of truth.
 
-------------------------------------------------------------------------
+---
 
 # 3. Technology Stack
 
 Use the following stack:
 
-  Area               Technology
-  ------------------ -----------------
-  Framework          React
-  Language           TypeScript
-  Build Tool         Vite
-  Styling            Tailwind CSS
-  Component System   shadcn/ui
-  Routing            React Router
-  State Management   Zustand
-  Forms              React Hook Form
-  Validation         Zod
-  Tables             TanStack Table
-  Icons              Lucide React
+Area Technology
+
+---
+
+Framework React
+Language TypeScript
+Build Tool Vite
+Styling Tailwind CSS
+Component System shadcn/ui
+Routing React Router
+State Management Zustand
+Forms React Hook Form
+Validation Zod
+Tables TanStack Table
+Icons Lucide React
 
 Do not introduce additional application frameworks during this phase.
 
-------------------------------------------------------------------------
+---
 
 # 4. Project Initialization
 
@@ -89,26 +91,26 @@ Initialize a Vite React TypeScript project.
 
 The application must start successfully with:
 
-``` bash
+```bash
 npm install
 npm run dev
 ```
 
 A production build must work with:
 
-``` bash
+```bash
 npm run build
 ```
 
 The production build must complete without TypeScript errors.
 
-------------------------------------------------------------------------
+---
 
 # 5. Package Requirements
 
 Install and configure:
 
-``` text
+```text
 react
 react-dom
 react-router-dom
@@ -122,7 +124,7 @@ lucide-react
 
 Configure:
 
-``` text
+```text
 Tailwind CSS
 shadcn/ui
 ```
@@ -130,7 +132,7 @@ shadcn/ui
 Use the repository's current supported versions rather than blindly
 copying outdated installation commands.
 
-------------------------------------------------------------------------
+---
 
 # 6. TypeScript
 
@@ -138,7 +140,7 @@ Use strict TypeScript.
 
 Required configuration:
 
-``` json
+```json
 {
   "compilerOptions": {
     "strict": true
@@ -148,21 +150,21 @@ Required configuration:
 
 The project must not rely on:
 
-``` ts
-any
+```ts
+any;
 ```
 
 unless there is a documented and justified reason.
 
 Do not disable strict TypeScript rules simply to make the build pass.
 
-------------------------------------------------------------------------
+---
 
 # 7. Source Structure
 
 Create the initial structure:
 
-``` text
+```text
 src/
 ├── app/
 │   ├── App.tsx
@@ -201,7 +203,7 @@ At this stage these folders are only structural foundations.
 
 Do not create unnecessary feature implementations.
 
-------------------------------------------------------------------------
+---
 
 # 8. Application Entry Point
 
@@ -209,7 +211,7 @@ Do not create unnecessary feature implementations.
 
 Expected conceptual flow:
 
-``` text
+```text
 main.tsx
     ↓
 App / Providers
@@ -221,7 +223,7 @@ Application routes
 
 Do not put business logic in `main.tsx`.
 
-------------------------------------------------------------------------
+---
 
 # 9. Application Providers
 
@@ -229,7 +231,7 @@ Create a provider boundary for application-wide configuration.
 
 Example responsibilities:
 
-``` text
+```text
 App Providers
 ├── Router
 ├── Future global providers
@@ -238,7 +240,7 @@ App Providers
 
 Do not create providers that are not currently required.
 
-------------------------------------------------------------------------
+---
 
 # 10. Routing Foundation
 
@@ -246,7 +248,7 @@ Configure React Router.
 
 Create placeholder routes for the major application areas:
 
-``` text
+```text
 /
  /dashboard
  /products
@@ -261,7 +263,7 @@ phase.
 
 Example:
 
-``` text
+```text
 Dashboard
 Products
 Sales
@@ -272,19 +274,19 @@ Settings
 
 No actual feature functionality should be implemented yet.
 
-------------------------------------------------------------------------
+---
 
 # 11. Route Behavior
 
 The root route should redirect to:
 
-``` text
+```text
 /dashboard
 ```
 
 Unknown routes should have a basic:
 
-``` text
+```text
 404 Not Found
 ```
 
@@ -292,13 +294,13 @@ route.
 
 Routing must be centralized rather than scattered across components.
 
-------------------------------------------------------------------------
+---
 
 # 12. Zustand Setup
 
 Install Zustand and establish the store location:
 
-``` text
+```text
 src/stores/
 ```
 
@@ -309,7 +311,7 @@ used correctly.
 
 Future stores will include:
 
-``` text
+```text
 products
 sales
 inventory
@@ -319,13 +321,13 @@ notes
 
 but their business logic belongs to later phases.
 
-------------------------------------------------------------------------
+---
 
 # 13. Form and Validation Setup
 
 Configure:
 
-``` text
+```text
 React Hook Form
 Zod
 @hookform/resolvers
@@ -338,7 +340,7 @@ feature development begins.
 
 Future workflows will use:
 
-``` text
+```text
 React Hook Form
         ↓
 Zod schema
@@ -346,7 +348,7 @@ Zod schema
 Validated domain input
 ```
 
-------------------------------------------------------------------------
+---
 
 # 14. shadcn/ui Setup
 
@@ -361,7 +363,7 @@ Only establish the system.
 
 Future components will be added when a feature requires them.
 
-------------------------------------------------------------------------
+---
 
 # 15. Tailwind Setup
 
@@ -374,7 +376,7 @@ Do not build the final visual design in this phase.
 The existing design references will be applied during feature
 implementation.
 
-------------------------------------------------------------------------
+---
 
 # 16. Design Tokens
 
@@ -385,7 +387,7 @@ project's established brand system.
 
 The current intended brand direction is:
 
-``` text
+```text
 Primary Navy: #163A5F
 Burnt Orange: #C65A1E
 Light Background: #F8FAFC
@@ -397,13 +399,13 @@ components.
 
 When the design system is implemented, centralize them appropriately.
 
-------------------------------------------------------------------------
+---
 
 # 17. Environment Configuration
 
 Create:
 
-``` text
+```text
 .env.example
 ```
 
@@ -411,22 +413,22 @@ Only include variables that are actually required.
 
 For example:
 
-``` text
+```text
 VITE_APP_NAME=
 ```
 
 Do not put:
 
--   Database credentials
--   API secrets
--   Private keys
--   Authentication secrets
+- Database credentials
+- API secrets
+- Private keys
+- Authentication secrets
 
 in frontend environment variables.
 
 Remember that Vite `VITE_*` variables are exposed to the client.
 
-------------------------------------------------------------------------
+---
 
 # 18. Data Layer Preparation
 
@@ -434,7 +436,7 @@ Do not connect to a backend.
 
 Create the architectural boundary that will eventually allow:
 
-``` text
+```text
 UI
  ↓
 Application logic
@@ -450,7 +452,7 @@ future database implementation.
 No real repository implementation is required yet beyond whatever
 minimal setup is necessary.
 
-------------------------------------------------------------------------
+---
 
 # 19. Mock Data Policy
 
@@ -460,19 +462,19 @@ Mock data will be introduced when the first feature is implemented.
 
 Future mock data should live under:
 
-``` text
+```text
 src/data/mock/
 ```
 
 Do not place mock business data directly inside UI components.
 
-------------------------------------------------------------------------
+---
 
 # 20. Code Quality
 
 Configure the project so that:
 
-``` bash
+```bash
 npm run build
 ```
 
@@ -483,20 +485,20 @@ project.
 
 Avoid:
 
--   unused imports
--   unused variables
--   implicit `any`
--   duplicated configuration
--   dead files
--   placeholder code that produces warnings
+- unused imports
+- unused variables
+- implicit `any`
+- duplicated configuration
+- dead files
+- placeholder code that produces warnings
 
-------------------------------------------------------------------------
+---
 
 # 21. Scripts
 
 The project should provide at minimum:
 
-``` json
+```json
 {
   "scripts": {
     "dev": "...",
@@ -510,7 +512,7 @@ If a preview script is generated by Vite, keep it.
 
 Expected commands:
 
-``` bash
+```bash
 npm run dev
 npm run build
 npm run lint
@@ -518,13 +520,13 @@ npm run lint
 
 All should execute successfully.
 
-------------------------------------------------------------------------
+---
 
 # 22. Git Setup
 
 Ensure the repository ignores:
 
-``` text
+```text
 node_modules/
 dist/
 .env
@@ -535,13 +537,13 @@ Do not commit secrets.
 
 Keep:
 
-``` text
+```text
 .env.example
 ```
 
 in the repository.
 
-------------------------------------------------------------------------
+---
 
 # 23. Initial Verification
 
@@ -549,7 +551,7 @@ Before considering initialization complete, verify:
 
 ### Installation
 
-``` bash
+```bash
 npm install
 ```
 
@@ -557,7 +559,7 @@ passes.
 
 ### Development
 
-``` bash
+```bash
 npm run dev
 ```
 
@@ -565,7 +567,7 @@ starts successfully.
 
 ### TypeScript / Build
 
-``` bash
+```bash
 npm run build
 ```
 
@@ -573,7 +575,7 @@ passes.
 
 ### Lint
 
-``` bash
+```bash
 npm run lint
 ```
 
@@ -583,7 +585,7 @@ passes.
 
 Verify:
 
-``` text
+```text
 /dashboard
 /products
 /sales
@@ -602,41 +604,41 @@ Verify an invalid URL renders the 404 page.
 
 Verify the application opens without:
 
--   Console errors
--   React warnings
--   TypeScript runtime issues
+- Console errors
+- React warnings
+- TypeScript runtime issues
 
-------------------------------------------------------------------------
+---
 
 # 24. Initialization Definition of Done
 
 The phase is complete when:
 
--   [ ] Vite React TypeScript project is initialized
--   [ ] TypeScript strict mode is enabled
--   [ ] Tailwind CSS is configured
--   [ ] shadcn/ui is configured
--   [ ] React Router is configured
--   [ ] Zustand is installed
--   [ ] React Hook Form is installed
--   [ ] Zod is installed
--   [ ] TanStack Table is installed
--   [ ] Lucide React is installed
--   [ ] Initial source structure exists
--   [ ] Application entry point is clean
--   [ ] Router is centralized
--   [ ] Required placeholder routes work
--   [ ] 404 route works
--   [ ] Environment example exists
--   [ ] Git ignore is configured
--   [ ] ESLint/linting works
--   [ ] `npm run build` passes
--   [ ] `npm run lint` passes
--   [ ] No business feature has been implemented
--   [ ] No backend has been added
--   [ ] No production credentials/secrets exist in the repository
+- [ ] Vite React TypeScript project is initialized
+- [ ] TypeScript strict mode is enabled
+- [ ] Tailwind CSS is configured
+- [ ] shadcn/ui is configured
+- [ ] React Router is configured
+- [ ] Zustand is installed
+- [ ] React Hook Form is installed
+- [ ] Zod is installed
+- [ ] TanStack Table is installed
+- [ ] Lucide React is installed
+- [ ] Initial source structure exists
+- [ ] Application entry point is clean
+- [ ] Router is centralized
+- [ ] Required placeholder routes work
+- [ ] 404 route works
+- [ ] Environment example exists
+- [ ] Git ignore is configured
+- [ ] ESLint/linting works
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+- [ ] No business feature has been implemented
+- [ ] No backend has been added
+- [ ] No production credentials/secrets exist in the repository
 
-------------------------------------------------------------------------
+---
 
 # 25. What Comes After Initialization
 
@@ -647,7 +649,7 @@ verified.
 
 Recommended sequence:
 
-``` text
+```text
 Phase 1
 Project Initialization
         ↓
@@ -682,7 +684,7 @@ Offline persistence
 Each phase should be implemented, tested, reviewed, and committed before
 moving to the next phase.
 
-------------------------------------------------------------------------
+---
 
 # 26. Vibe-Coding Instruction
 
@@ -702,18 +704,18 @@ The agent must:
 
 The agent must **not**:
 
--   Build the Dashboard.
--   Build the POS.
--   Build Products.
--   Build Inventory.
--   Build Customer Ledger.
--   Invent business rules.
--   Add a backend.
--   Add authentication.
--   Add unnecessary dependencies.
--   Create a large mock dataset.
--   Implement visual designs from screenshots.
--   Modify the PRD to make implementation easier.
+- Build the Dashboard.
+- Build the POS.
+- Build Products.
+- Build Inventory.
+- Build Customer Ledger.
+- Invent business rules.
+- Add a backend.
+- Add authentication.
+- Add unnecessary dependencies.
+- Create a large mock dataset.
+- Implement visual designs from screenshots.
+- Modify the PRD to make implementation easier.
 
 The objective is to leave the repository with a clean, working
 foundation ready for the next phase.

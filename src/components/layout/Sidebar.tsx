@@ -15,7 +15,7 @@ type SidebarProps = {
 };
 
 /** Signed-in user is stubbed for the POC; authentication is out of scope. */
-const CURRENT_USER = { name: "Juan Dela Cruz", role: "Cashier" };
+const CURRENT_USER = { name: "Juan Dela Cruz", role: "Owner" };
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   return (

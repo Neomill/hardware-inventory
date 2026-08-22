@@ -21,6 +21,13 @@ const timeFormatter = new Intl.DateTimeFormat(LOCALE, {
   hour12: true,
 })
 
+const shortDateFormatter = new Intl.DateTimeFormat(LOCALE, {
+  month: 'short',
+  day: 'numeric',
+})
+
+const numberFormatter = new Intl.NumberFormat(LOCALE)
+
 /** "₱42,560.00" */
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(value)
@@ -34,4 +41,14 @@ export function formatDateLabel(date: Date): string {
 /** "10:30 AM" */
 export function formatTime(date: Date): string {
   return timeFormatter.format(date)
+}
+
+/** "May 21, 10:15 AM" */
+export function formatDateTimeShort(date: Date): string {
+  return `${shortDateFormatter.format(date)}, ${timeFormatter.format(date)}`
+}
+
+/** "2,153" */
+export function formatNumber(value: number): string {
+  return numberFormatter.format(value)
 }

@@ -1,13 +1,13 @@
 # Domain and Data Layer Specification
 
-**Project:** Hardware Store Management System\
+**Project:** Olaer Store\
 **Phase:** 2 --- Domain and Data Layer\
 **Scope:** Domain model, pure logic, repository boundary, seed dataset\
 **Status:** Ready to implement\
 **Backend:** Not included\
 **UI:** None in this phase
 
-------------------------------------------------------------------------
+---
 
 ## 1. Objective
 
@@ -27,27 +27,27 @@ customers, and ledger entries. Building them feature by feature with
 per-feature mock data produces three incompatible datasets and forces a
 rewrite of all three when Inventory and Customer Ledger arrive.
 
-Handbook section 18 already states the resolution: *"Inventory changes
-only through transactions. Never edit stock directly."* If stock is a
+Handbook section 18 already states the resolution: _"Inventory changes
+only through transactions. Never edit stock directly."_ If stock is a
 **derived** value computed from an inventory transaction log, and a
 completed sale emits its records atomically, then:
 
--   Inventory is a view over data Sales already wrote
--   Customer Ledger is a view over data Sales already wrote
--   Reports are an aggregation over data Sales already wrote
--   Dashboard KPIs reconcile with Products stock badges because they are
-    the same computation
+- Inventory is a view over data Sales already wrote
+- Customer Ledger is a view over data Sales already wrote
+- Reports are an aggregation over data Sales already wrote
+- Dashboard KPIs reconcile with Products stock badges because they are
+  the same computation
 
 The four undesigned modules become assembly work rather than
 re-architecture. That is the entire purpose of this phase.
 
-------------------------------------------------------------------------
+---
 
 ## 2. Source of Truth
 
 Read before implementing:
 
-``` text
+```text
 docs/PRD.md
 docs/product/00-developer-handbook.md
 docs/business/04-business-rules.md
@@ -61,28 +61,28 @@ The design PNGs in `specs/01/` are layout references only. **Do not
 transcribe any figure from a screenshot.** See `DESIGN-ERRATA.md` E2, E3,
 E4.
 
-------------------------------------------------------------------------
+---
 
 ## 3. Non-Goals
 
 Explicitly out of scope for this phase:
 
--   Any React component, page, hook, or route change
--   Any styling or design-system work
--   Any backend, API client, or network call
--   Persistence of any kind (localStorage, IndexedDB) --- deferred to
-    Phase 10 per D5
--   Authentication or route guards --- per D3
--   Unit conversion --- per D2
--   Fractional line quantities --- per D2
--   Barcode input --- per E8
--   Hold Sale and the dashboard NOTE widget --- unspecified, per E11
+- Any React component, page, hook, or route change
+- Any styling or design-system work
+- Any backend, API client, or network call
+- Persistence of any kind (localStorage, IndexedDB) --- deferred to
+  Phase 10 per D5
+- Authentication or route guards --- per D3
+- Unit conversion --- per D2
+- Fractional line quantities --- per D2
+- Barcode input --- per E8
+- Hold Sale and the dashboard NOTE widget --- unspecified, per E11
 
-------------------------------------------------------------------------
+---
 
 ## 4. Structure
 
-``` text
+```text
 src/
 ├── domain/                 Pure. No React, no I/O, no imports from features.
 │   ├── money.ts
@@ -108,7 +108,7 @@ src/
 `src/domain/` must remain importable by a plain Node test with no DOM.
 Enforce it by keeping it free of any `react` or `@/components` import.
 
-------------------------------------------------------------------------
+---
 
 ## 5. Money
 
@@ -117,9 +117,9 @@ Enforce it by keeping it free of any `react` or `@/components` import.
 **All monetary values are integer centavos.** No floating-point
 arithmetic on money anywhere in the codebase.
 
-``` ts
+```ts
 /** An amount in centavos. 63100 means PHP 631.00. */
-export type Centavos = number
+export type Centavos = number;
 ```
 
 ### Rationale
@@ -132,7 +132,7 @@ debt shows PHP 0.01 forever is a support call the store cannot resolve.
 
 ### Required functions
 
-``` ts
+```ts
 fromPesos(pesos: number): Centavos
 toPesos(amount: Centavos): number
 parseAmountInput(raw: string): Centavos | null   // cashier keypad input
@@ -147,22 +147,22 @@ Rounding is half-up, applied once, only inside `applyRate`.
 `number`. It must be changed to accept `Centavos`, so that no caller can
 pass a float by accident. Update its doc comment accordingly.
 
-------------------------------------------------------------------------
+---
 
 ## 6. VAT
 
 Per **D1**, VAT is inclusive and never added to a total.
 
-``` ts
-export type VatBreakdown = { net: Centavos; vat: Centavos }
+```ts
+export type VatBreakdown = { net: Centavos; vat: Centavos };
 
-export function breakDownVat(total: Centavos, rate: number): VatBreakdown
+export function breakDownVat(total: Centavos, rate: number): VatBreakdown;
 ```
 
 Derive `net` first, then take `vat` as the remainder, so the two always
 sum exactly to `total`:
 
-``` text
+```text
 net = round(total / (1 + rate))
 vat = total - net
 ```
@@ -171,7 +171,7 @@ vat = total - net
 each sale at write time** as `Sale.taxRate`. Reports must use the stored
 rate for historical sales and never recompute at the current rate.
 
-------------------------------------------------------------------------
+---
 
 ## 7. Domain Types
 
@@ -180,18 +180,18 @@ Field lists below are the required minimum. Add only what a rule in
 
 ### Product
 
-``` ts
+```ts
 type Product = {
-  id: ProductId
-  name: string              // 'PVC Pipe 1/2"'
-  sku: string               // 'PVC-050', unique
-  categoryId: CategoryId
-  unit: UnitCode            // exactly one, per D2
-  price: Centavos           // VAT-inclusive selling price, per D1
-  reorderLevel: number      // drives Low Stock, per E3
-  isActive: boolean         // inactive products cannot be sold
-  imageUrl?: string
-}
+  id: ProductId;
+  name: string; // 'PVC Pipe 1/2"'
+  sku: string; // 'PVC-050', unique
+  categoryId: CategoryId;
+  unit: UnitCode; // exactly one, per D2
+  price: Centavos; // VAT-inclusive selling price, per D1
+  reorderLevel: number; // drives Low Stock, per E3
+  isActive: boolean; // inactive products cannot be sold
+  imageUrl?: string;
+};
 ```
 
 `Product` carries **no stock field.** Stock is derived. This is the
@@ -199,40 +199,40 @@ single most important constraint in the phase.
 
 ### Sale
 
-``` ts
-type SaleStatus = 'completed' | 'cancelled'
-type PaymentMethod = 'cash' | 'partial' | 'credit'
-type DiscountType = 'none' | 'fixed' | 'percent'
+```ts
+type SaleStatus = "completed" | "cancelled";
+type PaymentMethod = "cash" | "partial" | "credit";
+type DiscountType = "none" | "fixed" | "percent";
 
 type SaleLine = {
-  productId: ProductId
-  productName: string       // denormalised: a past sale must not change
-  sku: string               //   when a product is later renamed or repriced
-  unit: UnitCode
-  unitPrice: Centavos
-  quantity: number          // positive integer, per D2
-  lineTotal: Centavos       // unitPrice * quantity
-}
+  productId: ProductId;
+  productName: string; // denormalised: a past sale must not change
+  sku: string; //   when a product is later renamed or repriced
+  unit: UnitCode;
+  unitPrice: Centavos;
+  quantity: number; // positive integer, per D2
+  lineTotal: Centavos; // unitPrice * quantity
+};
 
 type Sale = {
-  id: SaleId
-  saleNumber: string        // '#20250521-0042', per E6
-  lines: SaleLine[]
-  subtotal: Centavos        // sum of lineTotal
-  discountType: DiscountType
-  discountValue: number     // centavos if fixed, basis points if percent
-  discountAmount: Centavos
-  total: Centavos           // subtotal - discountAmount
-  taxRate: number           // stamped at write time, per D1
-  paymentMethod: PaymentMethod
-  amountPaid: Centavos
-  changeGiven: Centavos
-  customerId: CustomerId | null   // null only for cash, per E5
-  status: SaleStatus
-  recordedBy: UserId        // per D3
-  approvedBy: UserId | null // required when discountAmount > 0
-  occurredAt: string        // ISO 8601
-}
+  id: SaleId;
+  saleNumber: string; // '#20250521-0042', per E6
+  lines: SaleLine[];
+  subtotal: Centavos; // sum of lineTotal
+  discountType: DiscountType;
+  discountValue: number; // centavos if fixed, basis points if percent
+  discountAmount: Centavos;
+  total: Centavos; // subtotal - discountAmount
+  taxRate: number; // stamped at write time, per D1
+  paymentMethod: PaymentMethod;
+  amountPaid: Centavos;
+  changeGiven: Centavos;
+  customerId: CustomerId | null; // null only for cash, per E5
+  status: SaleStatus;
+  recordedBy: UserId; // per D3
+  approvedBy: UserId | null; // required when discountAmount > 0
+  occurredAt: string; // ISO 8601
+};
 ```
 
 Line fields are denormalised deliberately. Completed sales cannot be
@@ -244,7 +244,7 @@ after the product it references is renamed, repriced, or deactivated.
 `percent` is stored in **basis points** to stay integral: `500` means
 5.00%.
 
-``` text
+```text
 fixed:    discountAmount = min(discountValue, subtotal)
 percent:  discountAmount = applyRate(subtotal, discountValue / 10000)
 ```
@@ -255,50 +255,50 @@ percent:  discountAmount = applyRate(subtotal, discountValue / 10000)
 
 ### InventoryTransaction
 
-``` ts
+```ts
 type InventoryTransactionType =
-  | 'stock_in'        // received from supplier
-  | 'sale'            // sold, negative delta
-  | 'sale_reversal'   // sale cancelled, positive delta
-  | 'adjustment'      // manual correction, reason required
+  | "stock_in" // received from supplier
+  | "sale" // sold, negative delta
+  | "sale_reversal" // sale cancelled, positive delta
+  | "adjustment"; // manual correction, reason required
 
 type InventoryTransaction = {
-  id: TransactionId
-  productId: ProductId
-  type: InventoryTransactionType
-  quantityDelta: number     // SIGNED. -5 for a sale of 5.
-  reference: string         // sale number or 'INV-10021', per E6
-  reason: string | null     // required when type is 'adjustment'
-  recordedBy: UserId
-  occurredAt: string
-}
+  id: TransactionId;
+  productId: ProductId;
+  type: InventoryTransactionType;
+  quantityDelta: number; // SIGNED. -5 for a sale of 5.
+  reference: string; // sale number or 'INV-10021', per E6
+  reason: string | null; // required when type is 'adjustment'
+  recordedBy: UserId;
+  occurredAt: string;
+};
 ```
 
 ### LedgerEntry
 
-``` ts
-type LedgerEntryType = 'charge' | 'payment' | 'reversal'
+```ts
+type LedgerEntryType = "charge" | "payment" | "reversal";
 
 type LedgerEntry = {
-  id: LedgerEntryId
-  customerId: CustomerId
-  type: LedgerEntryType
-  amount: Centavos          // SIGNED. charge positive, payment negative.
-  saleId: SaleId | null
-  reference: string
-  recordedBy: UserId
-  occurredAt: string
-}
+  id: LedgerEntryId;
+  customerId: CustomerId;
+  type: LedgerEntryType;
+  amount: Centavos; // SIGNED. charge positive, payment negative.
+  saleId: SaleId | null;
+  reference: string;
+  recordedBy: UserId;
+  occurredAt: string;
+};
 ```
 
-------------------------------------------------------------------------
+---
 
 ## 8. Pure Functions
 
 Every function in this section is deterministic, side-effect free, and
 directly unit tested.
 
-``` ts
+```ts
 // sale.ts
 computeSaleTotals(lines, discountType, discountValue): SaleTotals
 computeChange(total, amountPaid): Centavos
@@ -317,7 +317,7 @@ computeOutstandingByCustomer(entries): Map<CustomerId, Centavos>
 
 ### Payment mode rules
 
-``` text
+```text
 cash      amountPaid >= total
           change = amountPaid - total
           customer optional
@@ -334,24 +334,24 @@ credit    amountPaid = 0
           ledger charge of total
 ```
 
-------------------------------------------------------------------------
+---
 
 ## 9. Repository Boundary
 
 Per **D5**, repository interfaces are the seam that keeps a future
 backend a one-folder change.
 
-``` ts
+```ts
 interface ProductRepository {
-  list(query?: ProductQuery): Product[]
-  findById(id: ProductId): Product | undefined
-  findBySku(sku: string): Product | undefined
+  list(query?: ProductQuery): Product[];
+  findById(id: ProductId): Product | undefined;
+  findBySku(sku: string): Product | undefined;
 }
 
 interface InventoryTransactionRepository {
-  listByProduct(productId: ProductId): InventoryTransaction[]
-  listAll(range?: DateRange): InventoryTransaction[]
-  append(entries: InventoryTransaction[]): void
+  listByProduct(productId: ProductId): InventoryTransaction[];
+  listAll(range?: DateRange): InventoryTransaction[];
+  append(entries: InventoryTransaction[]): void;
 }
 ```
 
@@ -360,27 +360,27 @@ following the same shape.
 
 ### Hard rules
 
--   UI components import **interfaces only**, never an implementation.
--   Implementations live in `src/data/repositories/inMemory/` and are
-    wired in exactly one place.
--   No repository method performs business calculation. Repositories
-    store and retrieve; `src/domain/` computes.
+- UI components import **interfaces only**, never an implementation.
+- Implementations live in `src/data/repositories/inMemory/` and are
+  wired in exactly one place.
+- No repository method performs business calculation. Repositories
+  store and retrieve; `src/domain/` computes.
 
-------------------------------------------------------------------------
+---
 
 ## 10. The Atomic Checkout
 
 This is the highest-value function in the codebase. Everything Inventory,
 Ledger, and Reports later display is whatever this function writes.
 
-``` ts
+```ts
 // src/features/sales/services/recordSale.ts
-function recordSale(draft: SaleDraft, repos: Repositories): RecordSaleResult
+function recordSale(draft: SaleDraft, repos: Repositories): RecordSaleResult;
 ```
 
 A single successful call emits, together:
 
-``` text
+```text
 1. one Sale                             status 'completed'
 2. one InventoryTransaction per line     type 'sale', negative delta
 3. one LedgerEntry                       only when partial or credit
@@ -388,19 +388,19 @@ A single successful call emits, together:
 
 ### Requirements
 
--   **Validate before writing.** Re-check stock availability at confirm
-    time, not only at add-to-cart time.
--   **Reject** any line that would drive stock below zero. Inventory can
-    never be negative (business rule).
--   **Reject** partial or credit without a customer, per E5.
--   **All or nothing.** A rejected sale writes nothing at all. No
-    partially applied stock deductions.
--   `cancelSale(saleId)` sets status to `cancelled`, emits
-    `sale_reversal` transactions restoring stock, and emits a ledger
-    `reversal` where a charge existed. The original sale row **remains**
-    in history (business rule).
+- **Validate before writing.** Re-check stock availability at confirm
+  time, not only at add-to-cart time.
+- **Reject** any line that would drive stock below zero. Inventory can
+  never be negative (business rule).
+- **Reject** partial or credit without a customer, per E5.
+- **All or nothing.** A rejected sale writes nothing at all. No
+  partially applied stock deductions.
+- `cancelSale(saleId)` sets status to `cancelled`, emits
+  `sale_reversal` transactions restoring stock, and emits a ledger
+  `reversal` where a charge existed. The original sale row **remains**
+  in history (business rule).
 
-------------------------------------------------------------------------
+---
 
 ## 11. Seed Dataset
 
@@ -410,22 +410,22 @@ transaction log**, not because three files were hand-tuned to match.
 
 ### Requirements
 
--   Roughly 40 products across the categories in the references:
-    Plumbing, Cement, Nails & Screws, Pipes, Hardware, Paints,
-    Electrical, Tools, Safety
--   Include the twelve products visible in the designs with their SKUs,
-    units, and prices (PVC-050, CEM-001, NAI-200, GI-100, SP-120,
-    PNT-701, WIR-020, PVCE-050, DK-001, THN-001, and the screw and
-    masking tape lines)
--   At least one product at zero stock, to exercise E7
--   At least three below reorder level, to populate Low Stock
--   8 customers, including Juan Dela Cruz, Pedro Santos, and Maria Reyes
-    from the references
--   Roughly 60 days of sales across all three payment methods, including
-    at least one cancelled sale
--   At least two customers carrying multiple unpaid balances
-    (`09-open-questions.md`)
--   Supplier stock-in transactions with `INV-NNNNN` references
+- Roughly 40 products across the categories in the references:
+  Plumbing, Cement, Nails & Screws, Pipes, Hardware, Paints,
+  Electrical, Tools, Safety
+- Include the twelve products visible in the designs with their SKUs,
+  units, and prices (PVC-050, CEM-001, NAI-200, GI-100, SP-120,
+  PNT-701, WIR-020, PVCE-050, DK-001, THN-001, and the screw and
+  masking tape lines)
+- At least one product at zero stock, to exercise E7
+- At least three below reorder level, to populate Low Stock
+- 8 customers, including Juan Dela Cruz, Pedro Santos, and Maria Reyes
+  from the references
+- Roughly 60 days of sales across all three payment methods, including
+  at least one cancelled sale
+- At least two customers carrying multiple unpaid balances
+  (`09-open-questions.md`)
+- Supplier stock-in transactions with `INV-NNNNN` references
 
 ### The critical constraint
 
@@ -440,59 +440,59 @@ hardcodes `2,153` or `PHP 42,560.00`.
 Seed timestamps are generated relative to a single injected `now`, so
 that "today" is always today when the POC is demonstrated.
 
-------------------------------------------------------------------------
+---
 
 ## 12. Testing
 
 Vitest is already configured. Required coverage:
 
-| Area         | Must prove                                              |
-| ------------ | ------------------------------------------------------- |
-| money        | No float drift; `parseAmountInput` rejects junk          |
-| VAT          | `net + vat === total` exactly, across many totals        |
-| totals       | Line sums, fixed and percent discounts, cap at subtotal  |
-| change       | Cash tendered above, equal to, and below total           |
-| stock        | Derivation from a log; low and out-of-stock thresholds   |
-| ledger       | Multiple charges and partial payments settle to exactly 0 |
-| recordSale   | Emits all three record types; rejects atomically         |
-| cancelSale   | Restores stock; original sale survives                   |
+| Area       | Must prove                                                |
+| ---------- | --------------------------------------------------------- |
+| money      | No float drift; `parseAmountInput` rejects junk           |
+| VAT        | `net + vat === total` exactly, across many totals         |
+| totals     | Line sums, fixed and percent discounts, cap at subtotal   |
+| change     | Cash tendered above, equal to, and below total            |
+| stock      | Derivation from a log; low and out-of-stock thresholds    |
+| ledger     | Multiple charges and partial payments settle to exactly 0 |
+| recordSale | Emits all three record types; rejects atomically          |
+| cancelSale | Restores stock; original sale survives                    |
 
 The ledger test is the one that matters most: a customer with three
 credit sales and four partial payments totalling the same amount must end
 at exactly `0`, not `1` centavo.
 
-------------------------------------------------------------------------
+---
 
 ## 13. Definition of Done
 
--   [ ] `src/domain/` contains no React import and no I/O
--   [ ] All money is `Centavos`; no float arithmetic on money
--   [ ] `formatCurrency` accepts `Centavos`
--   [ ] `Product` has no stock field
--   [ ] Stock is derived from the transaction log in every code path
--   [ ] VAT is inclusive; `net + vat === total` exactly
--   [ ] `Sale.taxRate` is stamped at write time
--   [ ] Discount supports fixed and percent, capped, with `approvedBy`
--   [ ] `recordSale` emits Sale + InventoryTransactions + LedgerEntry
-        atomically
--   [ ] `recordSale` rejects negative stock and customerless credit
--   [ ] `cancelSale` reverses stock and ledger, keeps the sale
--   [ ] Repository interfaces defined; in-memory implementations wired
-        once
--   [ ] Seed dataset authored as transactions only, no stock figures
--   [ ] Seed reconciles: derived stock, KPIs, and balances all agree
--   [ ] Unit tests cover every table row in section 12
--   [ ] `npm run lint` passes
--   [ ] `npm run test` passes
--   [ ] `npm run build` passes
--   [ ] No UI file was modified except `src/lib/format.ts`
--   [ ] No backend, no persistence, no auth
+- [ ] `src/domain/` contains no React import and no I/O
+- [ ] All money is `Centavos`; no float arithmetic on money
+- [ ] `formatCurrency` accepts `Centavos`
+- [ ] `Product` has no stock field
+- [ ] Stock is derived from the transaction log in every code path
+- [ ] VAT is inclusive; `net + vat === total` exactly
+- [ ] `Sale.taxRate` is stamped at write time
+- [ ] Discount supports fixed and percent, capped, with `approvedBy`
+- [ ] `recordSale` emits Sale + InventoryTransactions + LedgerEntry
+      atomically
+- [ ] `recordSale` rejects negative stock and customerless credit
+- [ ] `cancelSale` reverses stock and ledger, keeps the sale
+- [ ] Repository interfaces defined; in-memory implementations wired
+      once
+- [ ] Seed dataset authored as transactions only, no stock figures
+- [ ] Seed reconciles: derived stock, KPIs, and balances all agree
+- [ ] Unit tests cover every table row in section 12
+- [ ] `npm run lint` passes
+- [ ] `npm run test` passes
+- [ ] `npm run build` passes
+- [ ] No UI file was modified except `src/lib/format.ts`
+- [ ] No backend, no persistence, no auth
 
-------------------------------------------------------------------------
+---
 
 ## 14. What Comes After
 
-``` text
+```text
 Phase 3   Design-system primitives
 Phase 4   Products
 Phase 5   Sales / POS
