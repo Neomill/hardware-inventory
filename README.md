@@ -17,16 +17,16 @@ npm install
 npm run dev
 ```
 
-The dev server prints a URL that already includes the Pages base path (`/hardware-inventory/`).
+The dev server prints a URL that already includes the Pages base path (`/olaer-store/`).
 
-| Script              | Purpose                                            |
-| ------------------- | -------------------------------------------------- |
-| `npm run dev`       | Vite dev server with HMR                            |
-| `npm run build`     | Typecheck, then build to `dist/`                    |
-| `npm run preview`   | Serve the production build locally                  |
-| `npm run typecheck` | `tsc` over `src` and the Vite config                |
-| `npm run lint`      | ESLint, zero warnings allowed                       |
-| `npm run test`      | Vitest (single run) — `test:watch` for watch mode   |
+| Script              | Purpose                                           |
+| ------------------- | ------------------------------------------------- |
+| `npm run dev`       | Vite dev server with HMR                          |
+| `npm run build`     | Typecheck, then build to `dist/`                  |
+| `npm run preview`   | Serve the production build locally                |
+| `npm run typecheck` | `tsc` over `src` and the Vite config              |
+| `npm run lint`      | ESLint, zero warnings allowed                     |
+| `npm run test`      | Vitest (single run) — `test:watch` for watch mode |
 
 ## Project structure
 
@@ -54,11 +54,11 @@ Deployment runs from [`.github/workflows/deploy.yml`](.github/workflows/deploy.y
 
 One-time repository setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-Published at `https://neomill.github.io/hardware-inventory/`.
+Published at `https://neomill.github.io/olaer-store/`.
 
 Two details make the static host work:
 
-- **Base path** — `vite.config.ts` sets `base` to `/hardware-inventory/` so assets resolve under the
+- **Base path** — `vite.config.ts` sets `base` to `/olaer-store/` so assets resolve under the
   project-site subpath. Override with `VITE_BASE=/ npm run build` for a custom domain or root deploy.
 - **Hash routing** — GitHub Pages has no SPA rewrite, so a history URL like `/sales/123` would 404 on
   refresh. The app uses `HashRouter`, making every route (`#/sales/123`) survive a reload and stay
