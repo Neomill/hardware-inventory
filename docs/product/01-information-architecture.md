@@ -40,6 +40,12 @@ Dashboard
 │ ├── Payment History
 │ └── Record Payment
 │
+├── Reports
+│ ├── Daily Sales Report
+│ ├── Top Selling Products
+│ ├── Payment Breakdown
+│ └── Outstanding Credit
+│
 └── Settings (Prototype)
 
 # Navigation Items
@@ -49,6 +55,7 @@ Products
 Sales
 Inventory
 Ledger
+Reports
 
 # Dashboard
 
