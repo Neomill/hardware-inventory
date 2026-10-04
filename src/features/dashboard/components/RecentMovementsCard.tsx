@@ -3,26 +3,31 @@ import { StatusPill, type PillTone } from '@/components/common/StatusPill'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
-import type { InventoryMovement, MovementType } from '@/features/dashboard/types'
+import type { MovementType, StockMovement } from '@/domain/types'
 import { formatDateTimeShort, formatNumber } from '@/lib/format'
 
 const TYPE_LABELS: Record<MovementType, string> = {
   stock_in: 'Stock In',
   sale: 'Sale',
+  sale_reversal: 'Reversal',
+  adjustment: 'Adjustment',
 }
 
 const TYPE_TONES: Record<MovementType, PillTone> = {
   stock_in: 'success',
   sale: 'danger',
+  sale_reversal: 'info',
+  adjustment: 'warning',
 }
 
 /** "+150 pcs" / "-5 pcs" -- the sign is the point, so it is always shown. */
-function formatDelta(quantityDelta: number, unit: string): string {
+function formatDelta(quantityDelta: number): string {
   const sign = quantityDelta > 0 ? '+' : '-'
-  return `${sign}${formatNumber(Math.abs(quantityDelta))} ${unit}`
+
+  return `${sign}${formatNumber(Math.abs(quantityDelta))}`
 }
 
-const COLUMNS: SummaryColumn<InventoryMovement>[] = [
+const COLUMNS: SummaryColumn<StockMovement>[] = [
   {
     id: 'time',
     header: 'Time',
@@ -52,19 +57,19 @@ const COLUMNS: SummaryColumn<InventoryMovement>[] = [
     header: 'Qty',
     cell: (movement) => (
       <StatusPill tone={movement.quantityDelta > 0 ? 'success' : 'danger'}>
-        {formatDelta(movement.quantityDelta, movement.unit)}
+        {formatDelta(movement.quantityDelta)}
       </StatusPill>
     ),
   },
   {
-    id: 'user',
+    id: 'recordedBy',
     header: 'Recorded By',
-    cell: (movement) => movement.userName,
+    cell: (movement) => movement.recordedBy,
   },
 ]
 
 type RecentMovementsCardProps = {
-  movements: InventoryMovement[]
+  movements: StockMovement[]
 }
 
 export function RecentMovementsCard({ movements }: RecentMovementsCardProps) {

@@ -7,11 +7,13 @@ export const ROUTES = {
   dashboard: '/',
 
   products: '/products',
+  newProduct: '/products/new',
   productDetail: (productId: string) => `/products/${productId}`,
   lowStockProducts: '/products?filter=low-stock',
 
   sales: '/sales',
   newSale: '/sales/new',
+  checkout: '/sales/checkout',
   saleDetail: (saleId: string) => `/sales/${saleId}`,
 
   inventory: '/inventory',

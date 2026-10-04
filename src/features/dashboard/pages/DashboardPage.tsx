@@ -7,11 +7,11 @@ import { QuickActions } from '@/features/dashboard/components/QuickActions'
 import { RecentMovementsCard } from '@/features/dashboard/components/RecentMovementsCard'
 import { RecentSalesCard } from '@/features/dashboard/components/RecentSalesCard'
 import { TrendIndicator } from '@/features/dashboard/components/TrendIndicator'
-import { getDashboardSnapshot } from '@/features/dashboard/mock/dashboardSnapshot'
+import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData'
 import { formatCurrency, formatNumber } from '@/lib/format'
 
 export function DashboardPage() {
-  const { kpis, recentSales, lowStockItems, recentMovements, note } = getDashboardSnapshot()
+  const { kpis, recentSales, lowStockItems, recentMovements, note } = useDashboardData()
 
   return (
     <div className="flex flex-col gap-5">
@@ -24,7 +24,11 @@ export function DashboardPage() {
           footer={
             <>
               <span className="text-muted">vs Yesterday</span>
-              <TrendIndicator changePercent={kpis.todaysSalesChange} higherIsBetter />
+              {kpis.todaysSalesChange === null ? (
+                <span className="text-muted">--</span>
+              ) : (
+                <TrendIndicator changePercent={kpis.todaysSalesChange} higherIsBetter />
+              )}
             </>
           }
         />
@@ -37,10 +41,14 @@ export function DashboardPage() {
           footer={
             <>
               <span className="text-muted">vs Yesterday</span>
-              <TrendIndicator
-                changePercent={kpis.outstandingCreditChange}
-                higherIsBetter={false}
-              />
+              {kpis.outstandingCreditChange === null ? (
+                <span className="text-muted">--</span>
+              ) : (
+                <TrendIndicator
+                  changePercent={kpis.outstandingCreditChange}
+                  higherIsBetter={false}
+                />
+              )}
             </>
           }
         />

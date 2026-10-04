@@ -3,14 +3,9 @@ import { StatusPill, type PillTone } from '@/components/common/StatusPill'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
-import type { PaymentMethod, RecentSale } from '@/features/dashboard/types'
+import { PAYMENT_LABELS } from '@/domain/sale'
+import type { PaymentMethod, Sale } from '@/domain/types'
 import { formatCurrency, formatTime } from '@/lib/format'
-
-const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-  cash: 'Cash',
-  partial: 'Partial',
-  credit: 'Credit',
-}
 
 const PAYMENT_TONES: Record<PaymentMethod, PillTone> = {
   cash: 'success',
@@ -18,7 +13,7 @@ const PAYMENT_TONES: Record<PaymentMethod, PillTone> = {
   credit: 'danger',
 }
 
-const COLUMNS: SummaryColumn<RecentSale>[] = [
+const COLUMNS: SummaryColumn<Sale>[] = [
   {
     id: 'time',
     header: 'Time',
@@ -40,7 +35,7 @@ const COLUMNS: SummaryColumn<RecentSale>[] = [
     id: 'total',
     header: 'Total',
     cell: (sale) => formatCurrency(sale.total),
-    cellClassName: 'font-semibold',
+    cellClassName: 'font-semibold tabular-nums',
   },
   {
     id: 'payment',
@@ -54,7 +49,7 @@ const COLUMNS: SummaryColumn<RecentSale>[] = [
 ]
 
 type RecentSalesCardProps = {
-  sales: RecentSale[]
+  sales: Sale[]
 }
 
 export function RecentSalesCard({ sales }: RecentSalesCardProps) {

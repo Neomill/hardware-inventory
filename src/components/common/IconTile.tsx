@@ -15,15 +15,18 @@ const TONE_STYLES: Record<IconTone, string> = {
 type IconTileProps = {
   icon: LucideIcon
   tone: IconTone
+  /** The sales screens use circles; the dashboard uses rounded squares. */
+  shape?: 'square' | 'circle'
   className?: string
 }
 
 /** Rounded icon plate used by the KPI cards and the note widget. */
-export function IconTile({ icon: Icon, tone, className }: IconTileProps) {
+export function IconTile({ icon: Icon, tone, shape = 'square', className }: IconTileProps) {
   return (
     <span
       className={cn(
-        'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl',
+        'flex h-14 w-14 shrink-0 items-center justify-center',
+        shape === 'circle' ? 'rounded-full' : 'rounded-2xl',
         TONE_STYLES[tone],
         className,
       )}

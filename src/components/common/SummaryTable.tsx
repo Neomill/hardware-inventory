@@ -14,21 +14,31 @@ type SummaryTableProps<T> = {
   rows: T[]
   rowKey: (row: T) => string
   emptyMessage: string
+  /** Widen for tables with more columns than a dashboard widget carries. */
+  minWidthClassName?: string
+  hoverable?: boolean
 }
 
 /**
- * Compact, display-only table for dashboard widgets. It deliberately has no
- * sorting, selection or pagination: the sortable product grid is a separate
- * component. Wide content scrolls inside the card rather than the page.
+ * Display-only table. Filtering and pagination belong to the caller, so the
+ * same component serves a three-row dashboard widget and a paged product list.
+ * Wide content scrolls inside the card rather than the page.
  */
-export function SummaryTable<T>({ columns, rows, rowKey, emptyMessage }: SummaryTableProps<T>) {
+export function SummaryTable<T>({
+  columns,
+  rows,
+  rowKey,
+  emptyMessage,
+  minWidthClassName = 'min-w-[34rem]',
+  hoverable = false,
+}: SummaryTableProps<T>) {
   if (rows.length === 0) {
     return <p className="py-8 text-center text-sm text-muted">{emptyMessage}</p>
   }
 
   return (
     <div className="-mx-5 overflow-x-auto px-5">
-      <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
+      <table className={cn('w-full border-collapse text-left text-sm', minWidthClassName)}>
         <thead>
           <tr>
             {columns.map((column) => (
@@ -45,7 +55,13 @@ export function SummaryTable<T>({ columns, rows, rowKey, emptyMessage }: Summary
 
         <tbody>
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-t border-slate-100">
+            <tr
+              key={rowKey(row)}
+              className={cn(
+                'border-t border-slate-100',
+                hoverable && 'transition-colors hover:bg-slate-50/70',
+              )}
+            >
               {columns.map((column) => (
                 <td
                   key={column.id}

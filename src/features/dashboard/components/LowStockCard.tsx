@@ -2,37 +2,48 @@ import { SectionCard } from '@/components/common/SectionCard'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
-import type { LowStockItem } from '@/features/dashboard/types'
+import { deriveStockStatus, STOCK_TEXT_STYLES } from '@/domain/stock'
+import type { Product } from '@/domain/types'
+import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
 
-const COLUMNS: SummaryColumn<LowStockItem>[] = [
+const COLUMNS: SummaryColumn<Product>[] = [
   {
     id: 'product',
     header: 'Product',
-    cell: (item) => item.name,
+    cell: (product) => product.name,
     cellClassName: 'font-medium',
   },
   {
     id: 'stock',
     header: 'Current Stock',
-    cell: (item) => formatNumber(item.currentStock),
-    cellClassName: 'font-semibold text-rose-600',
+    cell: (product) => (
+      <span
+        className={cn(
+          'font-semibold tabular-nums',
+          STOCK_TEXT_STYLES[deriveStockStatus(product.stock, product.reorderLevel)],
+        )}
+      >
+        {formatNumber(product.stock)}
+      </span>
+    ),
   },
   {
     id: 'unit',
     header: 'Unit',
-    cell: (item) => item.unit,
+    cell: (product) => product.unit,
     cellClassName: 'text-muted',
   },
   {
     id: 'reorder',
     header: 'Reorder At',
-    cell: (item) => formatNumber(item.reorderLevel),
+    cell: (product) => formatNumber(product.reorderLevel),
+    cellClassName: 'tabular-nums',
   },
 ]
 
 type LowStockCardProps = {
-  items: LowStockItem[]
+  items: Product[]
 }
 
 export function LowStockCard({ items }: LowStockCardProps) {
@@ -41,7 +52,7 @@ export function LowStockCard({ items }: LowStockCardProps) {
       <SummaryTable
         columns={COLUMNS}
         rows={items}
-        rowKey={(item) => item.id}
+        rowKey={(product) => product.id}
         emptyMessage="Every product is above its reorder level."
       />
     </SectionCard>

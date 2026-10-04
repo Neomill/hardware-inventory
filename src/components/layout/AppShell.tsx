@@ -3,7 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom'
 
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
-import { resolvePageTitle } from '@/components/layout/navigation'
+import { resolvePageSubtitle, resolvePageTitle } from '@/components/layout/navigation'
+import { ROUTES } from '@/app/routes'
 import { APP_NAME, APP_VERSION } from '@/config/app'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +17,7 @@ export function AppShell() {
   const [isMenuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
   const title = resolvePageTitle(location.pathname)
+  const subtitle = resolvePageSubtitle(location.pathname)
 
   useEffect(() => {
     setMenuOpen(false)
@@ -42,7 +44,12 @@ export function AppShell() {
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <TopBar title={title} onOpenMenu={() => setMenuOpen(true)} />
+        <TopBar
+          title={title}
+          subtitle={subtitle}
+          showBreadcrumb={location.pathname !== ROUTES.dashboard}
+          onOpenMenu={() => setMenuOpen(true)}
+        />
 
         <main className="flex-1 px-4 pb-6 sm:px-6 lg:px-8">
           <Outlet />

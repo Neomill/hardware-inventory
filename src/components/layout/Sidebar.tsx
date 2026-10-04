@@ -2,7 +2,7 @@ import { ChevronDown, UserRound, Warehouse } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { ROUTES } from "@/app/routes";
-import { APP_SHORT_NAME } from "@/config/app";
+import { APP_SHORT_NAME, CURRENT_USER } from "@/config/app";
 import {
   PRIMARY_NAV,
   SECONDARY_NAV,
@@ -19,9 +19,6 @@ type SidebarProps = {
 const [BRAND_TOP, ...brandRest] = APP_SHORT_NAME.split(" ");
 const BRAND_BOTTOM = brandRest.join(" ");
 
-/** Signed-in user is stubbed for the POC; authentication is out of scope. */
-const CURRENT_USER = { name: "Juan Dela Cruz", role: "Owner" };
-
 export function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col bg-navy-900 text-white">
@@ -29,7 +26,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500">
           <Warehouse className="h-6 w-6" aria-hidden />
         </span>
-        <span className="text-lg font-extrabold uppercase leading-5 tracking-wide">
+        <span className="text-lg font-bold uppercase leading-5 tracking-wide">
           {BRAND_TOP}
           {BRAND_BOTTOM ? (
             <>

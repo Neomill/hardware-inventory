@@ -5,9 +5,14 @@ import { ROUTES } from '@/app/routes'
 import { CustomerLedgerPage } from '@/features/customers/pages/CustomerLedgerPage'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
+import { NewProductPage } from '@/features/products/pages/NewProductPage'
+import { ProductDetailPage } from '@/features/products/pages/ProductDetailPage'
 import { ProductsPage } from '@/features/products/pages/ProductsPage'
 import { ReportsPage } from '@/features/reports/pages/ReportsPage'
-import { SalesPage } from '@/features/sales/pages/SalesPage'
+import { CheckoutPage } from '@/features/sales/pages/CheckoutPage'
+import { PosPage } from '@/features/sales/pages/PosPage'
+import { SaleCompletePage } from '@/features/sales/pages/SaleCompletePage'
+import { SalesRootPage } from '@/features/sales/pages/SalesRootPage'
 import { SettingsPage } from '@/features/settings/pages/SettingsPage'
 
 /**
@@ -22,10 +27,12 @@ export function App() {
         <Route element={<AppShell />}>
           <Route path={ROUTES.dashboard} element={<DashboardPage />} />
           <Route path={ROUTES.products} element={<ProductsPage />} />
-          <Route path="/products/:productId" element={<ProductsPage />} />
-          <Route path={ROUTES.sales} element={<SalesPage />} />
-          <Route path="/sales/new" element={<SalesPage />} />
-          <Route path="/sales/:saleId" element={<SalesPage />} />
+          <Route path={ROUTES.newProduct} element={<NewProductPage />} />
+          <Route path="/products/:productId" element={<ProductDetailPage />} />
+          <Route path={ROUTES.sales} element={<SalesRootPage />} />
+          <Route path={ROUTES.newSale} element={<PosPage />} />
+          <Route path={ROUTES.checkout} element={<CheckoutPage />} />
+          <Route path="/sales/:saleId" element={<SaleCompletePage />} />
           <Route path={ROUTES.inventory} element={<InventoryPage />} />
           <Route path="/inventory/receive" element={<InventoryPage />} />
           <Route path="/inventory/movements" element={<InventoryPage />} />

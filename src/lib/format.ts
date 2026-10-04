@@ -1,3 +1,4 @@
+import { toPesos, type Centavos } from '@/domain/money'
 import { CURRENCY, LOCALE } from '@/config/app'
 
 const currencyFormatter = new Intl.NumberFormat(LOCALE, {
@@ -28,9 +29,9 @@ const shortDateFormatter = new Intl.DateTimeFormat(LOCALE, {
 
 const numberFormatter = new Intl.NumberFormat(LOCALE)
 
-/** "₱42,560.00" */
-export function formatCurrency(value: number): string {
-  return currencyFormatter.format(value)
+/** "₱42,560.00" from an integer centavo amount. */
+export function formatCurrency(amount: Centavos): string {
+  return currencyFormatter.format(toPesos(amount))
 }
 
 /** "May 21, 2025 (Wed)" */

@@ -1,13 +1,11 @@
-import { Settings } from 'lucide-react'
-
-import { ModulePlaceholder } from '@/components/common/ModulePlaceholder'
+import { DataCard } from '@/features/settings/components/DataCard'
+import { StoreProfileForm } from '@/features/settings/components/StoreProfileForm'
 
 export function SettingsPage() {
   return (
-    <ModulePlaceholder
-      icon={Settings}
-      title="Settings"
-      description="Store settings are a prototype placeholder in this POC."
-    />
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:items-start">
+      <StoreProfileForm />
+      <DataCard />
+    </div>
   )
 }

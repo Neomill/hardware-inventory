@@ -30,3 +30,26 @@
     @apply text-xs font-semibold uppercase tracking-wide text-navy-800;
   }
 }
+
+/*
+ * Printing a receipt must not print the whole application. Everything is
+ * hidden and only the receipt is painted, at the top of the page.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt,
+  .receipt * {
+    visibility: visible;
+  }
+
+  .receipt {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
+  }
+}
