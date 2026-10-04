@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ArrowLeft, UserX } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
@@ -22,13 +22,21 @@ type CustomerDetailPageProps = {
 
 export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const now = useCurrentTime(60_000)
   const ledger = useCustomerLedger(customerId)
 
   const [paying, setPaying] = useState(false)
-  const [notice, setNotice] = useState<string | null>(
-    () => (location.state as CustomerDetailLocationState | null)?.notice ?? null,
-  )
+  const passedNotice = (location.state as CustomerDetailLocationState | null)?.notice
+  // Read once: the router state outlives this visit (Back, Forward, refresh).
+  const [notice, setNotice] = useState<string | null>(() => passedNotice ?? null)
+
+  // Shown once, then dropped from the history entry so it does not come back.
+  useEffect(() => {
+    if (passedNotice) {
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [passedNotice, location.pathname, navigate])
 
   const closePayment = useCallback(() => setPaying(false), [])
 
@@ -45,8 +53,8 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
         </span>
         <h2 className="text-lg font-semibold text-navy-900">Customer not found</h2>
         <p className="max-w-md text-sm text-muted">
-          This customer is not in the current session. Customers are kept in memory for the
-          prototype.
+          There is no customer with this ID on this device. They may have been added on another
+          device, or the store data on this one was reset.
         </p>
         <Button to={ROUTES.customers}>Back to Customer Ledger</Button>
       </div>

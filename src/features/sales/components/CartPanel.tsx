@@ -5,10 +5,14 @@ import { QuantityStepper } from '@/components/common/QuantityStepper'
 import { CartTotals } from '@/features/sales/components/CartTotals'
 import type { CartEntry } from '@/features/sales/hooks/useCart'
 import type { SaleTotals } from '@/domain/sale'
+import type { CartLine } from '@/domain/types'
+import { formatItemCount } from '@/features/sales/lib/salesMetrics'
 import { formatCurrency, formatNumber } from '@/lib/format'
 
 type CartPanelProps = {
   entries: CartEntry[]
+  /** Lines whose product no longer exists; shown so they can be removed, never sold. */
+  unavailable: CartLine[]
   totals: SaleTotals
   taxRate: number
   onQuantityChange: (productId: string, quantity: number) => void
@@ -23,6 +27,7 @@ type CartPanelProps = {
  */
 export function CartPanel({
   entries,
+  unavailable,
   totals,
   taxRate,
   onQuantityChange,
@@ -30,14 +35,16 @@ export function CartPanel({
   onClear,
   onCheckout,
 }: CartPanelProps) {
+  const hasLines = entries.length > 0 || unavailable.length > 0
+
   return (
-    <section className="card flex flex-col">
+    <section className="card flex min-w-0 flex-col">
       <header className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <h2 className="text-base font-semibold text-navy-900">
-          Current Sale ({formatNumber(totals.itemCount)} items)
+          Current Sale ({formatItemCount(totals.itemCount)})
         </h2>
 
-        {entries.length > 0 ? (
+        {hasLines ? (
           <button
             type="button"
             onClick={onClear}
@@ -49,7 +56,7 @@ export function CartPanel({
         ) : null}
       </header>
 
-      {entries.length === 0 ? (
+      {!hasLines ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-14 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
             <Package className="h-7 w-7" aria-hidden />
@@ -97,6 +104,30 @@ export function CartPanel({
               </div>
             </li>
           ))}
+
+          {unavailable.map((line) => (
+            <li
+              key={line.productId}
+              className="flex items-start justify-between gap-3 bg-rose-50/60 px-5 py-3"
+            >
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="block font-medium text-navy-900">Unavailable item</span>
+                <span className="block text-xs text-rose-700">
+                  {formatNumber(line.quantity)} of a product that is no longer in the product list.
+                  Remove it to continue.
+                </span>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => onRemove(line.productId)}
+                aria-label={`Remove unavailable item ${line.productId}`}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-rose-600 transition-colors hover:bg-rose-100"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </button>
+            </li>
+          ))}
         </ul>
       )}
 
@@ -107,7 +138,7 @@ export function CartPanel({
           variant="primary"
           icon={ArrowRight}
           onClick={onCheckout}
-          disabled={entries.length === 0}
+          disabled={entries.length === 0 || unavailable.length > 0}
           className="h-14 text-base"
         >
           Proceed to Checkout

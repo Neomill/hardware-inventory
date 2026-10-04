@@ -3,7 +3,6 @@ import { CheckCircle2, ClipboardList, PackagePlus, Warehouse } from 'lucide-reac
 import { Button } from '@/components/common/Button'
 import { ROUTES } from '@/app/routes'
 import { displayReference, formatQuantityDelta } from '@/features/inventory/lib/movementQuery'
-import { movementsFor } from '@/features/inventory/lib/links'
 import type { StockMovement } from '@/domain/types'
 import { formatDateTimeShort, formatNumber } from '@/lib/format'
 
@@ -59,7 +58,11 @@ export function ReceiptConfirmation({ received, onReceiveAnother }: ReceiptConfi
         <Button icon={PackagePlus} variant="primary" onClick={onReceiveAnother} className="sm:h-14">
           Receive Another
         </Button>
-        <Button icon={ClipboardList} to={movementsFor(movement.productId)} className="sm:h-14">
+        <Button
+          icon={ClipboardList}
+          to={ROUTES.movementsFor(movement.productId)}
+          className="sm:h-14"
+        >
           View Movements
         </Button>
         <Button icon={Warehouse} to={ROUTES.inventory} className="sm:h-14">

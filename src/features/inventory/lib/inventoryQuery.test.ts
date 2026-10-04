@@ -37,7 +37,13 @@ describe('filterInventory', () => {
   it('lists out of stock first, then low, then in stock, alphabetical within each', () => {
     const names = filterInventory(CATALOGUE, EMPTY_INVENTORY_FILTERS).map((p) => p.name)
 
-    expect(names).toEqual(['Door Knob', 'Old Item', 'Anchor Bolt', 'Cement (Holcim)', 'PVC Pipe 1/2"'])
+    expect(names).toEqual([
+      'Door Knob',
+      'Old Item',
+      'Anchor Bolt',
+      'Cement (Holcim)',
+      'PVC Pipe 1/2"',
+    ])
   })
 
   it('searches name and SKU, ignoring case and spaces', () => {
@@ -45,7 +51,9 @@ describe('filterInventory', () => {
       filterInventory(CATALOGUE, { ...EMPTY_INVENTORY_FILTERS, search: '  cem ' }).map((p) => p.id),
     ).toEqual(['CEM-001'])
     expect(
-      filterInventory(CATALOGUE, { ...EMPTY_INVENTORY_FILTERS, search: 'pvc-050' }).map((p) => p.id),
+      filterInventory(CATALOGUE, { ...EMPTY_INVENTORY_FILTERS, search: 'pvc-050' }).map(
+        (p) => p.id,
+      ),
     ).toEqual(['PVC-050'])
   })
 
@@ -53,7 +61,10 @@ describe('filterInventory', () => {
     const low = filterInventory(CATALOGUE, { ...EMPTY_INVENTORY_FILTERS, stockStatus: 'low_stock' })
     expect(low.map((p) => p.id)).toEqual(['ABC-001', 'CEM-001'])
 
-    const plumbing = filterInventory(CATALOGUE, { ...EMPTY_INVENTORY_FILTERS, category: 'Plumbing' })
+    const plumbing = filterInventory(CATALOGUE, {
+      ...EMPTY_INVENTORY_FILTERS,
+      category: 'Plumbing',
+    })
     expect(plumbing.map((p) => p.id)).toEqual(['PVC-050'])
   })
 })

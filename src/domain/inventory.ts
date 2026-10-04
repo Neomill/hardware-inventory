@@ -1,5 +1,6 @@
 import { byOccurredAt, isWithinRange, type DateRange } from '@/domain/dates'
-import type { MovementType, StockMovement, ValidationResult } from '@/domain/types'
+import { nextSequentialId } from '@/domain/ids'
+import type { MovementType, Product, Sale, StockMovement, ValidationResult } from '@/domain/types'
 
 export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
   stock_in: 'Stock In',
@@ -127,4 +128,121 @@ export function summarizeMovements(movements: StockMovement[]): MovementTotals {
   }
 
   return totals
+}
+
+/**
+ * Opening stock convention. Stock changes only through movements, so the
+ * quantity a product had on hand before any recorded history is itself a
+ * movement: type 'stock_in' (it is stock coming onto the books), reference
+ * "OPENING", description "Opening stock", no reason, dated before everything
+ * else for that product. With it, the sum of a product's movements always
+ * equals its stock. It counts as "received" in summarizeMovements.
+ */
+export const OPENING_STOCK_REFERENCE = 'OPENING'
+export const OPENING_STOCK_DESCRIPTION = 'Opening stock'
+
+export function isOpeningStockMovement(movement: StockMovement): boolean {
+  return movement.type === 'stock_in' && movement.reference === OPENING_STOCK_REFERENCE
+}
+
+export function buildOpeningStockMovement(input: {
+  productId: string
+  quantity: number
+  occurredAt: string
+  recordedBy: string
+}): StockMovement {
+  return {
+    id: `MOV-OPEN-${input.productId}`,
+    productId: input.productId,
+    type: 'stock_in',
+    quantityDelta: input.quantity,
+    reference: OPENING_STOCK_REFERENCE,
+    description: OPENING_STOCK_DESCRIPTION,
+    reason: null,
+    note: null,
+    recordedBy: input.recordedBy,
+    occurredAt: input.occurredAt,
+  }
+}
+
+/** A product's stock as its movements tell it: the signed sum of every delta. */
+export function stockFromMovements(movements: StockMovement[], productId: string): number {
+  return movements.reduce(
+    (sum, movement) => (movement.productId === productId ? sum + movement.quantityDelta : sum),
+    0,
+  )
+}
+
+export const RECONCILED_BY = 'System'
+export const RECONCILE_REASON = 'Reconciled with recorded stock'
+
+/**
+ * Makes every product's movements add up to its stock without touching the
+ * stock itself. A product short of its stock gets an opening-stock movement
+ * dated a minute before the earliest sale or movement (data recorded before
+ * opening stock was a movement). A product whose movements add up to more
+ * than its stock -- or that already has an opening movement -- gets an
+ * adjustment dated `now` with RECONCILE_REASON, since an opening balance
+ * cannot be negative. Returns the same array when nothing is missing.
+ */
+export function reconcileOpeningStock(input: {
+  products: Product[]
+  movements: StockMovement[]
+  sales: Sale[]
+  now: Date
+}): StockMovement[] {
+  const { products, movements, sales, now } = input
+  const gaps = products
+    .map((product) => ({
+      productId: product.id,
+      gap: product.stock - stockFromMovements(movements, product.id),
+    }))
+    .filter(({ gap }) => gap !== 0)
+
+  if (gaps.length === 0) {
+    return movements
+  }
+
+  const times = [...movements, ...sales]
+    .map((record) => Date.parse(record.occurredAt))
+    .filter((time) => !Number.isNaN(time))
+  const earliest = times.length > 0 ? Math.min(...times) : now.getTime()
+  const openedAt = new Date(earliest - 60_000).toISOString()
+
+  const usedIds = new Set(movements.map((movement) => movement.id))
+  const references = movements.map((movement) => movement.reference)
+  const openings: StockMovement[] = []
+  const corrections: StockMovement[] = []
+
+  for (const { productId, gap } of gaps) {
+    const opening = buildOpeningStockMovement({
+      productId,
+      quantity: gap,
+      occurredAt: openedAt,
+      recordedBy: RECONCILED_BY,
+    })
+
+    if (gap > 0 && !usedIds.has(opening.id)) {
+      openings.push(opening)
+      continue
+    }
+
+    const reference = nextSequentialId('ADJ-', references, 5)
+    references.push(reference)
+
+    corrections.push({
+      id: `MOV-${reference}`,
+      productId,
+      type: 'adjustment',
+      quantityDelta: gap,
+      reference,
+      description: `Adjusted: ${RECONCILE_REASON}`,
+      reason: RECONCILE_REASON,
+      note: null,
+      recordedBy: RECONCILED_BY,
+      occurredAt: now.toISOString(),
+    })
+  }
+
+  return [...openings, ...movements, ...corrections]
 }

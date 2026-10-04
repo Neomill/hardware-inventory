@@ -6,10 +6,9 @@ import { useForm } from 'react-hook-form'
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { Dialog } from '@/components/common/Dialog'
+import { FormField } from '@/components/common/FormField'
+import { TextInput } from '@/components/common/TextInput'
 import type { Customer } from '@/domain/types'
-import { SubmitButton } from '@/features/customers/components/SubmitButton'
-import { FormField } from '@/features/customers/components/FormField'
-import { inputClassName } from '@/features/customers/lib/inputStyles'
 import {
   buildNewCustomerFormSchema,
   type NewCustomerFormValues,
@@ -57,33 +56,26 @@ export function AddCustomerDialog({ onClose, onAdded }: AddCustomerDialogProps) 
           Add a regular who buys on credit. Their balance starts at zero.
         </p>
 
+        {/* No autoFocus: Dialog focuses the first control in its body, the name. */}
         <FormField label="Customer name" error={errors.name?.message}>
-          {({ inputId, describedBy }) => (
-            <input
-              id={inputId}
-              type="text"
+          {(field) => (
+            <TextInput
+              {...field}
               autoComplete="off"
-              autoFocus
               placeholder="e.g. Juan Dela Cruz"
-              aria-invalid={errors.name ? true : undefined}
-              aria-describedby={describedBy}
-              className={inputClassName(Boolean(errors.name))}
               {...register('name')}
             />
           )}
         </FormField>
 
-        <FormField label="Phone number" hint="Optional" error={errors.phone?.message}>
-          {({ inputId, describedBy }) => (
-            <input
-              id={inputId}
+        <FormField label="Phone number" optional error={errors.phone?.message}>
+          {(field) => (
+            <TextInput
+              {...field}
               type="tel"
               inputMode="tel"
               autoComplete="off"
               placeholder="0917 555 0101"
-              aria-invalid={errors.phone ? true : undefined}
-              aria-describedby={describedBy}
-              className={inputClassName(Boolean(errors.phone))}
               {...register('phone')}
             />
           )}
@@ -95,9 +87,9 @@ export function AddCustomerDialog({ onClose, onAdded }: AddCustomerDialogProps) 
           <Button onClick={onClose} className="sm:w-36">
             Cancel
           </Button>
-          <SubmitButton icon={UserPlus} className="sm:w-48">
+          <Button type="submit" variant="primary" icon={UserPlus} className="sm:w-48">
             Add Customer
-          </SubmitButton>
+          </Button>
         </div>
       </form>
     </Dialog>

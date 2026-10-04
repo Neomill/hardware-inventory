@@ -114,3 +114,42 @@ export type ValidationResult = {
   ok: boolean
   message: string | null
 }
+
+/** One line of a held sale. */
+export type HeldSaleLine = {
+  productId: string
+  /** Whole units, more than zero (D2). */
+  quantity: number
+  /** Copied when the sale is held, so the list can show it. Never used to price the sale. */
+  productName: string
+  /** Copied when the sale is held. Used only to warn about a price change (Q5). */
+  unitPrice: Centavos
+}
+
+/** A cart set aside with Hold Sale. Not a Sale: it records nothing and moves no stock. */
+export type HeldSale = {
+  /** "HOLD-1747801234567": the hold time in ms, plus "-2", "-3" on a clash. */
+  id: string
+  /** Optional words to find it again: "Pedro, fetching cash". Trimmed; blank is null. */
+  label: string | null
+  /** At least one line, in the order they were added to the cart. */
+  lines: HeldSaleLine[]
+  /** ISO 8601. */
+  heldAt: string
+  /** CURRENT_USER.name (D3). */
+  heldBy: string
+}
+
+/** What changed when a held sale (or any cart) was checked against current stock. */
+export type CartAdjustment =
+  | { kind: 'removed_missing'; productId: string; productName: string; quantity: number }
+  | { kind: 'removed_inactive'; productId: string; productName: string; quantity: number }
+  | { kind: 'removed_out_of_stock'; productId: string; productName: string; quantity: number }
+  | {
+      kind: 'reduced'
+      productId: string
+      productName: string
+      from: number
+      to: number
+      unit: string
+    }

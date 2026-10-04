@@ -402,22 +402,47 @@ Implement only the requested feature.
 
 # 21. Definition of Done
 
-A feature is complete only when:
+A feature is complete only when every item below holds. Agents and people use the same list.
 
-✓ Matches PRD
+## Before building
 
-✓ Tablet responsive
+✓ A written spec exists in `specs/` and the owner has approved it (for anything not already
+  designed or specified)
 
-✓ Uses reusable components
+## Code
 
-✓ Uses mocked data
+✓ Matches PRD, the spec and `specs/01/DESIGN-ERRATA.md`
 
-✓ No TypeScript errors
+✓ Business rules respected, and enforced in `src/domain/` or the store, not only in the UI
 
-✓ No ESLint errors
+✓ Uses shared components from `src/components/common` instead of local copies
 
-✓ Follows coding standards
+✓ Uses store data; no figures or text copied from the design screenshots
 
-✓ Business rules respected
+✓ Follows coding standards and is formatted with Prettier
+
+## Verification
+
+✓ `npm run verify` passes: format, lint (zero warnings), typecheck, unit tests with coverage
+  thresholds on `src/domain/` and `src/stores/`, build
+
+✓ New pure logic has unit tests; changed rules have a test that fails without the change
+
+✓ The end-to-end test for the affected flow is added or updated, and `npm run test:e2e` passes
+
+✓ Works with no horizontal scroll or clipped figures at 390, 768 and 1280 px wide (tablet first)
+
+✓ Accessible: every control has a label, works by keyboard, dialogs manage focus, and meaning
+  never relies on colour alone
+
+✓ No console errors
+
+## Review
+
+✓ Reviewed by the `code-reviewer` agent, with every finding fixed or explicitly accepted
+
+✓ Signed off by the `qa-engineer` agent against the business rules
+
+✓ Built on a branch and merged into `main` by the owner, never pushed to `main` directly
 
 ---

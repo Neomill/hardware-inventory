@@ -205,3 +205,93 @@ workflows with the store, not infrastructure.
 ## Revisit when
 
 Phase 10, or when the store wants to keep data between sessions.
+
+---
+
+# D6 --- Hold Sale is in V1, and held sales do not reserve stock
+
+Date: 2026-10-04. Spec: `specs/03/03-hold-sale-spec.md` (Approved).
+
+## Decision
+
+The cashier can set an unfinished sale aside and resume any held sale
+later, not only the newest. Specifically:
+
+-   A held sale **does not reserve stock**. On resume, each line is
+    re-checked: a quantity above current stock is reduced to it, and a
+    line that is out of stock, inactive or missing is removed. The
+    cashier is told about every change. Checkout checks stock again.
+-   At most **10** held sales at once.
+-   A held sale carries an optional **free-text label** (up to 40
+    characters). No customer link in Version 1; the customer is still
+    chosen at checkout.
+-   Held sales are **kept until resumed or discarded**. Those from an
+    earlier day are marked "From <day>". There is no automatic expiry.
+-   If a product's **price changed** while the sale was held, the
+    cashier is warned. The sale uses the current price.
+
+## Rationale
+
+Hold Sale appears only in the design references (`DESIGN-ERRATA.md`
+E11), but it supports the documented counter workflow: the helper
+brings each customer's slip and goods to the cashier, and one customer
+may need to step away while the next is waiting
+(`02-current-workflow.md`).
+
+Stock stays the plain sum of stock movements (Handbook section 18). A
+reservation would need either movements that are not real stock
+changes, or a second "available" figure that every screen, KPI and
+report would have to choose between.
+
+## Consequences
+
+-   `heldCarts: CartLine[][]` becomes `heldSales: HeldSale[]`, each
+    with id, label, lines, time held and who held it. The storage
+    version goes from 1 to 2, with a migration that keeps existing
+    held carts.
+-   The Sales root button is relabelled **Held Sales** (with its count
+    badge) and opens a list with Resume and Discard. This overrides
+    `sales 1 - root.png`.
+-   `recordSale` must refuse inactive products, which a held sale could
+    otherwise carry to checkout.
+-   Discarding needs confirmation and changes no stock.
+
+## Revisit when
+
+Customers regularly lose items they were promised while a sale is
+held (reconsider reservation), or the owner wants a held sale to
+pre-select a ledger customer.
+
+---
+
+# D7 --- The dashboard NOTE widget is not in V1
+
+Date: 2026-10-04. Spec: `specs/03/03-dashboard-note-spec.md` (Deferred).
+
+## Decision
+
+The NOTE card shown in `dashboard.png` is removed from Version 1. The
+card is hidden and the hardcoded sentence copied from the screenshot is
+deleted.
+
+## Rationale
+
+No document in `docs/` asks for a note. The information architecture
+lists the Dashboard widgets and the note is not one of them. The
+current card shows text copied from the screenshot, which E3 and E4
+forbid.
+
+## Consequences
+
+-   Dashboard engineer removes the note from `useDashboardData`, the
+    `DashboardData` type and the page, and deletes `NoteCard`. Recent
+    Stock Movements takes the full row.
+-   No store, domain or persistence change.
+-   The spec keeps a proposal (one shared plain-text note, 280
+    characters, editable by anyone at the till) for a later version.
+
+## Revisit when
+
+The owner wants a way to leave messages for the cashier at the till,
+for example because the owner does not open the store
+(`08-observations.md`). The proposal must be approved again first.

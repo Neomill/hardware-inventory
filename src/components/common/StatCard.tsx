@@ -17,20 +17,28 @@ type StatCardProps = {
   iconShape?: 'square' | 'circle'
 }
 
-/** KPI tile: icon plate, label, headline figure, and a supporting line. */
+/**
+ * KPI tile: icon plate, label, headline figure, and a supporting line. The
+ * figure is never truncated: in a narrow tile it drops under the icon, and a
+ * longer figure still wraps rather than being cut with an ellipsis.
+ */
 export function StatCard({ label, value, icon, tone, footer, action, iconShape }: StatCardProps) {
   return (
-    <article className="card flex flex-col gap-4 p-5">
-      <div className="flex items-center gap-4">
+    <article className="card flex min-w-0 flex-col gap-4 p-5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <IconTile icon={icon} tone={tone} shape={iconShape} />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1 basis-36">
           <p className="card-title">{label}</p>
-          <p className="mt-1 truncate text-2xl font-bold tabular-nums text-navy-900">{value}</p>
+          <p className="mt-1 text-2xl font-bold leading-tight tabular-nums text-navy-900 [overflow-wrap:anywhere]">
+            {value}
+          </p>
         </div>
       </div>
 
       {footer ? (
-        <div className="flex items-center justify-between gap-2 text-sm">{footer}</div>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-sm">
+          {footer}
+        </div>
       ) : null}
 
       {action ? (

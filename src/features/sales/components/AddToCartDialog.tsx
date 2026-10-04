@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { ShoppingCart } from 'lucide-react'
 
 import { Alert } from '@/components/common/Alert'
@@ -6,7 +6,8 @@ import { Button } from '@/components/common/Button'
 import { Dialog } from '@/components/common/Dialog'
 import { QuantityStepper } from '@/components/common/QuantityStepper'
 import { StatusPill } from '@/components/common/StatusPill'
-import { deriveStockStatus, STOCK_STATUS_TONES } from '@/domain/stock'
+import { STOCK_STATUS_TONES } from '@/components/common/statusTones'
+import { deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
 import { formatCurrency, formatNumber } from '@/lib/format'
 
@@ -25,6 +26,14 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
   const available = Math.max(0, product.stock - inCart)
   const [quantity, setQuantity] = useState(Math.min(1, available))
 
+  // Focus starts on the quantity control, the one thing the cashier came to set.
+  // The shared stepper takes no ref, so its first enabled button is found here;
+  // callback refs are attached before the dialog moves focus.
+  const quantityFocusRef = useRef<HTMLElement | null>(null)
+  const attachQuantityControl = useCallback((node: HTMLDivElement | null) => {
+    quantityFocusRef.current = node?.querySelector<HTMLElement>('button:not(:disabled)') ?? null
+  }, [])
+
   const status = deriveStockStatus(product.stock, product.reorderLevel)
   const tooMany = quantity > available
 
@@ -33,7 +42,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
   }
 
   return (
-    <Dialog title="Add to Cart" onClose={onClose}>
+    <Dialog title="Add to Cart" onClose={onClose} initialFocusRef={quantityFocusRef}>
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-4 sm:flex-row">
           <span className="flex h-32 w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-300 sm:w-40">
@@ -62,7 +71,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
         ) : (
           <>
             <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
+              <div ref={attachQuantityControl}>
                 <p className="mb-2 text-sm font-semibold text-navy-900">Quantity</p>
                 <QuantityStepper
                   value={quantity}

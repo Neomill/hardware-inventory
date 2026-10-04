@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PackagePlus } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
+import { FormField } from '@/components/common/FormField'
+import { inputClassName } from '@/components/common/inputStyles'
+import { TextInput } from '@/components/common/TextInput'
 import { ROUTES } from '@/app/routes'
-import { FormField } from '@/features/inventory/components/FormField'
-import { inputClasses } from '@/features/inventory/lib/formStyles'
 import { ProductPicker } from '@/features/inventory/components/ProductPicker'
 import {
   ReceiptConfirmation,
   type ReceivedStock,
 } from '@/features/inventory/components/ReceiptConfirmation'
-import { SubmitButton } from '@/features/inventory/components/SubmitButton'
 import {
   EMPTY_RECEIVE_VALUES,
   receiveStockSchema,
@@ -39,11 +39,11 @@ export function ReceiveStockView({ initialProductId }: ReceiveStockViewProps) {
 
   const {
     register,
+    control,
     handleSubmit,
-    setValue,
     watch,
     reset,
-    formState: { errors, isSubmitted },
+    formState: { errors },
   } = useForm<ReceiveStockValues>({
     resolver: zodResolver(receiveStockSchema),
     defaultValues: { ...EMPTY_RECEIVE_VALUES, productId: knownInitialId },
@@ -97,80 +97,86 @@ export function ReceiveStockView({ initialProductId }: ReceiveStockViewProps) {
         </p>
       </header>
 
-      <FormField label="Product" htmlFor="receive-product" error={errors.productId?.message}>
-        <input id="receive-product" type="hidden" {...register('productId')} />
-        <ProductPicker
-          products={products}
-          selected={selected}
-          onSelect={(id) => setValue('productId', id, { shouldValidate: isSubmitted })}
-          error={errors.productId?.message}
-        />
+      <FormField label="Product" error={errors.productId?.message}>
+        {(fieldProps) => (
+          <Controller
+            control={control}
+            name="productId"
+            render={({ field }) => (
+              <ProductPicker
+                products={products}
+                selected={selected}
+                onSelect={field.onChange}
+                id={fieldProps.id}
+                describedBy={fieldProps.describedBy}
+                invalid={fieldProps.invalid}
+                inputRef={field.ref}
+              />
+            )}
+          />
+        )}
       </FormField>
 
       <FormField
         label={selected ? `Quantity received (${selected.unit})` : 'Quantity received'}
-        htmlFor="receive-quantity"
         error={errors.quantity?.message}
         hint="Whole units only."
       >
-        <input
-          id="receive-quantity"
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="0"
-          aria-invalid={Boolean(errors.quantity)}
-          aria-describedby="receive-quantity-message"
-          className={inputClasses(Boolean(errors.quantity), 'h-14 text-lg font-semibold sm:max-w-xs')}
-          {...register('quantity')}
-        />
+        {(field) => (
+          <TextInput
+            {...field}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="0"
+            className="h-14 text-lg font-semibold sm:max-w-xs"
+            {...register('quantity')}
+          />
+        )}
       </FormField>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <FormField
-          label="Supplier"
-          htmlFor="receive-supplier"
-          optional
-          error={errors.supplier?.message}
-        >
-          <input
-            id="receive-supplier"
-            autoComplete="off"
-            placeholder="e.g. Wilcon Depot"
-            aria-describedby="receive-supplier-message"
-            className={inputClasses(Boolean(errors.supplier))}
-            {...register('supplier')}
-          />
+        <FormField label="Supplier" optional error={errors.supplier?.message}>
+          {(field) => (
+            <TextInput
+              {...field}
+              autoComplete="off"
+              placeholder="e.g. Wilcon Depot"
+              {...register('supplier')}
+            />
+          )}
         </FormField>
 
         <FormField
           label="Supplier invoice"
-          htmlFor="receive-invoice"
           optional
           error={errors.supplierInvoice?.message}
           hint="Format INV-10021."
         >
-          <input
-            id="receive-invoice"
-            autoComplete="off"
-            autoCapitalize="characters"
-            placeholder="INV-10021"
-            aria-invalid={Boolean(errors.supplierInvoice)}
-            aria-describedby="receive-invoice-message"
-            className={inputClasses(Boolean(errors.supplierInvoice), 'uppercase')}
-            {...register('supplierInvoice')}
-          />
+          {(field) => (
+            <TextInput
+              {...field}
+              autoComplete="off"
+              autoCapitalize="characters"
+              placeholder="INV-10021"
+              className="uppercase"
+              {...register('supplierInvoice')}
+            />
+          )}
         </FormField>
       </div>
 
-      <FormField label="Note" htmlFor="receive-note" optional error={errors.note?.message}>
-        <textarea
-          id="receive-note"
-          rows={3}
-          placeholder="Anything worth remembering about this delivery"
-          aria-describedby="receive-note-message"
-          className={inputClasses(Boolean(errors.note), 'h-auto py-3')}
-          {...register('note')}
-        />
+      <FormField label="Note" optional error={errors.note?.message}>
+        {({ id, describedBy, invalid }) => (
+          <textarea
+            id={id}
+            rows={3}
+            placeholder="Anything worth remembering about this delivery"
+            aria-describedby={describedBy}
+            aria-invalid={invalid || undefined}
+            className={inputClassName(invalid, 'h-auto py-3')}
+            {...register('note')}
+          />
+        )}
       </FormField>
 
       {storeError ? <Alert tone="error">{storeError}</Alert> : null}
@@ -179,9 +185,9 @@ export function ReceiveStockView({ initialProductId }: ReceiveStockViewProps) {
         <Button to={ROUTES.inventory} className="sm:h-14 sm:px-8">
           Cancel
         </Button>
-        <SubmitButton icon={PackagePlus} className="sm:h-14 sm:px-10">
+        <Button type="submit" variant="primary" icon={PackagePlus} className="sm:h-14 sm:px-10">
           Receive Stock
-        </SubmitButton>
+        </Button>
       </div>
     </form>
   )

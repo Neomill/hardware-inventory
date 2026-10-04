@@ -47,3 +47,23 @@ export function parseAmountInput(raw: string): Centavos | null {
 
   return Number.isFinite(value) ? Math.round(value * 100) : null
 }
+
+/**
+ * The value an amount field starts with: 63100 becomes "631.00". Integer math
+ * only, so the text always parses back to the same centavos with
+ * parseAmountInput. No grouping separators: this is for inputs, not display.
+ * A fractional input is first rounded to whole centavos.
+ */
+export function formatAmountInput(amount: Centavos): string {
+  if (!Number.isFinite(amount)) {
+    return ''
+  }
+
+  const centavos = Math.round(amount)
+  const sign = centavos < 0 ? '-' : ''
+  const absolute = Math.abs(centavos)
+  const pesos = Math.floor(absolute / 100)
+  const cents = absolute % 100
+
+  return `${sign}${pesos}.${String(cents).padStart(2, '0')}`
+}

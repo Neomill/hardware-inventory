@@ -1,0 +1,20 @@
+# Build and tool output
+dist
+dist-ssr
+coverage
+node_modules
+playwright-report
+test-results
+blob-report
+*.tsbuildinfo
+
+# Lockfile is owned by npm
+package-lock.json
+
+# Design references and long-form docs are not formatted by tooling
+specs/**/*.png
+docs
+specs
+
+# Agent and editor configuration
+.claude

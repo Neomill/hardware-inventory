@@ -1,17 +1,10 @@
 import { SectionCard } from '@/components/common/SectionCard'
-import { StatusPill, type PillTone } from '@/components/common/StatusPill'
+import { PaymentMethodPill } from '@/components/common/StatusPills'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
-import { PAYMENT_LABELS } from '@/domain/sale'
-import type { PaymentMethod, Sale } from '@/domain/types'
+import type { Sale } from '@/domain/types'
 import { formatCurrency, formatTime } from '@/lib/format'
-
-const PAYMENT_TONES: Record<PaymentMethod, PillTone> = {
-  cash: 'success',
-  partial: 'info',
-  credit: 'danger',
-}
 
 const COLUMNS: SummaryColumn<Sale>[] = [
   {
@@ -40,11 +33,7 @@ const COLUMNS: SummaryColumn<Sale>[] = [
   {
     id: 'payment',
     header: 'Payment',
-    cell: (sale) => (
-      <StatusPill tone={PAYMENT_TONES[sale.paymentMethod]}>
-        {PAYMENT_LABELS[sale.paymentMethod]}
-      </StatusPill>
-    ),
+    cell: (sale) => <PaymentMethodPill method={sale.paymentMethod} />,
   },
 ]
 
@@ -54,7 +43,11 @@ type RecentSalesCardProps = {
 
 export function RecentSalesCard({ sales }: RecentSalesCardProps) {
   return (
-    <SectionCard title="Recent Sales" action={<ViewAllLink to={ROUTES.sales} />}>
+    <SectionCard
+      title="Recent Sales"
+      className="min-w-0"
+      action={<ViewAllLink to={ROUTES.sales} />}
+    >
       <SummaryTable
         columns={COLUMNS}
         rows={sales}

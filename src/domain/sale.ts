@@ -1,5 +1,6 @@
 import { breakDownVat, type Centavos, type VatBreakdown } from '@/domain/money'
-import type { PaymentMethod, SaleLine } from '@/domain/types'
+import { toDayKey } from '@/domain/dates'
+import type { CartLine, PaymentMethod, Sale, SaleLine } from '@/domain/types'
 
 export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   cash: 'Cash',
@@ -79,6 +80,11 @@ export function validatePayment(input: {
     return { ok: false, message: 'Add at least one item before taking payment.' }
   }
 
+  // Whole centavos, never negative: NaN or 0.5 centavos is a keypad slip, not money.
+  if (!Number.isSafeInteger(amountPaid) || amountPaid < 0) {
+    return { ok: false, message: 'Enter a valid amount.' }
+  }
+
   if (method !== 'cash' && !customerId) {
     return {
       ok: false,
@@ -88,6 +94,14 @@ export function validatePayment(input: {
 
   if (method === 'cash' && amountPaid < total) {
     return { ok: false, message: 'Cash received is less than the total due.' }
+  }
+
+  // A credit sale takes no money at the counter; the whole total goes on the ledger.
+  if (method === 'credit' && amountPaid !== 0) {
+    return {
+      ok: false,
+      message: 'A credit sale takes no payment now. Use Partial Payment instead.',
+    }
   }
 
   if (method === 'partial' && amountPaid <= 0) {
@@ -113,4 +127,56 @@ export function formatSaleNumber(date: Date, sequence: number): string {
   ].join('')
 
   return `#${stamp}-${String(sequence).padStart(4, '0')}`
+}
+
+/** The sequence part of "#20250521-0042" (42). Null when the number is not in that form. */
+export function parseSaleSequence(saleNumber: string): number | null {
+  const match = /^#\d{8}-(\d{4,})$/.exec(saleNumber)
+
+  return match ? Number(match[1]) : null
+}
+
+/**
+ * The next per-day sequence for a sale made at `date`: one more than the
+ * highest number already used that local day, so a live sale continues after
+ * the seeded ones and the next day starts again at 0001.
+ */
+export function nextSaleSequence(sales: Sale[], date: Date): number {
+  const day = toDayKey(date)
+  let highest = 0
+
+  for (const sale of sales) {
+    if (toDayKey(sale.occurredAt) !== day) {
+      continue
+    }
+
+    highest = Math.max(highest, parseSaleSequence(sale.saleNumber) ?? 0)
+  }
+
+  // Count too, in case an older record carries a number in another form.
+  const sameDay = sales.filter((sale) => toDayKey(sale.occurredAt) === day).length
+
+  return Math.max(highest, sameDay) + 1
+}
+
+/**
+ * One line per product, in first-seen order, quantities added together. A
+ * cart restored from storage or built by hand can repeat a product; the sale
+ * and its stock movements must still agree line for line.
+ */
+export function mergeCartLines(lines: CartLine[]): CartLine[] {
+  const merged = new Map<string, CartLine>()
+
+  for (const line of lines) {
+    const existing = merged.get(line.productId)
+
+    merged.set(
+      line.productId,
+      existing
+        ? { ...existing, quantity: existing.quantity + line.quantity }
+        : { productId: line.productId, quantity: line.quantity },
+    )
+  }
+
+  return [...merged.values()]
 }

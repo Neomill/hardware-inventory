@@ -17,7 +17,9 @@ export function PaymentHistoryCard({ payments }: PaymentHistoryCardProps) {
       cell: (payment) => (
         <span>
           {formatLedgerDate(payment.occurredAt)}
-          <span className="ml-2 text-xs text-muted">{formatTime(new Date(payment.occurredAt))}</span>
+          <span className="ml-2 text-xs text-muted">
+            {formatTime(new Date(payment.occurredAt))}
+          </span>
         </span>
       ),
     },

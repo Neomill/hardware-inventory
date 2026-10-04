@@ -35,9 +35,9 @@ describe('receiveStockSchema', () => {
     expect(receiveStockSchema.safeParse({ ...valid, supplierInvoice: ' inv-10021 ' }).success).toBe(
       true,
     )
-    expect(firstMessage(receiveStockSchema.safeParse({ ...valid, supplierInvoice: 'INV-12' }))).toBe(
-      'Supplier invoice numbers look like INV-10021.',
-    )
+    expect(
+      firstMessage(receiveStockSchema.safeParse({ ...valid, supplierInvoice: 'INV-12' })),
+    ).toBe('Supplier invoice numbers look like INV-10021.')
   })
 })
 
@@ -73,9 +73,9 @@ describe('makeAdjustStockSchema', () => {
   const schema = makeAdjustStockSchema(4)
 
   it('accepts a removal down to exactly zero', () => {
-    expect(schema.safeParse({ direction: 'remove', quantity: '4', reason: 'Damaged' }).success).toBe(
-      true,
-    )
+    expect(
+      schema.safeParse({ direction: 'remove', quantity: '4', reason: 'Damaged' }).success,
+    ).toBe(true)
   })
 
   it('blocks going below zero with the on-hand figure', () => {

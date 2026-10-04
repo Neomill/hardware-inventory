@@ -2,8 +2,18 @@ import { create } from 'zustand'
 import { persist, type StateStorage } from 'zustand/middleware'
 
 import { normalizeCustomerName, validateNewCustomer } from '@/domain/customer'
+import {
+  buildHeldSale,
+  HELD_SALE_MISSING_MESSAGE,
+  HELD_SALE_UNSELLABLE_MESSAGE,
+  HOLD_EMPTY_MESSAGE,
+  normalizeHeldSaleLabel,
+  reconcileCartWithStock,
+  validateHold,
+} from '@/domain/heldSale'
 import { nextSequentialId } from '@/domain/ids'
 import {
+  isWholePositiveQuantity,
   normalizeSupplierInvoice,
   validateStockAdjustment,
   validateStockReceipt,
@@ -15,13 +25,17 @@ import {
   computeChange,
   computeSaleTotals,
   formatSaleNumber,
+  mergeCartLines,
+  nextSaleSequence,
   validatePayment,
 } from '@/domain/sale'
 import type { Centavos } from '@/domain/money'
 import type {
+  CartAdjustment,
   CartLine,
   Customer,
   CustomerPayment,
+  HeldSale,
   PaymentMethod,
   Product,
   Sale,
@@ -35,15 +49,18 @@ import {
   createSafeShopStorage,
   DEFAULT_STORE_SETTINGS,
   getBrowserStorage,
-  migratePersistedShop,
-  sanitizePersistedShop,
+  inspectPersistedShop,
+  runPersistedMigrations,
+  saveUnreadableBackup,
   selectPersistedData,
   SHOP_STORAGE_KEY,
   SHOP_STORAGE_VERSION,
+  type DataRecovery,
   type PersistedShopData,
 } from '@/stores/shopPersistence'
 
 export { DEFAULT_STORE_SETTINGS }
+export type { DataRecovery }
 
 export type ActionResult = {
   ok: boolean
@@ -94,6 +111,17 @@ export type AddCustomerInput = {
 
 export type AddCustomerResult = { ok: true; customer: Customer } | { ok: false; message: string }
 
+export type HoldCartInput = {
+  /** Optional, at most HELD_SALE_LABEL_MAX characters after trimming. Blank is no label. */
+  label?: string
+}
+
+export type HoldCartResult = { ok: true; heldSale: HeldSale } | { ok: false; message: string }
+
+/** `adjustments` lists every line that was reduced or removed on resume, in cart order. */
+export type ResumeHeldSaleResult =
+  { ok: true; adjustments: CartAdjustment[] } | { ok: false; message: string }
+
 type ShopState = {
   products: Product[]
   customers: Customer[]
@@ -101,20 +129,29 @@ type ShopState = {
   movements: StockMovement[]
   /** The sale being built at the counter. */
   cart: CartLine[]
-  /** Carts parked with Hold Sale, newest last. */
-  heldCarts: CartLine[][]
+  /** Carts set aside with Hold Sale, oldest first. They reserve no stock (D6). */
+  heldSales: HeldSale[]
   /** Payments against customer balances, oldest first. Never edited. */
   payments: CustomerPayment[]
   /** VAT rate for sales recorded from now on. Each sale keeps its own (D1). */
   taxRate: number
   settings: StoreSettings
+  /**
+   * Set when the saved data could not be loaded as it was: the app started
+   * from the demo data ("reset") or dropped some records ("salvaged"). The
+   * saved text was copied to `backupKey` first. Not saved; cleared by
+   * dismissDataRecovery.
+   */
+  dataRecovery: DataRecovery | null
 
   addToCart: (productId: string, quantity: number) => ActionResult
   setCartQuantity: (productId: string, quantity: number) => ActionResult
   removeFromCart: (productId: string) => void
   clearCart: () => void
-  holdCart: () => ActionResult
-  resumeHeldCart: () => ActionResult
+  holdCart: (input?: HoldCartInput) => HoldCartResult
+  resumeHeldSale: (heldSaleId: string) => ResumeHeldSaleResult
+  discardHeldSale: (heldSaleId: string) => ActionResult
+  swapWithHeldSale: (heldSaleId: string, input?: HoldCartInput) => ResumeHeldSaleResult
   recordSale: (input: RecordSaleInput) => RecordSaleResult
   receiveStock: (input: ReceiveStockInput) => StockMovementResult
   adjustStock: (input: AdjustStockInput) => StockMovementResult
@@ -123,12 +160,17 @@ type ShopState = {
   updateSettings: (update: SettingsUpdate) => ActionResult
   /** Throws away everything recorded on this device and starts again from the demo data. */
   resetToSeedData: () => void
+  /** Hides the data recovery notice. The backup copy stays where it is. */
+  dismissDataRecovery: () => void
 }
 
 export type CreateShopStoreOptions = {
   /** Where the data is saved. Defaults to the browser's localStorage when there is one. */
   storage?: () => StateStorage | undefined
-  /** Clock for the seeded history. Defaults to the moment the store is created. */
+  /**
+   * The store's clock: dates the seeded history (at creation and on reset) and
+   * every record an action writes. Defaults to the real time.
+   */
   now?: () => Date
 }
 
@@ -138,6 +180,8 @@ function optionalText(value: string | undefined): string | null {
 
   return trimmed === '' ? null : trimmed
 }
+
+const WHOLE_QUANTITY_MESSAGE = 'Enter a whole number of units greater than zero.'
 
 function toSaleLine(product: Product, quantity: number): SaleLine {
   return {
@@ -159,12 +203,20 @@ export function createShopStore({
   storage = getBrowserStorage,
   now = () => new Date(),
 }: CreateShopStoreOptions = {}) {
+  /** The raw text of the last read from storage, kept for a backup if it cannot be used. */
+  let lastRead: string | null = null
+
   return create<ShopState>()(
     persist<ShopState, [], [], PersistedShopData>(
       (set, get) => ({
         ...buildSeedData(now()),
+        dataRecovery: null,
 
         addToCart(productId, quantity) {
+          if (!isWholePositiveQuantity(quantity)) {
+            return { ok: false, message: WHOLE_QUANTITY_MESSAGE }
+          }
+
           const { products, cart } = get()
           const product = products.find((candidate) => candidate.id === productId)
 
@@ -204,10 +256,15 @@ export function createShopStore({
         setCartQuantity(productId, quantity) {
           const { products, cart } = get()
 
-          if (quantity <= 0) {
+          // Zero is how a stepper removes a line; anything else must be whole and positive.
+          if (quantity === 0) {
             set({ cart: cart.filter((line) => line.productId !== productId) })
 
             return { ok: true, message: null }
+          }
+
+          if (!isWholePositiveQuantity(quantity)) {
+            return { ok: false, message: WHOLE_QUANTITY_MESSAGE }
           }
 
           const product = products.find((candidate) => candidate.id === productId)
@@ -234,34 +291,114 @@ export function createShopStore({
           set({ cart: [] })
         },
 
-        holdCart() {
-          const { cart, heldCarts } = get()
+        holdCart(input = {}) {
+          const { cart, heldSales, products } = get()
+          const validation = validateHold({
+            cartLineCount: cart.length,
+            heldCount: heldSales.length,
+            label: input.label,
+          })
 
-          if (cart.length === 0) {
-            return { ok: false, message: 'There is nothing to hold yet.' }
+          if (!validation.ok) {
+            return { ok: false, message: validation.message ?? 'This sale cannot be held.' }
           }
 
-          set({ heldCarts: [...heldCarts, cart], cart: [] })
+          const heldSale = buildHeldSale({
+            cart,
+            products,
+            label: normalizeHeldSaleLabel(input.label),
+            heldBy: CURRENT_USER.name,
+            now: now(),
+            existingIds: heldSales.map((held) => held.id),
+          })
 
-          return { ok: true, message: 'Sale held. Resume it from the Sales screen.' }
+          // No stock movement and no stock change: a held sale reserves nothing (D6).
+          set({ heldSales: [...heldSales, heldSale], cart: [] })
+
+          return { ok: true, heldSale }
         },
 
-        resumeHeldCart() {
-          const { cart, heldCarts } = get()
+        resumeHeldSale(heldSaleId) {
+          const { cart, heldSales, products } = get()
+          const held = heldSales.find((candidate) => candidate.id === heldSaleId)
 
-          if (heldCarts.length === 0) {
-            return { ok: false, message: 'There are no held sales.' }
+          if (!held) {
+            return { ok: false, message: HELD_SALE_MISSING_MESSAGE }
           }
 
           if (cart.length > 0) {
             return { ok: false, message: 'Finish or hold the current sale first.' }
           }
 
-          const resumed = heldCarts[heldCarts.length - 1]
+          const reconciled = reconcileCartWithStock(held.lines, products)
 
-          set({ cart: resumed, heldCarts: heldCarts.slice(0, -1) })
+          // Kept, so the cashier can see what it was and discard it on purpose.
+          if (reconciled.lines.length === 0) {
+            return { ok: false, message: HELD_SALE_UNSELLABLE_MESSAGE }
+          }
 
-          return { ok: true, message: null }
+          set({
+            cart: reconciled.lines,
+            heldSales: heldSales.filter((candidate) => candidate.id !== heldSaleId),
+          })
+
+          return { ok: true, adjustments: reconciled.adjustments }
+        },
+
+        discardHeldSale(heldSaleId) {
+          const { heldSales } = get()
+
+          if (!heldSales.some((candidate) => candidate.id === heldSaleId)) {
+            return { ok: false, message: HELD_SALE_MISSING_MESSAGE }
+          }
+
+          set({ heldSales: heldSales.filter((candidate) => candidate.id !== heldSaleId) })
+
+          return { ok: true, message: 'Held sale discarded.' }
+        },
+
+        swapWithHeldSale(heldSaleId, input = {}) {
+          const { cart, heldSales, products } = get()
+          const held = heldSales.find((candidate) => candidate.id === heldSaleId)
+
+          if (!held) {
+            return { ok: false, message: HELD_SALE_MISSING_MESSAGE }
+          }
+
+          if (cart.length === 0) {
+            return { ok: false, message: HOLD_EMPTY_MESSAGE }
+          }
+
+          // One in, one out: the limit does not apply, but the label rule does.
+          const validation = validateHold({
+            cartLineCount: cart.length,
+            heldCount: 0,
+            label: input.label,
+          })
+
+          if (!validation.ok) {
+            return { ok: false, message: validation.message ?? 'This sale cannot be held.' }
+          }
+
+          const reconciled = reconcileCartWithStock(held.lines, products)
+
+          if (reconciled.lines.length === 0) {
+            return { ok: false, message: HELD_SALE_UNSELLABLE_MESSAGE }
+          }
+
+          const remaining = heldSales.filter((candidate) => candidate.id !== heldSaleId)
+          const current = buildHeldSale({
+            cart,
+            products,
+            label: normalizeHeldSaleLabel(input.label),
+            heldBy: CURRENT_USER.name,
+            now: now(),
+            existingIds: heldSales.map((candidate) => candidate.id),
+          })
+
+          set({ heldSales: [...remaining, current], cart: reconciled.lines })
+
+          return { ok: true, adjustments: reconciled.adjustments }
         },
 
         recordSale({ paymentMethod, amountPaid, customerId }) {
@@ -269,11 +406,24 @@ export function createShopStore({
 
           const lines: SaleLine[] = []
 
-          for (const line of cart) {
+          // One line per product, so the stock taken equals the movements written.
+          for (const line of mergeCartLines(cart)) {
+            if (!isWholePositiveQuantity(line.quantity)) {
+              return { ok: false, message: WHOLE_QUANTITY_MESSAGE }
+            }
+
             const product = products.find((candidate) => candidate.id === line.productId)
 
             if (!product) {
               return { ok: false, message: 'A product in this sale no longer exists.' }
+            }
+
+            // Inactive products cannot be sold (business rules), even from an old cart.
+            if (!product.isActive) {
+              return {
+                ok: false,
+                message: `${product.name} is no longer for sale. Remove it to continue.`,
+              }
             }
 
             // Stock is checked again here, not only when the item was added.
@@ -300,15 +450,17 @@ export function createShopStore({
             return { ok: false, message: validation.message ?? 'This sale cannot be completed.' }
           }
 
-          const occurredAt = new Date()
-          const dayKey = occurredAt.toDateString()
-          const sequence =
-            sales.filter((sale) => new Date(sale.occurredAt).toDateString() === dayKey).length + 1
+          const occurredAt = now()
+          const sequence = nextSaleSequence(sales, occurredAt)
+          const baseId = `SALE-${occurredAt.getTime()}`
+          const id = sales.some((existing) => existing.id === baseId)
+            ? `${baseId}-${sequence}`
+            : baseId
 
           const customer = customers.find((candidate) => candidate.id === customerId) ?? null
 
           const sale: Sale = {
-            id: `SALE-${occurredAt.getTime()}`,
+            id,
             saleNumber: formatSaleNumber(occurredAt, sequence),
             occurredAt: occurredAt.toISOString(),
             lines,
@@ -385,7 +537,7 @@ export function createShopStore({
             reason: null,
             note: optionalText(note),
             recordedBy: CURRENT_USER.name,
-            occurredAt: new Date().toISOString(),
+            occurredAt: now().toISOString(),
           }
 
           // Stock only ever moves together with the movement that explains it.
@@ -439,7 +591,7 @@ export function createShopStore({
             reason: statedReason,
             note: null,
             recordedBy: CURRENT_USER.name,
-            occurredAt: new Date().toISOString(),
+            occurredAt: now().toISOString(),
           }
 
           set({
@@ -482,7 +634,7 @@ export function createShopStore({
             amount,
             note: optionalText(note),
             recordedBy: CURRENT_USER.name,
-            occurredAt: new Date().toISOString(),
+            occurredAt: now().toISOString(),
           }
 
           set({ payments: [...payments, payment] })
@@ -541,19 +693,47 @@ export function createShopStore({
           // A fresh seed, dated from now, so the demo shows today's sales again.
           set(buildSeedData(now()))
         },
+
+        dismissDataRecovery() {
+          set({ dataRecovery: null })
+        },
       }),
       {
         name: SHOP_STORAGE_KEY,
         version: SHOP_STORAGE_VERSION,
-        storage: createSafeShopStorage(storage),
+        storage: createSafeShopStorage(storage, {
+          onRead: (raw) => {
+            lastRead = raw
+          },
+        }),
         partialize: selectPersistedData,
         migrate: (persisted, version) =>
-          // Unreadable data resolves to null, which `merge` turns into the seed.
-          migratePersistedShop(persisted, version) as PersistedShopData,
+          // Only the steps here; `merge` checks the records. Unreadable data
+          // resolves to null, which `merge` turns into the seed.
+          runPersistedMigrations(persisted, version, now()) as unknown as PersistedShopData,
         merge: (persisted, current) => {
-          const data = sanitizePersistedShop(persisted)
+          const { data, dropped } = inspectPersistedShop(persisted, now())
 
-          return data ? { ...current, ...data } : current
+          if (data && dropped.length === 0) {
+            return { ...current, ...data }
+          }
+
+          // Nothing was saved: a first visit, not a problem.
+          if (lastRead === null) {
+            return current
+          }
+
+          // Zustand writes over the saved copy straight after this, so keep
+          // the text exactly as it was read before anything replaces it.
+          const at = now()
+          const dataRecovery: DataRecovery = {
+            outcome: data ? 'salvaged' : 'reset',
+            backupKey: saveUnreadableBackup(storage(), lastRead, at),
+            at: at.toISOString(),
+            dropped,
+          }
+
+          return data ? { ...current, ...data, dataRecovery } : { ...current, dataRecovery }
         },
       },
     ),

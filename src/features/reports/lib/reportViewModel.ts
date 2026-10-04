@@ -1,6 +1,10 @@
 import { CURRENCY, LOCALE } from '@/config/app'
 import { byOccurredAt, isWithinRange, type DateRange } from '@/domain/dates'
-import { computeTotalOutstanding, listCustomerBalances, type CustomerBalance } from '@/domain/ledger'
+import {
+  computeTotalOutstanding,
+  listCustomerBalances,
+  type CustomerBalance,
+} from '@/domain/ledger'
 import { toPesos, type Centavos } from '@/domain/money'
 import {
   aggregateSalesByDay,
@@ -90,7 +94,11 @@ export function buildTopProducts(
     products.map((product) => (metric === 'revenue' ? product.revenue : product.quantity)),
   )
 
-  return products.map((product, index) => ({ ...product, rank: index + 1, percent: percents[index] }))
+  return products.map((product, index) => ({
+    ...product,
+    rank: index + 1,
+    percent: percents[index],
+  }))
 }
 
 export type OutstandingCreditView = {

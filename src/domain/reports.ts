@@ -1,4 +1,11 @@
-import { eachDayKey, fromDayKey, isWithinRange, toDayKey, type DateRange, type DayKey } from '@/domain/dates'
+import {
+  eachDayKey,
+  fromDayKey,
+  isWithinRange,
+  toDayKey,
+  type DateRange,
+  type DayKey,
+} from '@/domain/dates'
 import { breakDownVat, type Centavos } from '@/domain/money'
 import { PAYMENT_LABELS } from '@/domain/sale'
 import type { CustomerPayment, PaymentMethod, Sale } from '@/domain/types'
@@ -179,11 +186,7 @@ export function topProductsByQuantity(
 }
 
 /** Best sellers by revenue. Ties go to the higher quantity, then by name. */
-export function topProductsByRevenue(
-  sales: Sale[],
-  limit = 10,
-  range?: DateRange,
-): ProductSales[] {
+export function topProductsByRevenue(sales: Sale[], limit = 10, range?: DateRange): ProductSales[] {
   return aggregateProductSales(sales, range)
     .sort(
       (a, b) =>

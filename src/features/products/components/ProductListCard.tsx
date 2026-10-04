@@ -5,12 +5,8 @@ import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTab
 import { ProductRowActions } from '@/features/products/components/ProductRowActions'
 import { ProductThumbnail } from '@/features/products/components/ProductThumbnail'
 import { PAGE_SIZE_OPTIONS } from '@/features/products/hooks/useProductList'
-import {
-  STOCK_STATUS_LABELS,
-  STOCK_STATUS_TONES,
-  STOCK_TEXT_STYLES,
-  deriveStockStatus,
-} from '@/domain/stock'
+import { STOCK_STATUS_TONES, STOCK_TEXT_STYLES } from '@/components/common/statusTones'
+import { STOCK_STATUS_LABELS, deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { formatCurrency, formatNumber } from '@/lib/format'
@@ -25,6 +21,8 @@ const COLUMNS: SummaryColumn<Product>[] = [
         <span className="font-medium">{product.name}</span>
       </span>
     ),
+    // Long names wrap instead of pushing Actions out of the card at 1280px.
+    cellClassName: 'min-w-[13rem] whitespace-normal',
   },
   {
     id: 'sku',
@@ -69,7 +67,9 @@ const COLUMNS: SummaryColumn<Product>[] = [
     cell: (product) => {
       const status = deriveStockStatus(product.stock, product.reorderLevel)
 
-      return <StatusPill tone={STOCK_STATUS_TONES[status]}>{STOCK_STATUS_LABELS[status]}</StatusPill>
+      return (
+        <StatusPill tone={STOCK_STATUS_TONES[status]}>{STOCK_STATUS_LABELS[status]}</StatusPill>
+      )
     },
   },
   {
@@ -128,7 +128,7 @@ export function ProductListCard({
           columns={COLUMNS}
           rows={rows}
           rowKey={(product) => product.id}
-          minWidthClassName="min-w-[62rem]"
+          minWidthClassName="min-w-[52rem]"
           hoverable
           emptyMessage={
             hasFilters

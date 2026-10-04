@@ -28,16 +28,16 @@ export function App() {
           <Route path={ROUTES.dashboard} element={<DashboardPage />} />
           <Route path={ROUTES.products} element={<ProductsPage />} />
           <Route path={ROUTES.newProduct} element={<NewProductPage />} />
-          <Route path="/products/:productId" element={<ProductDetailPage />} />
+          <Route path={ROUTES.patterns.productDetail} element={<ProductDetailPage />} />
           <Route path={ROUTES.sales} element={<SalesRootPage />} />
           <Route path={ROUTES.newSale} element={<PosPage />} />
           <Route path={ROUTES.checkout} element={<CheckoutPage />} />
-          <Route path="/sales/:saleId" element={<SaleCompletePage />} />
+          <Route path={ROUTES.patterns.saleDetail} element={<SaleCompletePage />} />
           <Route path={ROUTES.inventory} element={<InventoryPage />} />
-          <Route path="/inventory/receive" element={<InventoryPage />} />
-          <Route path="/inventory/movements" element={<InventoryPage />} />
+          <Route path={ROUTES.receiveStock} element={<InventoryPage />} />
+          <Route path={ROUTES.stockMovements} element={<InventoryPage />} />
           <Route path={ROUTES.customers} element={<CustomerLedgerPage />} />
-          <Route path="/customers/:customerId" element={<CustomerLedgerPage />} />
+          <Route path={ROUTES.patterns.customerDetail} element={<CustomerLedgerPage />} />
           <Route path={ROUTES.reports} element={<ReportsPage />} />
           <Route path={ROUTES.settings} element={<SettingsPage />} />
           <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />

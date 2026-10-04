@@ -1,49 +1,30 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+import { pageItems } from '@/lib/pagination'
 import { cn } from '@/lib/utils'
 
 type PaginationProps = {
   page: number
   pageCount: number
   onChange: (page: number) => void
-}
-
-const WINDOW_SIZE = 3
-
-/**
- * Page numbers around the current page, then an ellipsis and the last page.
- * Returns nulls where a gap is elided.
- */
-function buildPages(page: number, pageCount: number): (number | null)[] {
-  if (pageCount <= WINDOW_SIZE + 2) {
-    return Array.from({ length: pageCount }, (_, index) => index + 1)
-  }
-
-  const start = Math.max(1, Math.min(page - 1, pageCount - WINDOW_SIZE))
-  const window = Array.from({ length: WINDOW_SIZE }, (_, index) => start + index)
-  const pages: (number | null)[] = [...window]
-
-  if (window[window.length - 1] < pageCount - 1) {
-    pages.push(null)
-  }
-
-  if (window[window.length - 1] < pageCount) {
-    pages.push(pageCount)
-  }
-
-  return pages
+  /** Names the landmark when a screen has more than one paged list. */
+  label?: string
 }
 
 const STEP_STYLES =
   'flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-navy-700 transition-colors hover:bg-navy-50 disabled:cursor-not-allowed disabled:opacity-40'
 
-export function Pagination({ page, pageCount, onChange }: PaginationProps) {
+/**
+ * Previous / next plus page numbers. Page 1 and the last page are always
+ * offered, with an ellipsis wherever pages are skipped (see `pageItems`).
+ */
+export function Pagination({ page, pageCount, onChange, label = 'Pagination' }: PaginationProps) {
   if (pageCount <= 1) {
     return null
   }
 
   return (
-    <nav aria-label="Pagination" className="flex items-center gap-1.5">
+    <nav aria-label={label} className="flex flex-wrap items-center gap-1.5">
       <button
         type="button"
         onClick={() => onChange(page - 1)}
@@ -54,7 +35,7 @@ export function Pagination({ page, pageCount, onChange }: PaginationProps) {
         <ChevronLeft className="h-4 w-4" aria-hidden />
       </button>
 
-      {buildPages(page, pageCount).map((value, index) =>
+      {pageItems(page, pageCount).map((value, index) =>
         value === null ? (
           <span key={`gap-${index}`} className="px-1 text-sm text-muted" aria-hidden>
             &hellip;
@@ -64,6 +45,7 @@ export function Pagination({ page, pageCount, onChange }: PaginationProps) {
             key={value}
             type="button"
             onClick={() => onChange(value)}
+            aria-label={`Page ${value}`}
             aria-current={value === page ? 'page' : undefined}
             className={cn(
               'h-9 min-w-9 rounded-lg px-2 text-sm font-semibold transition-colors',

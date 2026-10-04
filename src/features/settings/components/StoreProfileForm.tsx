@@ -4,7 +4,9 @@ import { Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import { Alert } from '@/components/common/Alert'
-import { FormField } from '@/features/settings/components/FormField'
+import { Button } from '@/components/common/Button'
+import { FormField } from '@/components/common/FormField'
+import { TextInput } from '@/components/common/TextInput'
 import {
   settingsFormSchema,
   toSettingsFormValues,
@@ -61,29 +63,33 @@ export function StoreProfileForm() {
         </header>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            label="Store name"
-            autoComplete="organization"
-            error={errors.storeName?.message}
-            className="md:col-span-2"
-            {...register('storeName')}
-          />
-          <FormField
-            label="Address"
-            placeholder="Street, barangay, city"
-            autoComplete="street-address"
-            error={errors.address?.message}
-            {...register('address')}
-          />
-          <FormField
-            label="Phone"
-            type="tel"
-            inputMode="tel"
-            placeholder="0912 345 6789"
-            autoComplete="tel"
-            error={errors.phone?.message}
-            {...register('phone')}
-          />
+          <FormField label="Store name" error={errors.storeName?.message} className="md:col-span-2">
+            {(field) => (
+              <TextInput {...field} autoComplete="organization" {...register('storeName')} />
+            )}
+          </FormField>
+          <FormField label="Address" optional error={errors.address?.message}>
+            {(field) => (
+              <TextInput
+                {...field}
+                placeholder="Street, barangay, city"
+                autoComplete="street-address"
+                {...register('address')}
+              />
+            )}
+          </FormField>
+          <FormField label="Phone" optional error={errors.phone?.message}>
+            {(field) => (
+              <TextInput
+                {...field}
+                type="tel"
+                inputMode="tel"
+                placeholder="0912 345 6789"
+                autoComplete="tel"
+                {...register('phone')}
+              />
+            )}
+          </FormField>
         </div>
       </section>
 
@@ -91,45 +97,46 @@ export function StoreProfileForm() {
         <header>
           <h2 className="text-base font-semibold text-navy-900">VAT</h2>
           <p className="mt-1 text-sm text-muted">
-            Shelf prices already include VAT. The rate only splits out the VAT shown on receipts
-            and reports; it is never added on top of a total.
+            Shelf prices already include VAT. The rate only splits out the VAT shown on receipts and
+            reports; it is never added on top of a total.
           </p>
         </header>
 
         <FormField
           label="VAT rate"
-          inputMode="decimal"
-          suffix="%"
           className="max-w-xs"
           error={errors.vatPercent?.message}
           hint="Applies to new sales only. Past sales keep the rate they were made with."
-          {...register('vatPercent')}
-        />
+        >
+          {(field) => (
+            <TextInput {...field} inputMode="decimal" suffix="%" {...register('vatPercent')} />
+          )}
+        </FormField>
       </section>
 
       {feedback ? <Alert tone={feedback.tone}>{feedback.message}</Alert> : null}
 
       <div className="flex flex-wrap justify-end gap-3">
-        <button
-          type="button"
+        <Button
           onClick={() => {
             reset(toSettingsFormValues(settings, taxRate))
             setFeedback(null)
           }}
           disabled={!isDirty}
-          className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-navy-900 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Discard changes
-        </button>
-        {/* Native submit so Enter in any field saves; styled as the primary Button. */}
-        <button
+        </Button>
+        {/* type="submit" so Enter in any field saves. */}
+        <Button
           type="submit"
-          disabled={!isDirty || isSubmitting}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+          variant="primary"
+          icon={Save}
+          disabled={!isDirty}
+          pending={isSubmitting}
+          className="px-5"
         >
-          <Save className="h-5 w-5 shrink-0" aria-hidden />
           Save settings
-        </button>
+        </Button>
       </div>
     </form>
   )

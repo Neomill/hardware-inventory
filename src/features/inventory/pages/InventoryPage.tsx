@@ -1,11 +1,10 @@
 import { useLocation } from 'react-router-dom'
 
-import { ROUTES } from '@/app/routes'
+import { PRODUCT_QUERY_PARAM, ROUTES } from '@/app/routes'
 import { CurrentInventoryView } from '@/features/inventory/components/CurrentInventoryView'
 import { InventoryTabs } from '@/features/inventory/components/InventoryTabs'
 import { ReceiveStockView } from '@/features/inventory/components/ReceiveStockView'
 import { StockMovementsView } from '@/features/inventory/components/StockMovementsView'
-import { PRODUCT_PARAM } from '@/features/inventory/lib/links'
 
 /** "/inventory/receive/" and "/inventory/receive" are the same view. */
 function trimTrailingSlash(pathname: string): string {
@@ -19,7 +18,7 @@ function trimTrailingSlash(pathname: string): string {
 export function InventoryPage() {
   const location = useLocation()
   const pathname = trimTrailingSlash(location.pathname)
-  const productId = new URLSearchParams(location.search).get(PRODUCT_PARAM)
+  const productId = new URLSearchParams(location.search).get(PRODUCT_QUERY_PARAM)
 
   function renderView() {
     if (pathname === ROUTES.receiveStock) {

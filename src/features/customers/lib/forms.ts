@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { isValidPhone, validateNewCustomer } from '@/domain/customer'
 import { validateCustomerPayment } from '@/domain/ledger'
-import { parseAmountInput, toPesos, type Centavos } from '@/domain/money'
+import { parseAmountInput, type Centavos } from '@/domain/money'
 import type { Customer } from '@/domain/types'
 
 /**
@@ -32,7 +32,10 @@ export function buildPaymentFormSchema(outstanding: Centavos) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['amount'],
-          message: values.amount.trim() === '' ? 'Enter the amount received.' : 'Enter an amount such as 500 or 1,250.50.',
+          message:
+            values.amount.trim() === ''
+              ? 'Enter the amount received.'
+              : 'Enter an amount such as 500 or 1,250.50.',
         })
 
         return
@@ -48,11 +51,6 @@ export function buildPaymentFormSchema(outstanding: Centavos) {
         })
       }
     })
-}
-
-/** "1250.50": what the Pay Full Balance shortcut puts in the amount field. */
-export function toAmountInput(amount: Centavos): string {
-  return toPesos(amount).toFixed(2)
 }
 
 export type PaymentPreview = {
@@ -80,30 +78,28 @@ export type NewCustomerFormValues = {
 }
 
 export function buildNewCustomerFormSchema(existing: Customer[]) {
-  return z
-    .object({ name: z.string(), phone: z.string() })
-    .superRefine((values, context) => {
-      const nameCheck = validateNewCustomer({ name: values.name }, existing)
+  return z.object({ name: z.string(), phone: z.string() }).superRefine((values, context) => {
+    const nameCheck = validateNewCustomer({ name: values.name }, existing)
 
-      if (!nameCheck.ok) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['name'],
-          message: nameCheck.message ?? 'Check the customer name.',
-        })
-      }
+    if (!nameCheck.ok) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['name'],
+        message: nameCheck.message ?? 'Check the customer name.',
+      })
+    }
 
-      const phone = values.phone.trim()
+    const phone = values.phone.trim()
 
-      if (phone !== '' && !isValidPhone(phone)) {
-        // Name and phone are checked separately so both messages can show at once.
-        const phoneCheck = validateNewCustomer({ name: 'placeholder', phone }, [])
+    if (phone !== '' && !isValidPhone(phone)) {
+      // Name and phone are checked separately so both messages can show at once.
+      const phoneCheck = validateNewCustomer({ name: 'placeholder', phone }, [])
 
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['phone'],
-          message: phoneCheck.message ?? 'Check the phone number.',
-        })
-      }
-    })
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['phone'],
+        message: phoneCheck.message ?? 'Check the phone number.',
+      })
+    }
+  })
 }

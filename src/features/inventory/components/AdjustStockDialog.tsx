@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Minus, Plus, SlidersVertical } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -6,9 +6,8 @@ import { useForm } from 'react-hook-form'
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { Dialog } from '@/components/common/Dialog'
-import { FormField } from '@/features/inventory/components/FormField'
-import { inputClasses } from '@/features/inventory/lib/formStyles'
-import { SubmitButton } from '@/features/inventory/components/SubmitButton'
+import { FormField } from '@/components/common/FormField'
+import { TextInput } from '@/components/common/TextInput'
 import {
   EMPTY_ADJUST_VALUES,
   makeAdjustStockSchema,
@@ -39,6 +38,7 @@ type AdjustStockDialogProps = {
 export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockDialogProps) {
   const adjustStock = useShopStore((state) => state.adjustStock)
   const [storeError, setStoreError] = useState<string | null>(null)
+  const quantityRef = useRef<HTMLInputElement | null>(null)
   const schema = useMemo(() => makeAdjustStockSchema(product.stock), [product.stock])
 
   const {
@@ -52,6 +52,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
     defaultValues: EMPTY_ADJUST_VALUES,
   })
 
+  const quantityField = register('quantity')
   const direction = watch('direction')
   const delta = toQuantityDelta(direction, watch('quantity'))
   const projected = delta === null ? null : product.stock + delta
@@ -60,6 +61,26 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
     projected !== null && projected < 0
       ? `Only ${formatNumber(product.stock)} ${product.unit} on hand. Stock cannot go below zero.`
       : undefined
+
+  function chooseDirection(value: AdjustmentDirection) {
+    setValue('direction', value, { shouldValidate: isSubmitted })
+  }
+
+  /** Radio-group keys: arrows move and select, like native radios. */
+  function handleDirectionKey(event: KeyboardEvent<HTMLButtonElement>) {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key]
+
+    if (step === undefined) {
+      return
+    }
+
+    event.preventDefault()
+    const index = DIRECTIONS.findIndex((option) => option.value === direction)
+    const next = DIRECTIONS[(index + step + DIRECTIONS.length) % DIRECTIONS.length]
+    chooseDirection(next.value)
+    const group = event.currentTarget.parentElement
+    group?.querySelector<HTMLButtonElement>(`[data-direction="${next.value}"]`)?.focus()
+  }
 
   function onSubmit(values: AdjustStockValues) {
     const quantityDelta = toQuantityDelta(values.direction, values.quantity)
@@ -80,7 +101,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
   }
 
   return (
-    <Dialog title="Adjust Stock" onClose={onClose}>
+    <Dialog title="Adjust Stock" onClose={onClose} initialFocusRef={quantityRef}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3">
           <div className="min-w-0">
@@ -102,7 +123,10 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
               type="button"
               role="radio"
               aria-checked={direction === option.value}
-              onClick={() => setValue('direction', option.value, { shouldValidate: isSubmitted })}
+              tabIndex={direction === option.value ? 0 : -1}
+              data-direction={option.value}
+              onClick={() => chooseDirection(option.value)}
+              onKeyDown={handleDirectionKey}
               className={cn(
                 'flex h-14 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors',
                 direction === option.value
@@ -118,7 +142,6 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
 
         <FormField
           label={`Quantity (${product.unit})`}
-          htmlFor="adjust-quantity"
           error={belowZero ?? errors.quantity?.message}
           hint={
             projected !== null && projected >= 0
@@ -126,41 +149,44 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
               : undefined
           }
         >
-          <input
-            id="adjust-quantity"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="0"
-            aria-invalid={Boolean(errors.quantity)}
-            aria-describedby="adjust-quantity-message"
-            className={inputClasses(Boolean(errors.quantity), 'h-14 text-lg font-semibold')}
-            {...register('quantity')}
-          />
+          {(field) => (
+            <TextInput
+              {...field}
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="0"
+              className="h-14 text-lg font-semibold"
+              {...quantityField}
+              ref={(element) => {
+                quantityField.ref(element)
+                quantityRef.current = element
+              }}
+            />
+          )}
         </FormField>
 
-        <FormField label="Reason" htmlFor="adjust-reason" error={errors.reason?.message}>
-          <input
-            id="adjust-reason"
-            autoComplete="off"
-            placeholder="Why is the stock changing?"
-            aria-invalid={Boolean(errors.reason)}
-            aria-describedby="adjust-reason-message"
-            className={inputClasses(Boolean(errors.reason))}
-            {...register('reason')}
-          />
-          <div className="flex flex-wrap gap-2 pt-1">
-            {QUICK_REASONS.map((reason) => (
-              <button
-                key={reason}
-                type="button"
-                onClick={() => setValue('reason', reason, { shouldValidate: isSubmitted })}
-                className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-medium text-navy-800 transition-colors hover:bg-navy-50"
-              >
-                {reason}
-              </button>
-            ))}
-          </div>
+        <FormField label="Reason" error={errors.reason?.message}>
+          {(field) => (
+            <TextInput
+              {...field}
+              autoComplete="off"
+              placeholder="Why is the stock changing?"
+              {...register('reason')}
+            />
+          )}
         </FormField>
+        <div role="group" aria-label="Common reasons" className="-mt-3 flex flex-wrap gap-2">
+          {QUICK_REASONS.map((reason) => (
+            <button
+              key={reason}
+              type="button"
+              onClick={() => setValue('reason', reason, { shouldValidate: isSubmitted })}
+              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-medium text-navy-800 transition-colors hover:bg-navy-50"
+            >
+              {reason}
+            </button>
+          ))}
+        </div>
 
         {storeError ? <Alert tone="error">{storeError}</Alert> : null}
 
@@ -168,13 +194,15 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
           <Button onClick={onClose} className="flex-1 sm:h-14">
             Cancel
           </Button>
-          <SubmitButton
+          <Button
+            type="submit"
+            variant="primary"
             icon={SlidersVertical}
             disabled={belowZero !== undefined}
             className="flex-1 sm:h-14"
           >
             Save Adjustment
-          </SubmitButton>
+          </Button>
         </div>
       </form>
     </Dialog>

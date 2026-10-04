@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { ArrowLeft, PauseCircle } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
@@ -8,9 +8,19 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { ROUTES } from '@/app/routes'
 import type { Product } from '@/domain/types'
 import { AddToCartDialog } from '@/features/sales/components/AddToCartDialog'
+import { CartNoticePanel } from '@/features/sales/components/CartNoticePanel'
 import { CartPanel } from '@/features/sales/components/CartPanel'
+import { HoldSaleDialog } from '@/features/sales/components/HoldSaleDialog'
 import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
 import { useCart } from '@/features/sales/hooks/useCart'
+import {
+  buildLiveCartNotice,
+  holdAvailability,
+  planCartRepair,
+  readPosCartNotice,
+  type CartNotice,
+  type SalesRootNavState,
+} from '@/features/sales/lib/heldSales'
 import { useShopStore } from '@/stores/useShopStore'
 import { cn } from '@/lib/utils'
 
@@ -18,19 +28,62 @@ const ALL_CATEGORIES = 'all'
 
 export function PosPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const holdHintId = useId()
   const products = useShopStore((state) => state.products)
   const addToCart = useShopStore((state) => state.addToCart)
   const setCartQuantity = useShopStore((state) => state.setCartQuantity)
   const removeFromCart = useShopStore((state) => state.removeFromCart)
   const clearCart = useShopStore((state) => state.clearCart)
-  const holdCart = useShopStore((state) => state.holdCart)
+  const cartLineCount = useShopStore((state) => state.cart.length)
+  const heldCount = useShopStore((state) => state.heldSales.length)
 
-  const { entries, totals, taxRate } = useCart()
+  const { entries, unavailable, totals, taxRate } = useCart()
 
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState(ALL_CATEGORIES)
   const [selected, setSelected] = useState<Product | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [isHoldOpen, setHoldOpen] = useState(false)
+  // What changed in the cart: handed over by a resume, or found on opening
+  // (spec 03 s.5.5, s.7.3). Lives only as long as this page.
+  const [notices, setNotices] = useState<CartNotice[]>(() => {
+    const resumed = readPosCartNotice(location.state)
+
+    return resumed ? [resumed] : []
+  })
+
+  // The resume notice is read once; clear it from history so a reload or Back
+  // does not show it again.
+  useEffect(() => {
+    if (location.state !== null && location.state !== undefined) {
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.pathname, location.state, navigate])
+
+  // Bring the live cart within current stock when the page opens, with the same
+  // rules and wording as a resume. Read straight from the store so a second
+  // run (React StrictMode) sees the repaired cart and does nothing.
+  useEffect(() => {
+    const { cart, products: current } = useShopStore.getState()
+    const plan = planCartRepair(cart, current)
+
+    for (const repair of plan.repairs) {
+      if (repair.kind === 'remove') {
+        removeFromCart(repair.productId)
+      } else {
+        setCartQuantity(repair.productId, repair.quantity)
+      }
+    }
+
+    const notice = buildLiveCartNotice(plan.adjustments)
+
+    if (notice) {
+      setNotices((previous) => [...previous, notice])
+    }
+  }, [removeFromCart, setCartQuantity])
+
+  const holdState = holdAvailability(cartLineCount, heldCount)
 
   const categories = useMemo(
     () => [...new Set(products.map((product) => product.category))].sort(),
@@ -53,9 +106,7 @@ export function PosPage() {
         return true
       }
 
-      return (
-        product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term)
-      )
+      return product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term)
     })
   }, [products, category, search])
 
@@ -74,16 +125,10 @@ export function PosPage() {
     setMessage(result.ok ? null : result.message)
   }
 
-  function handleHold() {
-    const result = holdCart()
-
-    if (result.ok) {
-      navigate(ROUTES.sales)
-
-      return
-    }
-
-    setMessage(result.message)
+  function handleHeld() {
+    setHoldOpen(false)
+    const state: SalesRootNavState = { notice: 'Sale held.' }
+    navigate(ROUTES.sales, { state })
   }
 
   const inCart = selected
@@ -91,10 +136,18 @@ export function PosPage() {
     : 0
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-5">
       {message ? <Alert tone="error">{message}</Alert> : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
+      {notices.map((notice, index) => (
+        <CartNoticePanel
+          key={`${notice.title}-${index}`}
+          notice={notice}
+          onDismiss={() => setNotices((previous) => previous.filter((_, at) => at !== index))}
+        />
+      ))}
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="flex min-w-0 flex-col gap-4">
           <SearchInput
             value={search}
@@ -139,9 +192,10 @@ export function PosPage() {
           <PosProductGrid products={visible} onSelect={setSelected} />
         </div>
 
-        <div className="xl:sticky xl:top-4 xl:self-start">
+        <div className="min-w-0 xl:sticky xl:top-4 xl:self-start">
           <CartPanel
             entries={entries}
+            unavailable={unavailable}
             totals={totals}
             taxRate={taxRate}
             onQuantityChange={handleQuantityChange}
@@ -152,14 +206,30 @@ export function PosPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Button icon={ArrowLeft} to={ROUTES.sales} className="flex-1">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Button icon={ArrowLeft} to={ROUTES.sales}>
           Back to Sales
         </Button>
-        <Button icon={PauseCircle} onClick={handleHold} className="flex-1">
-          Hold Sale
-        </Button>
+        <div className="flex min-w-0 flex-col gap-1">
+          <Button
+            icon={PauseCircle}
+            onClick={() => setHoldOpen(true)}
+            disabled={!holdState.canHold}
+            aria-describedby={holdState.reason ? holdHintId : undefined}
+          >
+            Hold Sale
+          </Button>
+          {holdState.reason ? (
+            <p id={holdHintId} className="text-center text-xs text-muted">
+              {holdState.reason}
+            </p>
+          ) : null}
+        </div>
       </div>
+
+      {isHoldOpen ? (
+        <HoldSaleDialog onClose={() => setHoldOpen(false)} onHeld={handleHeld} />
+      ) : null}
 
       {selected ? (
         <AddToCartDialog

@@ -20,9 +20,9 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
       id: 'date',
       header: 'Date',
       cell: (entry) => (
-        <span>
+        <span className="flex flex-col">
           {formatLedgerDate(entry.occurredAt)}
-          <span className="ml-2 text-xs text-muted">{formatTime(new Date(entry.occurredAt))}</span>
+          <span className="text-xs text-muted">{formatTime(new Date(entry.occurredAt))}</span>
         </span>
       ),
     },
@@ -37,25 +37,27 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
         ),
     },
     {
+      // Reference and description share a column so the statement fits a
+      // portrait tablet without scrolling; the description truncates.
       id: 'reference',
       header: 'Reference',
-      cell: (entry) =>
-        entry.saleId ? (
-          <Link
-            to={ROUTES.saleDetail(entry.saleId)}
-            className="font-semibold text-navy-900 underline-offset-2 hover:text-brand-600 hover:underline"
-          >
-            {entry.reference}
-          </Link>
-        ) : (
-          <span className="font-semibold text-navy-700">{entry.reference}</span>
-        ),
-    },
-    {
-      id: 'description',
-      header: 'Description',
-      cell: (entry) => entry.description,
-      cellClassName: 'max-w-[18rem] truncate text-navy-700',
+      cell: (entry) => (
+        <span className="flex flex-col">
+          {entry.saleId ? (
+            <Link
+              to={ROUTES.saleDetail(entry.saleId)}
+              className="w-fit font-semibold text-navy-900 underline-offset-2 hover:text-brand-600 hover:underline"
+            >
+              {entry.reference}
+            </Link>
+          ) : (
+            <span className="font-semibold text-navy-700">{entry.reference}</span>
+          )}
+          <span title={entry.description} className="max-w-[14rem] truncate text-xs text-muted">
+            {entry.description}
+          </span>
+        </span>
+      ),
     },
     {
       id: 'amount',
@@ -86,7 +88,7 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
         rows={entries}
         rowKey={(entry) => entry.id}
         emptyMessage="No credit sales or payments yet."
-        minWidthClassName="min-w-[48rem]"
+        minWidthClassName="min-w-[34rem]"
       />
     </SectionCard>
   )

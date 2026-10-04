@@ -97,9 +97,11 @@ describe('range query params', () => {
     expect(parseRangeParams(new URLSearchParams('range=7d&from=2025-05-01'))).toEqual({
       preset: '7d',
     })
-    expect(
-      parseRangeParams(new URLSearchParams('range=custom&from=2025-05-01&to=nope')),
-    ).toEqual({ preset: 'custom', from: '2025-05-01', to: undefined })
+    expect(parseRangeParams(new URLSearchParams('range=custom&from=2025-05-01&to=nope'))).toEqual({
+      preset: 'custom',
+      from: '2025-05-01',
+      to: undefined,
+    })
   })
 
   it('round-trips a custom range and keeps unrelated params', () => {

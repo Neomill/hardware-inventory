@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
+import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { resolvePageSubtitle, resolvePageTitle } from '@/components/layout/navigation'
 import { ROUTES } from '@/app/routes'
 import { APP_NAME, APP_VERSION } from '@/config/app'
-import { cn } from '@/lib/utils'
+import { DESKTOP_NAV_QUERY, useMediaQuery } from '@/hooks/useMediaQuery'
+
+const DRAWER_ID = 'mobile-navigation'
 
 /**
  * Application frame: fixed sidebar on tablet/desktop, slide-over drawer on
@@ -15,13 +18,21 @@ import { cn } from '@/lib/utils'
  */
 export function AppShell() {
   const [isMenuOpen, setMenuOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
   const location = useLocation()
   const title = resolvePageTitle(location.pathname)
   const subtitle = resolvePageSubtitle(location.pathname)
 
+  // The drawer is lg:hidden. If the viewport grows past lg while it is open
+  // (a tablet rotating), close it: otherwise it would vanish but keep the page
+  // inert, with the menu button hidden too.
+  const isDesktop = useMediaQuery(DESKTOP_NAV_QUERY)
+  const showDrawer = isMenuOpen && !isDesktop
+
   useEffect(() => {
     setMenuOpen(false)
-  }, [location.pathname])
+  }, [location.pathname, isDesktop])
 
   return (
     <div className="flex h-full bg-surface">
@@ -29,18 +40,8 @@ export function AppShell() {
         <Sidebar />
       </aside>
 
-      {isMenuOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close navigation menu"
-            className="absolute inset-0 bg-navy-950/50"
-            onClick={() => setMenuOpen(false)}
-          />
-          <div className={cn('absolute inset-y-0 left-0 shadow-xl')}>
-            <Sidebar onNavigate={() => setMenuOpen(false)} />
-          </div>
-        </div>
+      {showDrawer ? (
+        <MobileNavDrawer id={DRAWER_ID} onClose={closeMenu} returnFocusRef={menuButtonRef} />
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
@@ -49,6 +50,9 @@ export function AppShell() {
           subtitle={subtitle}
           showBreadcrumb={location.pathname !== ROUTES.dashboard}
           onOpenMenu={() => setMenuOpen(true)}
+          menuButtonRef={menuButtonRef}
+          menuControls={DRAWER_ID}
+          isMenuOpen={showDrawer}
         />
 
         <main className="flex-1 px-4 pb-6 sm:px-6 lg:px-8">

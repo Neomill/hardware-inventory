@@ -32,16 +32,25 @@
 }
 
 /*
- * Printing a receipt must not print the whole application. Everything is
- * hidden and only the receipt is painted, at the top of the page.
+ * Printing a receipt must not print the whole application. Only a page that
+ * contains a .receipt hides everything else; every other page prints as it
+ * looks on screen.
+ *
+ * The receipt is sized for 80mm thermal paper as well as A4: it takes the
+ * printable width, its table drops the on-screen minimum width and scroll
+ * clipping, and long item names wrap instead of being cut off.
  */
 @media print {
-  body * {
+  @page {
+    margin: 4mm;
+  }
+
+  body:has(.receipt) * {
     visibility: hidden;
   }
 
-  .receipt,
-  .receipt * {
+  body:has(.receipt) .receipt,
+  body:has(.receipt) .receipt * {
     visibility: visible;
   }
 
@@ -49,7 +58,39 @@
     position: absolute;
     inset: 0 auto auto 0;
     width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 !important;
     border: 0;
+    border-radius: 0;
     box-shadow: none;
+    color: #000;
+    font-size: 11px;
+  }
+
+  /* Ancestors that scroll or clip on screen must not crop the printout. */
+  .receipt,
+  .receipt * {
+    overflow: visible !important;
+  }
+
+  .receipt table {
+    width: 100%;
+    min-width: 0 !important;
+    table-layout: auto;
+  }
+
+  .receipt th,
+  .receipt td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .receipt h2 {
+    font-size: 14px;
+  }
+
+  .receipt dl {
+    max-width: none;
   }
 }

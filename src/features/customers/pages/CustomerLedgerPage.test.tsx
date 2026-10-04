@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest'
 
 import { CustomerLedgerPage } from '@/features/customers/pages/CustomerLedgerPage'
 
-function renderAt(path: string): string {
+function renderAt(path: string, state?: unknown): string {
   return renderToString(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[{ pathname: path, state }]}>
       <Routes>
         <Route path="/customers" element={<CustomerLedgerPage />} />
         <Route path="/customers/:customerId" element={<CustomerLedgerPage />} />
@@ -33,7 +33,17 @@ describe('CustomerLedgerPage', () => {
     expect(html).toContain('Payment History')
   })
 
+  it('shows the notice passed in router state, e.g. after adding a customer', () => {
+    expect(renderAt('/customers/CUS-006', { notice: 'Ana Lim was added.' })).toContain(
+      'Ana Lim was added.',
+    )
+  })
+
   it('explains an unknown customer instead of failing', () => {
-    expect(renderAt('/customers/CUS-999')).toContain('Customer not found')
+    const html = renderAt('/customers/CUS-999')
+
+    expect(html).toContain('Customer not found')
+    expect(html).toContain('on this device')
+    expect(html).not.toContain('in memory')
   })
 })

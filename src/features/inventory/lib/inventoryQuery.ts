@@ -23,9 +23,7 @@ export type InventorySummary = {
 }
 
 export function isInventoryFiltered(filters: InventoryFilters): boolean {
-  return (
-    filters.search.trim() !== '' || filters.stockStatus !== ALL || filters.category !== ALL
-  )
+  return filters.search.trim() !== '' || filters.stockStatus !== ALL || filters.category !== ALL
 }
 
 /** Name and SKU only; the store does not use barcodes (DESIGN-ERRATA E8). */

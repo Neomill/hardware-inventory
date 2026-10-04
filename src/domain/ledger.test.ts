@@ -8,6 +8,8 @@ import {
   computeTotalOutstanding,
   listCustomerBalances,
   listOpenCharges,
+  remainingBySale,
+  settlementStatus,
   validateCustomerPayment,
 } from '@/domain/ledger'
 import type { Customer } from '@/domain/types'
@@ -26,10 +28,35 @@ const CUSTOMERS: Customer[] = [
 
 /** Pedro: two credit sales and one partial. Maria: one credit sale. Plus a walk-in. */
 const SALES = [
-  testSale({ id: 'S1', occurredAt: at(10), total: 33333, paymentMethod: 'credit', customerId: PEDRO }),
-  testSale({ id: 'S2', occurredAt: at(12), total: 70001, paymentMethod: 'partial', amountPaid: 35001, customerId: PEDRO }),
-  testSale({ id: 'S3', occurredAt: at(14), total: 12345, paymentMethod: 'credit', customerId: PEDRO }),
-  testSale({ id: 'S4', occurredAt: at(11), total: 20000, paymentMethod: 'credit', customerId: MARIA }),
+  testSale({
+    id: 'S1',
+    occurredAt: at(10),
+    total: 33333,
+    paymentMethod: 'credit',
+    customerId: PEDRO,
+  }),
+  testSale({
+    id: 'S2',
+    occurredAt: at(12),
+    total: 70001,
+    paymentMethod: 'partial',
+    amountPaid: 35001,
+    customerId: PEDRO,
+  }),
+  testSale({
+    id: 'S3',
+    occurredAt: at(14),
+    total: 12345,
+    paymentMethod: 'credit',
+    customerId: PEDRO,
+  }),
+  testSale({
+    id: 'S4',
+    occurredAt: at(11),
+    total: 20000,
+    paymentMethod: 'credit',
+    customerId: MARIA,
+  }),
   testSale({ id: 'S5', occurredAt: at(11), total: 50000, paymentMethod: 'cash' }),
 ]
 
@@ -133,7 +160,10 @@ describe('listOpenCharges', () => {
 
 describe('buildLedgerStatement', () => {
   it('lists charges and payments in date order with a running balance', () => {
-    const payments = [testPayment(PEDRO, 30000, at(11), 'PAY-00001'), testPayment(PEDRO, 5000, at(15), 'PAY-00002')]
+    const payments = [
+      testPayment(PEDRO, 30000, at(11), 'PAY-00001'),
+      testPayment(PEDRO, 5000, at(15), 'PAY-00002'),
+    ]
     const statement = buildLedgerStatement(SALES, payments, PEDRO)
 
     expect(statement.map((entry) => [entry.type, entry.amount, entry.balance])).toEqual([
@@ -224,5 +254,124 @@ describe('validateCustomerPayment', () => {
     expect(validateCustomerPayment({ amount: 100, outstanding: 0 }).message).toContain(
       'no outstanding balance',
     )
+  })
+})
+
+describe('remainingBySale', () => {
+  it('allocates payments to the oldest charge first', () => {
+    // Pedro owes 33333 (S1) + 35000 (S2) + 12345 (S3); 40000 clears S1 and dents S2.
+    const remaining = remainingBySale(SALES, [testPayment(PEDRO, 40000, at(15))])
+
+    expect(remaining.get('S1')).toBe(0)
+    expect(remaining.get('S2')).toBe(35000 - (40000 - 33333))
+    expect(remaining.get('S3')).toBe(12345)
+    expect(remaining.get('S4')).toBe(20000)
+  })
+
+  it('maps sales that never charged anything to zero', () => {
+    const cancelled = testSale({
+      id: 'S6',
+      occurredAt: at(16),
+      total: 9000,
+      paymentMethod: 'credit',
+      customerId: MARIA,
+      status: 'cancelled',
+    })
+
+    const remaining = remainingBySale([...SALES, cancelled], [])
+
+    expect(remaining.get('S5')).toBe(0)
+    expect(remaining.get('S6')).toBe(0)
+  })
+
+  it('agrees with listOpenCharges and sums to the outstanding balance', () => {
+    const payments = [
+      testPayment(PEDRO, 10000, at(15)),
+      testPayment(PEDRO, 30000, at(16)),
+      testPayment(MARIA, 5000, at(15)),
+    ]
+    const remaining = remainingBySale(SALES, payments)
+
+    for (const customerId of [PEDRO, MARIA]) {
+      const open = listOpenCharges(SALES, payments, customerId)
+
+      for (const charge of open) {
+        expect(remaining.get(charge.saleId)).toBe(charge.remaining)
+      }
+
+      const total = SALES.filter((sale) => sale.customerId === customerId).reduce(
+        (sum, sale) => sum + (remaining.get(sale.id) ?? 0),
+        0,
+      )
+
+      expect(total).toBe(computeOutstanding(SALES, payments, customerId))
+    }
+  })
+
+  it("does not let one customer pay down another customer's sale", () => {
+    const remaining = remainingBySale(SALES, [testPayment(MARIA, 20000, at(15))])
+
+    expect(remaining.get('S4')).toBe(0)
+    expect(remaining.get('S1')).toBe(33333)
+  })
+
+  it('treats charges in date order, not list order', () => {
+    const reversed = [...SALES].reverse()
+    const remaining = remainingBySale(reversed, [testPayment(PEDRO, 33333, at(15))])
+
+    expect(remaining.get('S1')).toBe(0)
+    expect(remaining.get('S3')).toBe(12345)
+  })
+})
+
+describe('settlementStatus', () => {
+  const credit = testSale({
+    occurredAt: at(10),
+    total: 30000,
+    paymentMethod: 'credit',
+    customerId: PEDRO,
+  })
+  const partial = testSale({
+    occurredAt: at(10),
+    total: 30000,
+    paymentMethod: 'partial',
+    amountPaid: 10000,
+    customerId: PEDRO,
+  })
+  const cash = testSale({ occurredAt: at(10), total: 30000 })
+
+  it('is paid when nothing remains, whatever was left at the counter', () => {
+    expect(settlementStatus(cash, 0)).toBe('paid')
+    expect(settlementStatus(credit, 0)).toBe('paid')
+    expect(settlementStatus(partial, 0)).toBe('paid')
+  })
+
+  it('is outstanding while the whole total is unpaid', () => {
+    expect(settlementStatus(credit, 30000)).toBe('outstanding')
+  })
+
+  it('is partially paid once some of the total is paid, at the counter or later', () => {
+    expect(settlementStatus(partial, 20000)).toBe('partially_paid')
+    expect(settlementStatus(credit, 1)).toBe('partially_paid')
+  })
+
+  it('follows later payments through remainingBySale', () => {
+    const sales = [credit]
+
+    expect(settlementStatus(credit, remainingBySale(sales, []).get(credit.id) ?? 0)).toBe(
+      'outstanding',
+    )
+    expect(
+      settlementStatus(
+        credit,
+        remainingBySale(sales, [testPayment(PEDRO, 5000, at(11))]).get(credit.id) ?? 0,
+      ),
+    ).toBe('partially_paid')
+    expect(
+      settlementStatus(
+        credit,
+        remainingBySale(sales, [testPayment(PEDRO, 30000, at(11))]).get(credit.id) ?? 0,
+      ),
+    ).toBe('paid')
   })
 })

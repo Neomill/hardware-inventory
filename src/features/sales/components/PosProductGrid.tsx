@@ -1,7 +1,8 @@
 import { Package, Plus } from 'lucide-react'
 
 import { StatusPill } from '@/components/common/StatusPill'
-import { deriveStockStatus, STOCK_STATUS_TONES } from '@/domain/stock'
+import { STOCK_STATUS_TONES } from '@/components/common/statusTones'
+import { deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
 import { formatCurrency, formatNumber } from '@/lib/format'
 
@@ -51,6 +52,8 @@ export function PosProductGrid({ products, onSelect }: PosProductGridProps) {
               type="button"
               onClick={() => onSelect(product)}
               disabled={soldOut}
+              // Every card has an Add button, so each needs the product in its name.
+              aria-label={soldOut ? `${product.name}: Out of Stock` : `Add ${product.name}`}
               className="mt-3 flex h-12 items-center justify-center gap-2 rounded-xl bg-navy-800 text-sm font-semibold text-white transition-colors hover:bg-navy-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
             >
               {soldOut ? (

@@ -1,5 +1,5 @@
-import type { LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Loader2, type LucideIcon } from 'lucide-react'
+import { forwardRef, type ForwardedRef, type MouseEventHandler, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
@@ -17,53 +17,89 @@ const VARIANT_STYLES: Record<ButtonVariant, string> = {
 const BASE_STYLES =
   'inline-flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50'
 
-type ButtonProps = {
+export type ButtonProps = {
   children: ReactNode
   /** Renders a router link instead of a button element. */
   to?: string
   icon?: LucideIcon
   variant?: ButtonVariant
-  onClick?: () => void
+  /** Defaults to "button", so a button inside a form never submits by accident. */
+  type?: 'button' | 'submit'
+  onClick?: MouseEventHandler<HTMLButtonElement>
   disabled?: boolean
+  /** Work in flight: the button is disabled, announced busy, and shows a spinner. */
+  pending?: boolean
   expanded?: boolean
+  /** Needed when the visible content does not name the action (icon only, or ambiguous). */
+  'aria-label'?: string
+  'aria-describedby'?: string
+  'aria-controls'?: string
   className?: string
 }
 
-export function Button({
-  children,
-  to,
-  icon: Icon,
-  variant = 'secondary',
-  onClick,
-  disabled,
-  expanded,
-  className,
-}: ButtonProps) {
-  const classes = cn(BASE_STYLES, VARIANT_STYLES[variant], className)
-  const content = (
-    <>
-      {Icon ? <Icon className="h-5 w-5 shrink-0" aria-hidden /> : null}
-      {children}
-    </>
-  )
-
-  if (to) {
-    return (
-      <Link to={to} className={classes}>
-        {content}
-      </Link>
+/**
+ * The ref points at the rendered element: an HTMLButtonElement normally, or
+ * the HTMLAnchorElement when `to` is set.
+ */
+export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
+  function Button(
+    {
+      children,
+      to,
+      icon: Icon,
+      variant = 'secondary',
+      type = 'button',
+      onClick,
+      disabled,
+      pending = false,
+      expanded,
+      'aria-label': ariaLabel,
+      'aria-describedby': ariaDescribedBy,
+      'aria-controls': ariaControls,
+      className,
+    }: ButtonProps,
+    ref,
+  ) {
+    const classes = cn(BASE_STYLES, VARIANT_STYLES[variant], className)
+    const LeadingIcon = pending ? Loader2 : Icon
+    const content = (
+      <>
+        {LeadingIcon ? (
+          <LeadingIcon className={cn('h-5 w-5 shrink-0', pending && 'animate-spin')} aria-hidden />
+        ) : null}
+        {children}
+      </>
     )
-  }
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-expanded={expanded}
-      className={classes}
-    >
-      {content}
-    </button>
-  )
-}
+    if (to) {
+      return (
+        <Link
+          ref={ref as ForwardedRef<HTMLAnchorElement>}
+          to={to}
+          className={classes}
+          aria-label={ariaLabel}
+          aria-describedby={ariaDescribedBy}
+        >
+          {content}
+        </Link>
+      )
+    }
+
+    return (
+      <button
+        ref={ref as ForwardedRef<HTMLButtonElement>}
+        type={type}
+        onClick={onClick}
+        disabled={disabled || pending}
+        aria-busy={pending || undefined}
+        aria-expanded={expanded}
+        aria-controls={ariaControls}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
+        className={classes}
+      >
+        {content}
+      </button>
+    )
+  },
+)

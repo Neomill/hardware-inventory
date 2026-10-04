@@ -44,8 +44,7 @@ export function ReportsPage() {
   const section = parseSectionParam(searchParams)
 
   const view = useMemo(
-    () =>
-      buildReportViewModel({ sales, payments, customers, range: resolved.range, topMetric }),
+    () => buildReportViewModel({ sales, payments, customers, range: resolved.range, topMetric }),
     // resolved.range is rebuilt each render; its day keys identify it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [sales, payments, customers, resolved.from, resolved.to, topMetric],
@@ -100,7 +99,10 @@ export function ReportsPage() {
 
         <RangeSelector resolved={resolved} now={now} onChange={handleRangeChange} />
 
-        <nav aria-label="Report sections" className="-mx-1 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+        <nav
+          aria-label="Report sections"
+          className="-mx-1 flex flex-wrap gap-2 border-t border-slate-100 pt-4"
+        >
           {REPORT_SECTIONS.map((item) => (
             <button
               key={item.id}

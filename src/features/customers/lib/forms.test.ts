@@ -4,8 +4,8 @@ import {
   buildNewCustomerFormSchema,
   buildPaymentFormSchema,
   previewPayment,
-  toAmountInput,
 } from '@/features/customers/lib/forms'
+import { formatAmountInput } from '@/domain/money'
 
 function amountError(outstanding: number, amount: string): string | undefined {
   const result = buildPaymentFormSchema(outstanding).safeParse({ amount, note: '' })
@@ -54,19 +54,16 @@ describe('previewPayment', () => {
   })
 
   it('flags a payment that clears the account', () => {
-    expect(previewPayment(toAmountInput(150050), 150050).settlesInFull).toBe(true)
+    expect(previewPayment(formatAmountInput(150050), 150050).settlesInFull).toBe(true)
   })
 
   it('leaves the balance unchanged for unusable input', () => {
-    expect(previewPayment('', 1000)).toEqual({ amount: null, remaining: 1000, settlesInFull: false })
+    expect(previewPayment('', 1000)).toEqual({
+      amount: null,
+      remaining: 1000,
+      settlesInFull: false,
+    })
     expect(previewPayment('20', 1000).amount).toBeNull()
-  })
-})
-
-describe('toAmountInput', () => {
-  it('writes centavos as a two-decimal peso amount', () => {
-    expect(toAmountInput(150050)).toBe('1500.50')
-    expect(toAmountInput(7)).toBe('0.07')
   })
 })
 

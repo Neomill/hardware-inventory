@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { CalendarDays, ChevronRight, Clock, Menu } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -14,16 +14,33 @@ type TopBarProps = {
   /** Every section except the Dashboard shows a trail back to it. */
   showBreadcrumb: boolean
   onOpenMenu: () => void
+  /** Lets the shell return focus here when the mobile drawer closes. */
+  menuButtonRef?: RefObject<HTMLButtonElement>
+  /** Id of the drawer the menu button opens. */
+  menuControls?: string
+  isMenuOpen?: boolean
 }
 
-export function TopBar({ title, subtitle, showBreadcrumb, onOpenMenu }: TopBarProps) {
+export function TopBar({
+  title,
+  subtitle,
+  showBreadcrumb,
+  onOpenMenu,
+  menuButtonRef,
+  menuControls,
+  isMenuOpen,
+}: TopBarProps) {
   const now = useCurrentTime()
 
   return (
     <header className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
       <button
+        ref={menuButtonRef}
         type="button"
         onClick={onOpenMenu}
+        aria-haspopup="dialog"
+        aria-expanded={isMenuOpen}
+        aria-controls={isMenuOpen ? menuControls : undefined}
         className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-navy-800 lg:hidden"
         aria-label="Open navigation menu"
       >
@@ -37,7 +54,10 @@ export function TopBar({ title, subtitle, showBreadcrumb, onOpenMenu }: TopBarPr
 
         {showBreadcrumb && !subtitle ? (
           <nav aria-label="Breadcrumb" className="mt-1 flex items-center gap-2 text-sm">
-            <Link to={ROUTES.dashboard} className="text-muted transition-colors hover:text-navy-700">
+            <Link
+              to={ROUTES.dashboard}
+              className="text-muted transition-colors hover:text-navy-700"
+            >
               Home
             </Link>
             <ChevronRight className="h-4 w-4 text-muted" aria-hidden />

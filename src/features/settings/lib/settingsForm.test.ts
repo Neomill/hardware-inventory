@@ -3,13 +3,18 @@ import { describe, expect, it } from 'vitest'
 import { buildSeedData } from '@/stores/shopPersistence'
 import { buildDataExport, exportFileName } from '@/features/settings/lib/exportData'
 import {
-  formatTaxRatePercent,
   settingsFormSchema,
   toSettingsFormValues,
   toSettingsUpdate,
+  toVatPercentInput,
 } from '@/features/settings/lib/settingsForm'
 
-const valid = { storeName: 'Olaer Store', address: 'Main St', phone: '+63 912 345 6789', vatPercent: '12' }
+const valid = {
+  storeName: 'Olaer Store',
+  address: 'Main St',
+  phone: '+63 912 345 6789',
+  vatPercent: '12',
+}
 
 function errorFor(values: Partial<typeof valid>, field: keyof typeof valid) {
   const result = settingsFormSchema.safeParse({ ...valid, ...values })
@@ -39,10 +44,13 @@ describe('settings form', () => {
   })
 
   it('round-trips the rate between percent and fraction', () => {
-    expect(formatTaxRatePercent(0.12)).toBe('12')
-    expect(formatTaxRatePercent(0.125)).toBe('12.5')
-    expect(formatTaxRatePercent(0.07)).toBe('7')
-    expect(toSettingsFormValues({ storeName: 'A', address: '', phone: '' }, 0.12).vatPercent).toBe('12')
+    expect(toVatPercentInput(0.12)).toBe('12')
+    expect(toVatPercentInput(0.125)).toBe('12.5')
+    expect(toVatPercentInput(0.07)).toBe('7')
+    expect(toVatPercentInput(0)).toBe('0')
+    expect(toSettingsFormValues({ storeName: 'A', address: '', phone: '' }, 0.12).vatPercent).toBe(
+      '12',
+    )
     expect(toSettingsUpdate({ ...valid, vatPercent: '12.5' }).taxRate).toBe(0.125)
   })
 })
@@ -54,9 +62,18 @@ describe('data export', () => {
     const exported = buildDataExport({ ...seed, extra: () => 1 } as typeof seed, now)
 
     expect(exported.app).toBe('olaer-store')
-    expect(exported.schemaVersion).toBe(1)
+    expect(exported.schemaVersion).toBe(2)
     expect(exported.data.sales).toHaveLength(seed.sales.length)
     expect('extra' in exported.data).toBe(false)
     expect(exportFileName(now)).toBe('olaer-store-data-2025-05-21.json')
+  })
+
+  it('includes held sales, and not as the old heldCarts key', () => {
+    const now = new Date('2025-05-21T10:00:00')
+    const seed = buildSeedData(now)
+    const exported = buildDataExport(seed, now)
+
+    expect(exported.data.heldSales).toEqual(seed.heldSales)
+    expect('heldCarts' in exported.data).toBe(false)
   })
 })

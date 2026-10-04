@@ -24,9 +24,7 @@ export function RangeSelector({ resolved, now, onChange }: RangeSelectorProps) {
 
   function handlePreset(preset: RangePreset) {
     // Custom starts from whatever was on screen, so the figures don't jump.
-    onChange(
-      preset === 'custom' ? { preset, from: resolved.from, to: resolved.to } : { preset },
-    )
+    onChange(preset === 'custom' ? { preset, from: resolved.from, to: resolved.to } : { preset })
   }
 
   return (

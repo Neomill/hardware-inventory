@@ -1,31 +1,10 @@
 import { SectionCard } from '@/components/common/SectionCard'
-import { StatusPill, type PillTone } from '@/components/common/StatusPill'
+import { MovementTypePill, QuantityDeltaPill } from '@/components/common/StatusPills'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
-import type { MovementType, StockMovement } from '@/domain/types'
-import { formatDateTimeShort, formatNumber } from '@/lib/format'
-
-const TYPE_LABELS: Record<MovementType, string> = {
-  stock_in: 'Stock In',
-  sale: 'Sale',
-  sale_reversal: 'Reversal',
-  adjustment: 'Adjustment',
-}
-
-const TYPE_TONES: Record<MovementType, PillTone> = {
-  stock_in: 'success',
-  sale: 'danger',
-  sale_reversal: 'info',
-  adjustment: 'warning',
-}
-
-/** "+150 pcs" / "-5 pcs" -- the sign is the point, so it is always shown. */
-function formatDelta(quantityDelta: number): string {
-  const sign = quantityDelta > 0 ? '+' : '-'
-
-  return `${sign}${formatNumber(Math.abs(quantityDelta))}`
-}
+import type { StockMovement } from '@/domain/types'
+import { formatDateTimeShort } from '@/lib/format'
 
 const COLUMNS: SummaryColumn<StockMovement>[] = [
   {
@@ -37,14 +16,14 @@ const COLUMNS: SummaryColumn<StockMovement>[] = [
   {
     id: 'type',
     header: 'Type',
-    cell: (movement) => (
-      <StatusPill tone={TYPE_TONES[movement.type]}>{TYPE_LABELS[movement.type]}</StatusPill>
-    ),
+    cell: (movement) => <MovementTypePill type={movement.type} />,
   },
   {
     id: 'description',
     header: 'Description',
     cell: (movement) => movement.description,
+    // Wraps so the six columns fit a portrait tablet without scrolling.
+    cellClassName: 'min-w-[9rem] whitespace-normal',
   },
   {
     id: 'reference',
@@ -55,11 +34,7 @@ const COLUMNS: SummaryColumn<StockMovement>[] = [
   {
     id: 'quantity',
     header: 'Qty',
-    cell: (movement) => (
-      <StatusPill tone={movement.quantityDelta > 0 ? 'success' : 'danger'}>
-        {formatDelta(movement.quantityDelta)}
-      </StatusPill>
-    ),
+    cell: (movement) => <QuantityDeltaPill delta={movement.quantityDelta} />,
   },
   {
     id: 'recordedBy',
@@ -76,6 +51,7 @@ export function RecentMovementsCard({ movements }: RecentMovementsCardProps) {
   return (
     <SectionCard
       title="Recent Stock Movements"
+      className="min-w-0"
       action={<ViewAllLink to={ROUTES.stockMovements} />}
     >
       <SummaryTable

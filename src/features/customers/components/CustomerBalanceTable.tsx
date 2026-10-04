@@ -23,22 +23,20 @@ export function CustomerBalanceTable({
 }: CustomerBalanceTableProps) {
   const columns: SummaryColumn<CustomerBalance>[] = [
     {
+      // Phone sits under the name so the table fits a portrait tablet.
       id: 'name',
       header: 'Customer',
       cell: (row) => (
-        <Link
-          to={ROUTES.customerDetail(row.customerId)}
-          className="flex min-h-11 items-center font-semibold text-navy-900 hover:text-brand-600"
-        >
-          {row.customerName}
-        </Link>
+        <span className="flex flex-col py-0.5">
+          <Link
+            to={ROUTES.customerDetail(row.customerId)}
+            className="w-fit font-semibold text-navy-900 hover:text-brand-600"
+          >
+            {row.customerName}
+          </Link>
+          <span className="text-xs tabular-nums text-muted">{row.phone ?? 'No phone'}</span>
+        </span>
       ),
-    },
-    {
-      id: 'phone',
-      header: 'Phone',
-      cell: (row) => row.phone ?? <span className="text-muted">&mdash;</span>,
-      cellClassName: 'tabular-nums text-navy-700',
     },
     {
       id: 'outstanding',
@@ -56,10 +54,10 @@ export function CustomerBalanceTable({
       header: 'Open Charges',
       cell: (row) =>
         row.openChargeCount > 0 ? (
-          <span>
+          <span className="flex flex-col">
             {formatNumber(row.openChargeCount)}
             {row.oldestOpenChargeAt ? (
-              <span className="ml-2 text-xs text-muted">
+              <span className="text-xs text-muted">
                 oldest {describeAge(row.oldestOpenChargeAt, now).toLowerCase()}
               </span>
             ) : null}
@@ -114,7 +112,7 @@ export function CustomerBalanceTable({
       rows={rows}
       rowKey={(row) => row.customerId}
       emptyMessage={emptyMessage}
-      minWidthClassName="min-w-[52rem]"
+      minWidthClassName="min-w-[38rem]"
       hoverable
     />
   )

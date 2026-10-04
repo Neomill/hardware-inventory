@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 import { ProductFilterBar } from '@/features/products/components/ProductFilterBar'
 import { ProductListCard } from '@/features/products/components/ProductListCard'
@@ -10,6 +11,13 @@ import { deriveStockStatus, STOCK_STATUS_LABELS } from '@/domain/stock'
 import { toPesos } from '@/domain/money'
 import { useShopStore } from '@/stores/useShopStore'
 
+/** Location state the dashboard's quick action sends to land in the search box. */
+type ProductsLocationState = { focusSearch?: boolean } | null
+
+function wantsSearchFocus(state: unknown): boolean {
+  return (state as ProductsLocationState)?.focusSearch === true
+}
+
 const EXPORT_HEADER = ['Product', 'SKU', 'Category', 'Unit', 'Price', 'Stock', 'Status']
 
 export function ProductsPage() {
@@ -18,6 +26,16 @@ export function ProductsPage() {
   const list = useProductList(products)
   // The design shows the filter row open; it stays collapsible for small screens.
   const [filtersVisible, setFiltersVisible] = useState(true)
+  const location = useLocation()
+  const searchRef = useRef<HTMLInputElement>(null)
+  const focusSearch = wantsSearchFocus(location.state)
+
+  // Keyed on the navigation, so the quick action focuses again if used twice.
+  useEffect(() => {
+    if (focusSearch) {
+      searchRef.current?.focus()
+    }
+  }, [focusSearch, location.key])
 
   function handleExport() {
     const rows = list.matches.map((product) => [
@@ -43,6 +61,7 @@ export function ProductsPage() {
           onToggleFilters={() => setFiltersVisible((visible) => !visible)}
           onExport={handleExport}
           exportDisabled={list.matchCount === 0}
+          searchRef={searchRef}
         />
 
         {filtersVisible ? (

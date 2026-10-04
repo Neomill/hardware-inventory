@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { parseTaxRatePercent, validateTaxRate, type SettingsUpdate } from '@/domain/settings'
 import type { StoreSettings } from '@/domain/types'
+import { formatTaxRatePercent } from '@/lib/format'
 
 /**
  * The Settings form as the owner types it. The VAT rate is entered as a
@@ -59,9 +60,12 @@ export const settingsFormSchema = z.object({
 
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>
 
-/** 0.12 to "12", 0.125 to "12.5", without float noise such as 12.000000000000002. */
-export function formatTaxRatePercent(rate: number): string {
-  return String(Math.round(rate * 10_000) / 100)
+/**
+ * The rate as the owner types it: 0.12 to "12", 0.125 to "12.5". The field
+ * shows "%" as a suffix, so the sign is left off the value.
+ */
+export function toVatPercentInput(rate: number): string {
+  return formatTaxRatePercent(rate).replace(/%$/, '')
 }
 
 export function toSettingsFormValues(settings: StoreSettings, taxRate: number): SettingsFormValues {
@@ -69,7 +73,7 @@ export function toSettingsFormValues(settings: StoreSettings, taxRate: number): 
     storeName: settings.storeName,
     address: settings.address,
     phone: settings.phone,
-    vatPercent: formatTaxRatePercent(taxRate),
+    vatPercent: toVatPercentInput(taxRate),
   }
 }
 

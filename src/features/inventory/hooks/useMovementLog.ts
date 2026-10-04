@@ -9,7 +9,7 @@ import {
   toMovementFilter,
   type MovementLogFilters,
 } from '@/features/inventory/lib/movementQuery'
-import { paginate } from '@/features/inventory/lib/pagination'
+import { usePagedList } from '@/hooks/usePagedList'
 
 export const MOVEMENT_PAGE_SIZE = 15
 
@@ -23,23 +23,22 @@ export function useMovementLog(movements: StockMovement[], initialProductId: str
       ? { ...DEFAULT_MOVEMENT_FILTERS, productId: initialProductId, datePreset: ALL }
       : DEFAULT_MOVEMENT_FILTERS,
   )
-  const [page, setPage] = useState(1)
 
   const matches = useMemo(
     () => filterMovements(movements, toMovementFilter(filters, new Date())),
     [movements, filters],
   )
   const totals = useMemo(() => summarizeMovements(matches), [matches])
-  const slice = paginate(matches, page, MOVEMENT_PAGE_SIZE)
+  const { resetPage, ...paged } = usePagedList(matches, MOVEMENT_PAGE_SIZE)
 
   function updateFilter<K extends keyof MovementLogFilters>(key: K, value: MovementLogFilters[K]) {
     setFilters((current) => ({ ...current, [key]: value }))
-    setPage(1)
+    resetPage()
   }
 
   function resetFilters() {
     setFilters(DEFAULT_MOVEMENT_FILTERS)
-    setPage(1)
+    resetPage()
   }
 
   return {
@@ -49,7 +48,6 @@ export function useMovementLog(movements: StockMovement[], initialProductId: str
     isFiltered: isMovementLogFiltered(filters),
     totals,
     matchCount: matches.length,
-    ...slice,
-    setPage,
+    ...paged,
   }
 }

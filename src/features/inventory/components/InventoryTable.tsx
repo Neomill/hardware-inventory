@@ -4,13 +4,8 @@ import { Link } from 'react-router-dom'
 import { StatusPill } from '@/components/common/StatusPill'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import { ROUTES } from '@/app/routes'
-import { movementsFor, receiveStockFor } from '@/features/inventory/lib/links'
-import {
-  STOCK_STATUS_LABELS,
-  STOCK_STATUS_TONES,
-  STOCK_TEXT_STYLES,
-  deriveStockStatus,
-} from '@/domain/stock'
+import { STOCK_STATUS_TONES, STOCK_TEXT_STYLES } from '@/components/common/statusTones'
+import { STOCK_STATUS_LABELS, deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
@@ -84,16 +79,25 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
       header: 'Actions',
       cell: (product) => (
         <span className="flex items-center gap-2">
-          <Link to={receiveStockFor(product.id)} className={TEXT_ACTION}>
+          <Link
+            to={ROUTES.receiveStockFor(product.id)}
+            aria-label={`Receive stock for ${product.name}`}
+            className={TEXT_ACTION}
+          >
             <PackagePlus className="h-4 w-4" aria-hidden />
             Receive
           </Link>
-          <button type="button" onClick={() => onAdjust(product)} className={TEXT_ACTION}>
+          <button
+            type="button"
+            onClick={() => onAdjust(product)}
+            aria-label={`Adjust stock for ${product.name}`}
+            className={TEXT_ACTION}
+          >
             <SlidersVertical className="h-4 w-4" aria-hidden />
             Adjust
           </button>
           <Link
-            to={movementsFor(product.id)}
+            to={ROUTES.movementsFor(product.id)}
             aria-label={`Stock movements for ${product.name}`}
             title="Stock movements"
             className={ICON_LINK}

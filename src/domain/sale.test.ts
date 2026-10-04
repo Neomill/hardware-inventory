@@ -5,9 +5,13 @@ import {
   computeChange,
   computeSaleTotals,
   formatSaleNumber,
+  mergeCartLines,
+  nextSaleSequence,
+  parseSaleSequence,
   validatePayment,
 } from '@/domain/sale'
 import type { SaleLine } from '@/domain/types'
+import { testSale } from '@/test/fixtures'
 
 function line(unitPrice: number, quantity: number): SaleLine {
   return {
@@ -122,6 +126,32 @@ describe('validatePayment', () => {
     expect(result.message).toContain('Cash')
   })
 
+  it('refuses an amount that is not whole, non-negative centavos', () => {
+    for (const amountPaid of [Number.NaN, Number.POSITIVE_INFINITY, -1, 100.5]) {
+      for (const method of ['cash', 'partial', 'credit'] as const) {
+        const result = validatePayment({ ...base, method, amountPaid, customerId: 'CUS-001' })
+
+        expect(result.ok).toBe(false)
+      }
+    }
+  })
+
+  it('refuses NaN cash, which compares as neither short nor enough', () => {
+    expect(validatePayment({ ...base, method: 'cash', amountPaid: Number.NaN }).ok).toBe(false)
+  })
+
+  it('refuses a credit sale that takes money at the counter', () => {
+    const credit = { ...base, method: 'credit' as const, customerId: 'CUS-001' }
+
+    expect(validatePayment({ ...credit, amountPaid: 0 }).ok).toBe(true)
+    expect(validatePayment({ ...credit, amountPaid: -500 }).ok).toBe(false)
+
+    const paid = validatePayment({ ...credit, amountPaid: 500 })
+
+    expect(paid.ok).toBe(false)
+    expect(paid.message).toContain('Partial')
+  })
+
   it('refuses a partial payment of nothing', () => {
     expect(
       validatePayment({ ...base, method: 'partial', amountPaid: 0, customerId: 'CUS-001' }).ok,
@@ -132,5 +162,69 @@ describe('validatePayment', () => {
 describe('formatSaleNumber', () => {
   it('stamps the date and the sale count for that day', () => {
     expect(formatSaleNumber(new Date(2025, 4, 21), 42)).toBe('#20250521-0042')
+  })
+})
+
+describe('parseSaleSequence', () => {
+  it('reads the number within the day', () => {
+    expect(parseSaleSequence('#20250521-0042')).toBe(42)
+    expect(parseSaleSequence('#20250521-12345')).toBe(12345)
+  })
+
+  it('is null for anything else', () => {
+    for (const raw of ['INV-10021', '20250521-0042', '#2025-0042', '']) {
+      expect(parseSaleSequence(raw)).toBeNull()
+    }
+  })
+})
+
+describe('nextSaleSequence', () => {
+  const at = (day: number, hour: number) => new Date(2025, 4, day, hour).toISOString()
+
+  it('starts each day at 1', () => {
+    expect(nextSaleSequence([], new Date(2025, 4, 21, 9))).toBe(1)
+  })
+
+  it('continues after the highest number used that day and restarts the next', () => {
+    const sales = [
+      { ...testSale({ occurredAt: at(21, 9) }), saleNumber: '#20250521-0001' },
+      { ...testSale({ occurredAt: at(21, 10) }), saleNumber: '#20250521-0007' },
+      { ...testSale({ occurredAt: at(20, 10) }), saleNumber: '#20250520-0030' },
+    ]
+
+    expect(nextSaleSequence(sales, new Date(2025, 4, 21, 15))).toBe(8)
+    expect(nextSaleSequence(sales, new Date(2025, 4, 22, 8))).toBe(1)
+  })
+
+  it('never reuses a number when an older record has another form', () => {
+    const sales = [
+      { ...testSale({ occurredAt: at(21, 9) }), saleNumber: 'legacy' },
+      { ...testSale({ occurredAt: at(21, 10) }), saleNumber: 'legacy-2' },
+    ]
+
+    expect(nextSaleSequence(sales, new Date(2025, 4, 21, 15))).toBe(3)
+  })
+})
+
+describe('mergeCartLines', () => {
+  it('adds repeated products together, keeping first-seen order', () => {
+    expect(
+      mergeCartLines([
+        { productId: 'A', quantity: 2 },
+        { productId: 'B', quantity: 1 },
+        { productId: 'A', quantity: 3 },
+      ]),
+    ).toEqual([
+      { productId: 'A', quantity: 5 },
+      { productId: 'B', quantity: 1 },
+    ])
+  })
+
+  it('leaves a clean cart as it is without sharing its lines', () => {
+    const cart = [{ productId: 'A', quantity: 2 }]
+
+    expect(mergeCartLines(cart)).toEqual(cart)
+    expect(mergeCartLines(cart)[0]).not.toBe(cart[0])
+    expect(mergeCartLines([])).toEqual([])
   })
 })

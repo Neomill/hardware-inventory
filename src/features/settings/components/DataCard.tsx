@@ -26,7 +26,7 @@ export function DataCard() {
   const movements = useShopStore((state) => state.movements)
   const payments = useShopStore((state) => state.payments)
   const cart = useShopStore((state) => state.cart)
-  const heldCarts = useShopStore((state) => state.heldCarts)
+  const heldSales = useShopStore((state) => state.heldSales)
   const taxRate = useShopStore((state) => state.taxRate)
   const settings = useShopStore((state) => state.settings)
   const resetToSeedData = useShopStore((state) => state.resetToSeedData)
@@ -45,11 +45,11 @@ export function DataCard() {
         movements,
         payments,
         cart,
-        heldCarts,
+        heldSales,
         taxRate,
         settings,
       }),
-    [products, customers, sales, movements, payments, cart, heldCarts, taxRate, settings],
+    [products, customers, sales, movements, payments, cart, heldSales, taxRate, settings],
   )
 
   const counts = [
@@ -58,7 +58,7 @@ export function DataCard() {
     { label: 'Sales', value: sales.length },
     { label: 'Stock movements', value: movements.length },
     { label: 'Customer payments', value: payments.length },
-    { label: 'Held sales', value: heldCarts.length },
+    { label: 'Held sales', value: heldSales.length },
   ]
 
   function handleExport() {
@@ -77,7 +77,9 @@ export function DataCard() {
     <section className="card flex flex-col gap-4 p-5">
       <header>
         <h2 className="text-base font-semibold text-navy-900">Data</h2>
-        <p className="mt-1 text-sm text-muted">There is no server: all records live in this browser.</p>
+        <p className="mt-1 text-sm text-muted">
+          There is no server: all records live in this browser.
+        </p>
       </header>
 
       <div className="flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-3">
@@ -124,7 +126,7 @@ export function DataCard() {
           onConfirm={handleReset}
           onExport={handleExport}
           saleCount={sales.length}
-          hasSaleInProgress={cart.length > 0 || heldCarts.length > 0}
+          hasSaleInProgress={cart.length > 0 || heldSales.length > 0}
         />
       ) : null}
     </section>

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { applyRate, breakDownVat, fromPesos, parseAmountInput, toPesos } from '@/domain/money'
+import {
+  applyRate,
+  breakDownVat,
+  formatAmountInput,
+  fromPesos,
+  parseAmountInput,
+  toPesos,
+} from '@/domain/money'
 
 describe('centavo conversion', () => {
   it('round-trips amounts that break in floating point', () => {
@@ -55,5 +62,32 @@ describe('parseAmountInput', () => {
     for (const raw of ['', '.', 'abc', '1.234', '-5', '1..2']) {
       expect(parseAmountInput(raw)).toBeNull()
     }
+  })
+})
+
+describe('formatAmountInput', () => {
+  it('writes pesos with exactly two decimals', () => {
+    expect(formatAmountInput(63100)).toBe('631.00')
+    expect(formatAmountInput(70672)).toBe('706.72')
+    expect(formatAmountInput(5)).toBe('0.05')
+    expect(formatAmountInput(50)).toBe('0.50')
+    expect(formatAmountInput(0)).toBe('0.00')
+    expect(formatAmountInput(123456789)).toBe('1234567.89')
+  })
+
+  it('round-trips through parseAmountInput for amounts that break in floats', () => {
+    for (const amount of [1, 29, 70672, 100001, 999999999]) {
+      expect(parseAmountInput(formatAmountInput(amount))).toBe(amount)
+    }
+  })
+
+  it('keeps the sign of a negative amount', () => {
+    expect(formatAmountInput(-1505)).toBe('-15.05')
+  })
+
+  it('rounds a stray fraction to whole centavos and blanks a non-number', () => {
+    expect(formatAmountInput(99.6)).toBe('1.00')
+    expect(formatAmountInput(Number.NaN)).toBe('')
+    expect(formatAmountInput(Number.POSITIVE_INFINITY)).toBe('')
   })
 })

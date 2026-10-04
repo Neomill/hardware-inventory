@@ -5,7 +5,11 @@ import { Link } from 'react-router-dom'
 
 import { IconTile, type IconTone } from '@/components/common/IconTile'
 import { ROUTES } from '@/app/routes'
-import { describeAge, formatLedgerDate, type LedgerSummary } from '@/features/customers/lib/ledgerView'
+import {
+  describeAge,
+  formatLedgerDate,
+  type LedgerSummary,
+} from '@/features/customers/lib/ledgerView'
 import { formatCurrency, formatNumber } from '@/lib/format'
 
 type LedgerSummaryStripProps = {

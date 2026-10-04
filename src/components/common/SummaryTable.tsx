@@ -45,7 +45,7 @@ export function SummaryTable<T>({
               <th
                 key={column.id}
                 scope="col"
-                className="whitespace-nowrap pb-3 text-xs font-semibold uppercase tracking-wide text-muted"
+                className="whitespace-nowrap pb-3 pr-4 text-xs font-semibold uppercase tracking-wide text-muted"
               >
                 {column.header}
               </th>

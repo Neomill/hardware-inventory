@@ -24,7 +24,12 @@ const CUSTOMERS = [
 
 const SALES = [
   testSale({ occurredAt: at(19), lines: [PIPE, CEMENT] }), // 80000 cash
-  testSale({ occurredAt: at(19, 15), lines: [NAILS], paymentMethod: 'credit', customerId: 'CUS-001' }), // 9000
+  testSale({
+    occurredAt: at(19, 15),
+    lines: [NAILS],
+    paymentMethod: 'credit',
+    customerId: 'CUS-001',
+  }), // 9000
   testSale({
     occurredAt: at(21),
     lines: [PIPE],
@@ -102,7 +107,9 @@ describe('buildTopProducts', () => {
   })
 
   it('is empty for a range with no sales', () => {
-    expect(buildTopProducts(SALES, 'quantity', dayRange(new Date(2025, 0, 1), new Date(2025, 0, 1)))).toEqual([])
+    expect(
+      buildTopProducts(SALES, 'quantity', dayRange(new Date(2025, 0, 1), new Date(2025, 0, 1))),
+    ).toEqual([])
   })
 })
 

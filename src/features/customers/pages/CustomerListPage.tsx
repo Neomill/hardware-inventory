@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Alert } from '@/components/common/Alert'
+import { Pagination } from '@/components/common/Pagination'
 import { ROUTES } from '@/app/routes'
 import type { Customer, CustomerPayment } from '@/domain/types'
 import { AddCustomerDialog } from '@/features/customers/components/AddCustomerDialog'
@@ -14,7 +15,10 @@ import { filterBalances } from '@/features/customers/lib/ledgerView'
 import { describePaymentRecorded } from '@/features/customers/lib/notices'
 import type { CustomerDetailLocationState } from '@/features/customers/types'
 import { useCurrentTime } from '@/hooks/useCurrentTime'
+import { usePagedList } from '@/hooks/usePagedList'
 import { formatNumber } from '@/lib/format'
+
+export const CUSTOMER_PAGE_SIZE = 15
 
 /** Outstanding Balances: who owes the store, largest balance first. */
 export function CustomerListPage() {
@@ -32,6 +36,17 @@ export function CustomerListPage() {
     () => filterBalances(includeSettled ? rows : rows.filter((row) => row.outstanding > 0), search),
     [rows, includeSettled, search],
   )
+  const list = usePagedList(visibleRows, CUSTOMER_PAGE_SIZE)
+
+  function changeSearch(value: string) {
+    setSearch(value)
+    list.resetPage()
+  }
+
+  function changeIncludeSettled(value: boolean) {
+    setIncludeSettled(value)
+    list.resetPage()
+  }
 
   const closeAddCustomer = useCallback(() => setAddingCustomer(false), [])
   const closePayment = useCallback(() => setPayingCustomerId(null), [])
@@ -66,9 +81,9 @@ export function CustomerListPage() {
       <section className="card flex flex-col gap-4 p-5">
         <CustomerListToolbar
           search={search}
-          onSearchChange={setSearch}
+          onSearchChange={changeSearch}
           includeSettled={includeSettled}
-          onIncludeSettledChange={setIncludeSettled}
+          onIncludeSettledChange={changeIncludeSettled}
           onAddCustomer={() => setAddingCustomer(true)}
         />
 
@@ -82,7 +97,7 @@ export function CustomerListPage() {
         </div>
 
         <CustomerBalanceTable
-          rows={visibleRows}
+          rows={list.rows}
           now={now}
           emptyMessage={emptyMessage}
           onRecordPayment={(customerId) => {
@@ -90,6 +105,18 @@ export function CustomerListPage() {
             setPayingCustomerId(customerId)
           }}
         />
+
+        {list.pageCount > 1 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+            <span className="text-sm text-muted">{list.rangeLabel}</span>
+            <Pagination
+              page={list.page}
+              pageCount={list.pageCount}
+              onChange={list.setPage}
+              label="Customer pages"
+            />
+          </div>
+        ) : null}
       </section>
 
       {addingCustomer ? (

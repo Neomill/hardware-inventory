@@ -33,7 +33,12 @@ function ShareBar({ percent }: { percent: number }) {
   )
 }
 
-export function TopProductsSection({ rows, metric, onMetricChange, range }: TopProductsSectionProps) {
+export function TopProductsSection({
+  rows,
+  metric,
+  onMetricChange,
+  range,
+}: TopProductsSectionProps) {
   const columns: SummaryColumn<TopProductRow>[] = [
     {
       id: 'rank',

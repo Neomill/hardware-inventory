@@ -67,7 +67,8 @@ const BALANCE_COLUMNS: SummaryColumn<CustomerBalance>[] = [
   {
     id: 'oldest',
     header: 'Owing Since',
-    cell: (row) => (row.oldestOpenChargeAt ? formatShortDate(new Date(row.oldestOpenChargeAt)) : '--'),
+    cell: (row) =>
+      row.oldestOpenChargeAt ? formatShortDate(new Date(row.oldestOpenChargeAt)) : '--',
     cellClassName: 'text-muted',
   },
 ]
@@ -104,7 +105,9 @@ export function OutstandingCreditSection({ credit, range }: OutstandingCreditSec
       id="outstanding-credit"
       title="Outstanding Credit"
       description={`What customers owe right now, whatever the period, and the credit payments received ${
-        range.preset === 'today' || range.preset === 'yesterday' ? range.phrase : `in ${range.phrase}`
+        range.preset === 'today' || range.preset === 'yesterday'
+          ? range.phrase
+          : `in ${range.phrase}`
       }.`}
     >
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

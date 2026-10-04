@@ -16,7 +16,12 @@ export const DATE_PRESET_LABELS: Record<DatePreset, string> = {
 
 export const DATE_PRESET_ORDER: DatePreset[] = ['today', '7d', '30d', ALL]
 
-export const MOVEMENT_TYPE_ORDER: MovementType[] = ['stock_in', 'sale', 'sale_reversal', 'adjustment']
+export const MOVEMENT_TYPE_ORDER: MovementType[] = [
+  'stock_in',
+  'sale',
+  'sale_reversal',
+  'adjustment',
+]
 
 export type MovementLogFilters = {
   type: MovementType | typeof ALL

@@ -47,7 +47,11 @@ export function OpenChargesCard({ charges, now }: OpenChargesCardProps) {
       id: 'settled',
       header: 'Paid So Far',
       cell: (charge) =>
-        charge.settled > 0 ? formatCurrency(charge.settled) : <span className="text-muted">&mdash;</span>,
+        charge.settled > 0 ? (
+          formatCurrency(charge.settled)
+        ) : (
+          <span className="text-muted">&mdash;</span>
+        ),
       cellClassName: 'tabular-nums text-emerald-700',
     },
     {

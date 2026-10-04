@@ -1,23 +1,19 @@
-import { ChevronDown, UserRound, Warehouse } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { ChevronDown, UserRound, Warehouse } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
 
-import { ROUTES } from "@/app/routes";
-import { APP_SHORT_NAME, CURRENT_USER } from "@/config/app";
-import {
-  PRIMARY_NAV,
-  SECONDARY_NAV,
-  type NavItem,
-} from "@/components/layout/navigation";
-import { cn } from "@/lib/utils";
+import { ROUTES } from '@/app/routes'
+import { APP_SHORT_NAME, CURRENT_USER } from '@/config/app'
+import { PRIMARY_NAV, SECONDARY_NAV, type NavItem } from '@/components/layout/navigation'
+import { cn } from '@/lib/utils'
 
 type SidebarProps = {
   /** Called after a nav item is chosen, so the mobile drawer can close itself. */
-  onNavigate?: () => void;
-};
+  onNavigate?: () => void
+}
 
 /** The design stacks the wordmark on two lines, so split it once here. */
-const [BRAND_TOP, ...brandRest] = APP_SHORT_NAME.split(" ");
-const BRAND_BOTTOM = brandRest.join(" ");
+const [BRAND_TOP, ...brandRest] = APP_SHORT_NAME.split(' ')
+const BRAND_BOTTOM = brandRest.join(' ')
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   return (
@@ -58,28 +54,18 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <UserRound className="h-6 w-6" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold">
-              {CURRENT_USER.name}
-            </span>
-            <span className="block text-xs text-navy-200">
-              {CURRENT_USER.role}
-            </span>
+            <span className="block truncate text-sm font-semibold">{CURRENT_USER.name}</span>
+            <span className="block text-xs text-navy-200">{CURRENT_USER.role}</span>
           </span>
           <ChevronDown className="h-4 w-4 text-navy-200" aria-hidden />
         </button>
       </div>
     </div>
-  );
+  )
 }
 
-function SidebarLink({
-  item,
-  onNavigate,
-}: {
-  item: NavItem;
-  onNavigate?: () => void;
-}) {
-  const Icon = item.icon;
+function SidebarLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+  const Icon = item.icon
 
   return (
     <NavLink
@@ -88,15 +74,13 @@ function SidebarLink({
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors",
-          isActive
-            ? "bg-brand-500 text-white shadow-sm"
-            : "text-navy-100 hover:bg-white/5",
+          'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors',
+          isActive ? 'bg-brand-500 text-white shadow-sm' : 'text-navy-100 hover:bg-white/5',
         )
       }
     >
       <Icon className="h-5 w-5 shrink-0" aria-hidden />
       <span className="truncate">{item.label}</span>
     </NavLink>
-  );
+  )
 }

@@ -2,7 +2,8 @@ import { SectionCard } from '@/components/common/SectionCard'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
-import { deriveStockStatus, STOCK_TEXT_STYLES } from '@/domain/stock'
+import { STOCK_TEXT_STYLES } from '@/components/common/statusTones'
+import { deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
@@ -48,7 +49,11 @@ type LowStockCardProps = {
 
 export function LowStockCard({ items }: LowStockCardProps) {
   return (
-    <SectionCard title="Low Stock Items" action={<ViewAllLink to={ROUTES.lowStockProducts} />}>
+    <SectionCard
+      title="Low Stock Items"
+      className="min-w-0"
+      action={<ViewAllLink to={ROUTES.productsByStock('restock')} />}
+    >
       <SummaryTable
         columns={COLUMNS}
         rows={items}

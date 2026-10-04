@@ -44,8 +44,7 @@ export function testSale(overrides: {
   const discountAmount = overrides.discountAmount ?? 0
   const total = overrides.total ?? subtotal - discountAmount
   const paymentMethod = overrides.paymentMethod ?? 'cash'
-  const amountPaid =
-    overrides.amountPaid ?? (paymentMethod === 'cash' ? total : 0)
+  const amountPaid = overrides.amountPaid ?? (paymentMethod === 'cash' ? total : 0)
 
   return {
     id: overrides.id ?? `SALE-T${saleCounter}`,

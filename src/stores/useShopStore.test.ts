@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { SEED_CUSTOMERS } from '@/data/mock/customers'
 import { SEED_PRODUCTS } from '@/data/mock/catalog'
+import { toDayKey } from '@/domain/dates'
 import { computeOutstanding } from '@/domain/ledger'
-import { DEFAULT_STORE_SETTINGS, useShopStore } from '@/stores/useShopStore'
+import { formatSaleNumber } from '@/domain/sale'
+import { createMemoryStorage } from '@/stores/shopPersistence'
+import { createShopStore, DEFAULT_STORE_SETTINGS, useShopStore } from '@/stores/useShopStore'
 
 const PVC = 'PVC-050'
 const SOLD_OUT = 'SFG-002'
@@ -23,7 +26,7 @@ function reset() {
     taxRate: 0.12,
     settings: DEFAULT_STORE_SETTINGS,
     cart: [],
-    heldCarts: [],
+    heldSales: [],
   })
 }
 
@@ -67,23 +70,303 @@ describe('cart', () => {
     expect(useShopStore.getState().cart[0].quantity).toBe(5)
   })
 
+  it('refuses negative, fractional and non-number adds and changes nothing', () => {
+    const store = useShopStore.getState()
+
+    for (const quantity of [-1, 0, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const result = store.addToCart(PVC, quantity)
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('whole number')
+    }
+
+    expect(useShopStore.getState().cart).toEqual([])
+
+    // A negative add cannot shrink a line already in the cart either.
+    store.addToCart(PVC, 5)
+
+    expect(useShopStore.getState().addToCart(PVC, -3).ok).toBe(false)
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 5 }])
+  })
+
+  it('refuses a fractional or negative quantity change, keeping the line', () => {
+    useShopStore.getState().addToCart(PVC, 2)
+
+    for (const quantity of [2.5, -1, Number.NaN]) {
+      expect(useShopStore.getState().setCartQuantity(PVC, quantity).ok).toBe(false)
+    }
+
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 2 }])
+    expect(useShopStore.getState().setCartQuantity(PVC, 7).ok).toBe(true)
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 7 }])
+  })
+
   it('removes a line when its quantity reaches zero', () => {
     useShopStore.getState().addToCart(PVC, 2)
     useShopStore.getState().setCartQuantity(PVC, 0)
 
     expect(useShopStore.getState().cart).toHaveLength(0)
   })
+})
 
-  it('holds a cart and gives it back', () => {
-    useShopStore.getState().addToCart(PVC, 4)
+describe('held sales', () => {
+  beforeEach(reset)
 
-    expect(useShopStore.getState().holdCart().ok).toBe(true)
-    expect(useShopStore.getState().cart).toHaveLength(0)
-    expect(useShopStore.getState().heldCarts).toHaveLength(1)
+  const CEMENT = 'CEM-001'
 
-    expect(useShopStore.getState().resumeHeldCart().ok).toBe(true)
-    expect(useShopStore.getState().cart[0].quantity).toBe(4)
-    expect(useShopStore.getState().heldCarts).toHaveLength(0)
+  function hold(lines: [string, number][], label?: string) {
+    for (const [productId, quantity] of lines) {
+      expect(useShopStore.getState().addToCart(productId, quantity).ok).toBe(true)
+    }
+
+    const result = useShopStore.getState().holdCart(label === undefined ? undefined : { label })
+
+    if (!result.ok) {
+      throw new Error(result.message)
+    }
+
+    return result.heldSale
+  }
+
+  function setProduct(productId: string, patch: Partial<{ stock: number; isActive: boolean }>) {
+    useShopStore.setState({
+      products: useShopStore
+        .getState()
+        .products.map((product) => (product.id === productId ? { ...product, ...patch } : product)),
+    })
+  }
+
+  it('holds the cart with its label, and moves no stock (S1)', () => {
+    const { products, movements } = useShopStore.getState()
+    const held = hold(
+      [
+        [PVC, 2],
+        [CEMENT, 1],
+      ],
+      '  Pedro ',
+    )
+
+    const state = useShopStore.getState()
+
+    expect(state.heldSales).toEqual([held])
+    expect(held.label).toBe('Pedro')
+    expect(held.heldBy).toBe('Juan Dela Cruz')
+    expect(held.id).toMatch(/^HOLD-\d+(-\d+)?$/)
+    expect(held.lines).toEqual([
+      { productId: PVC, quantity: 2, productName: 'PVC Pipe 1/2"', unitPrice: 2800 },
+      { productId: CEMENT, quantity: 1, productName: 'Cement (Holcim)', unitPrice: 26000 },
+    ])
+    expect(state.cart).toEqual([])
+    expect(state.products).toBe(products)
+    expect(state.movements).toBe(movements)
+  })
+
+  it('refuses an empty cart and a label over 40 characters', () => {
+    expect(useShopStore.getState().holdCart()).toEqual({
+      ok: false,
+      message: 'There is nothing to hold yet.',
+    })
+
+    useShopStore.getState().addToCart(PVC, 1)
+
+    expect(useShopStore.getState().holdCart({ label: 'x'.repeat(41) }).ok).toBe(false)
+    expect(useShopStore.getState().cart).toHaveLength(1)
+    expect(useShopStore.getState().heldSales).toEqual([])
+  })
+
+  it('refuses a hold at the limit and writes nothing (S2)', () => {
+    for (let count = 0; count < 10; count += 1) {
+      hold([[PVC, 1]])
+    }
+
+    const ids = useShopStore.getState().heldSales.map((held) => held.id)
+
+    expect(new Set(ids).size).toBe(10)
+
+    useShopStore.getState().addToCart(PVC, 1)
+    const result = useShopStore.getState().holdCart()
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'You already have 10 held sales. Resume or discard one first.',
+    })
+    expect(useShopStore.getState().heldSales).toHaveLength(10)
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 1 }])
+  })
+
+  it('resumes any held sale, not only the newest (S3)', () => {
+    const first = hold([[PVC, 2]], 'A')
+    const second = hold([[CEMENT, 1]], 'B')
+
+    const result = useShopStore.getState().resumeHeldSale(first.id)
+
+    expect(result).toEqual({ ok: true, adjustments: [] })
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 2 }])
+    expect(useShopStore.getState().heldSales).toEqual([second])
+  })
+
+  it('reduces a line to the stock left after another sale (S4)', () => {
+    const held = hold([[PVC, 5]])
+    const onHand = stockOf(PVC)
+
+    useShopStore.getState().addToCart(PVC, onHand - 2)
+    expect(
+      useShopStore
+        .getState()
+        .recordSale({ paymentMethod: 'cash', amountPaid: 100_000_000, customerId: null }).ok,
+    ).toBe(true)
+
+    const result = useShopStore.getState().resumeHeldSale(held.id)
+
+    expect(result).toEqual({
+      ok: true,
+      adjustments: [
+        {
+          kind: 'reduced',
+          productId: PVC,
+          productName: 'PVC Pipe 1/2"',
+          from: 5,
+          to: 2,
+          unit: 'pcs',
+        },
+      ],
+    })
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 2 }])
+  })
+
+  it('drops a line whose product sold out, and one deactivated (S5)', () => {
+    const held = hold([
+      [PVC, 1],
+      [CEMENT, 1],
+      ['NAI-200', 1],
+    ])
+
+    setProduct(CEMENT, { stock: 0 })
+    setProduct('NAI-200', { isActive: false })
+
+    const result = useShopStore.getState().resumeHeldSale(held.id)
+
+    expect(result.ok && result.adjustments.map((adjustment) => adjustment.kind)).toEqual([
+      'removed_out_of_stock',
+      'removed_inactive',
+    ])
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 1 }])
+  })
+
+  it('refuses a held sale with nothing sellable and keeps it (S6)', () => {
+    const held = hold([[CEMENT, 1]])
+
+    setProduct(CEMENT, { stock: 0 })
+
+    expect(useShopStore.getState().resumeHeldSale(held.id)).toEqual({
+      ok: false,
+      message: 'None of the items in this held sale can be sold now.',
+    })
+    expect(useShopStore.getState().heldSales).toEqual([held])
+    expect(useShopStore.getState().cart).toEqual([])
+  })
+
+  it('refuses to resume over a sale in progress, or an unknown id (S7)', () => {
+    const held = hold([[PVC, 1]])
+
+    useShopStore.getState().addToCart(CEMENT, 1)
+
+    expect(useShopStore.getState().resumeHeldSale(held.id)).toEqual({
+      ok: false,
+      message: 'Finish or hold the current sale first.',
+    })
+    expect(useShopStore.getState().resumeHeldSale('HOLD-nope')).toEqual({
+      ok: false,
+      message: 'That held sale is no longer here.',
+    })
+    expect(useShopStore.getState().cart).toEqual([{ productId: CEMENT, quantity: 1 }])
+    expect(useShopStore.getState().heldSales).toEqual([held])
+  })
+
+  it('swaps the current cart for a held sale in one step, even at the limit (S8)', () => {
+    const target = hold([[PVC, 3]])
+
+    for (let count = 1; count < 10; count += 1) {
+      hold([['NAI-200', 1]])
+    }
+
+    useShopStore.getState().addToCart(CEMENT, 2)
+
+    const result = useShopStore.getState().swapWithHeldSale(target.id, { label: 'Maria' })
+
+    expect(result).toEqual({ ok: true, adjustments: [] })
+
+    const state = useShopStore.getState()
+
+    expect(state.cart).toEqual([{ productId: PVC, quantity: 3 }])
+    expect(state.heldSales).toHaveLength(10)
+    expect(state.heldSales.some((held) => held.id === target.id)).toBe(false)
+
+    const parked = state.heldSales[state.heldSales.length - 1]
+
+    expect(parked.label).toBe('Maria')
+    expect(parked.lines).toEqual([
+      { productId: CEMENT, quantity: 2, productName: 'Cement (Holcim)', unitPrice: 26000 },
+    ])
+  })
+
+  it('changes nothing when the swap target has nothing sellable (S9)', () => {
+    const target = hold([[CEMENT, 1]])
+
+    setProduct(CEMENT, { stock: 0 })
+    useShopStore.getState().addToCart(PVC, 2)
+
+    const result = useShopStore.getState().swapWithHeldSale(target.id)
+
+    expect(result.ok).toBe(false)
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 2 }])
+    expect(useShopStore.getState().heldSales).toEqual([target])
+  })
+
+  it('refuses a swap with an empty cart, an unknown id or an over-long label', () => {
+    const target = hold([[PVC, 1]])
+
+    expect(useShopStore.getState().swapWithHeldSale(target.id).ok).toBe(false)
+    expect(useShopStore.getState().swapWithHeldSale('HOLD-nope').ok).toBe(false)
+
+    useShopStore.getState().addToCart(CEMENT, 1)
+
+    expect(useShopStore.getState().swapWithHeldSale(target.id, { label: 'x'.repeat(41) }).ok).toBe(
+      false,
+    )
+    expect(useShopStore.getState().heldSales).toEqual([target])
+    expect(useShopStore.getState().cart).toEqual([{ productId: CEMENT, quantity: 1 }])
+  })
+
+  it('discards a held sale without touching stock or records (S10, S11)', () => {
+    const held = hold([[PVC, 2]])
+    const { products, movements, sales } = useShopStore.getState()
+
+    expect(useShopStore.getState().discardHeldSale(held.id).ok).toBe(true)
+
+    const state = useShopStore.getState()
+
+    expect(state.heldSales).toEqual([])
+    expect(state.products).toBe(products)
+    expect(state.movements).toBe(movements)
+    expect(state.sales).toBe(sales)
+    expect(useShopStore.getState().discardHeldSale('nope')).toEqual({
+      ok: false,
+      message: 'That held sale is no longer here.',
+    })
+  })
+
+  it('is cleared by a reset to the demo data (S13)', () => {
+    const store = createShopStore({ storage: () => createMemoryStorage() })
+
+    store.getState().addToCart(PVC, 1)
+    store.getState().holdCart()
+
+    expect(store.getState().heldSales).toHaveLength(1)
+
+    store.getState().resetToSeedData()
+
+    expect(store.getState().heldSales).toEqual([])
   })
 })
 
@@ -210,17 +493,208 @@ describe('recordSale', () => {
     expect(stockOf(PVC)).toBe(4)
   })
 
-  it('never lets stock go negative across repeated sales', () => {
+  it('never lets stock go negative across repeated sales, even past the cart check', () => {
+    const onHand = stockOf(PVC)
+    let recorded = 0
+
     for (let attempt = 0; attempt < 20; attempt += 1) {
-      useShopStore.getState().addToCart(PVC, 10)
-      useShopStore.getState().recordSale({
+      // Put the line straight into the cart, as a restored or stale cart would,
+      // so only recordSale's own recheck stands between it and negative stock.
+      useShopStore.setState({ cart: [{ productId: PVC, quantity: 10 }] })
+
+      const result = useShopStore.getState().recordSale({
         paymentMethod: 'cash',
         amountPaid: 1_000_000,
         customerId: null,
       })
+
+      if (result.ok) {
+        recorded += 1
+      } else {
+        expect(result.message).toContain('left in stock')
+      }
+
+      expect(stockOf(PVC)).toBeGreaterThanOrEqual(0)
     }
 
-    expect(stockOf(PVC)).toBeGreaterThanOrEqual(0)
+    expect(recorded).toBe(Math.floor(onHand / 10))
+    expect(stockOf(PVC)).toBe(onHand - recorded * 10)
+  })
+
+  it('refuses an inactive product in the cart and writes nothing (S12)', () => {
+    useShopStore.getState().addToCart(PVC, 2)
+    useShopStore.setState({
+      products: useShopStore
+        .getState()
+        .products.map((product) =>
+          product.id === PVC ? { ...product, isActive: false } : product,
+        ),
+    })
+
+    const { sales, movements, products } = useShopStore.getState()
+    const result = useShopStore
+      .getState()
+      .recordSale({ paymentMethod: 'cash', amountPaid: 1_000_000, customerId: null })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'PVC Pipe 1/2" is no longer for sale. Remove it to continue.',
+    })
+    expect(useShopStore.getState().sales).toBe(sales)
+    expect(useShopStore.getState().movements).toBe(movements)
+    expect(useShopStore.getState().products).toBe(products)
+    expect(useShopStore.getState().cart).toHaveLength(1)
+  })
+
+  it('refuses invalid amounts and changes nothing', () => {
+    const cases = [
+      { paymentMethod: 'cash' as const, amountPaid: Number.NaN, customerId: null },
+      { paymentMethod: 'cash' as const, amountPaid: 28000.5, customerId: null },
+      { paymentMethod: 'credit' as const, amountPaid: -100, customerId: CUSTOMER },
+      { paymentMethod: 'credit' as const, amountPaid: 100, customerId: CUSTOMER },
+      { paymentMethod: 'partial' as const, amountPaid: -100, customerId: CUSTOMER },
+    ]
+
+    for (const input of cases) {
+      const before = stockOf(PVC)
+      const salesBefore = useShopStore.getState().sales.length
+      const owingBefore = outstandingOf(CUSTOMER)
+
+      useShopStore.setState({ cart: [{ productId: PVC, quantity: 10 }] })
+
+      expect(useShopStore.getState().recordSale(input).ok).toBe(false)
+      expect(stockOf(PVC)).toBe(before)
+      expect(useShopStore.getState().sales).toHaveLength(salesBefore)
+      expect(outstandingOf(CUSTOMER)).toBe(owingBefore)
+      expect(useShopStore.getState().cart).toHaveLength(1)
+    }
+  })
+
+  it('refuses a cart line that is not a whole positive quantity', () => {
+    const before = stockOf(PVC)
+
+    for (const quantity of [2.5, -3, 0, Number.NaN]) {
+      useShopStore.setState({ cart: [{ productId: PVC, quantity }] })
+
+      const result = useShopStore
+        .getState()
+        .recordSale({ paymentMethod: 'cash', amountPaid: 1_000_000, customerId: null })
+
+      expect(result.ok).toBe(false)
+      expect(stockOf(PVC)).toBe(before)
+    }
+  })
+
+  it('merges repeated lines for one product, so stock taken matches the movements', () => {
+    const before = stockOf(PVC)
+
+    useShopStore.setState({
+      cart: [
+        { productId: PVC, quantity: 3 },
+        { productId: 'CEM-001', quantity: 1 },
+        { productId: PVC, quantity: 4 },
+      ],
+    })
+
+    const result = useShopStore
+      .getState()
+      .recordSale({ paymentMethod: 'cash', amountPaid: 1_000_000, customerId: null })
+
+    expect(result.ok).toBe(true)
+
+    if (!result.ok) {
+      return
+    }
+
+    expect(result.sale.lines.map((line) => [line.productId, line.quantity])).toEqual([
+      [PVC, 7],
+      ['CEM-001', 1],
+    ])
+    expect(result.sale.total).toBe(7 * 2800 + 26000)
+
+    const movements = useShopStore
+      .getState()
+      .movements.filter((movement) => movement.reference === result.sale.saleNumber)
+
+    expect(movements).toHaveLength(2)
+    expect(new Set(movements.map((movement) => movement.id)).size).toBe(2)
+    expect(stockOf(PVC)).toBe(before - 7)
+    expect(
+      movements
+        .filter((movement) => movement.productId === PVC)
+        .reduce((sum, movement) => sum + movement.quantityDelta, 0),
+    ).toBe(-7)
+  })
+
+  it('refuses repeated lines that together exceed stock', () => {
+    const onHand = stockOf(PVC)
+
+    useShopStore.setState({
+      cart: [
+        { productId: PVC, quantity: onHand },
+        { productId: PVC, quantity: 1 },
+      ],
+    })
+
+    const result = useShopStore
+      .getState()
+      .recordSale({ paymentMethod: 'cash', amountPaid: 100_000_000, customerId: null })
+
+    expect(result.ok).toBe(false)
+    expect(stockOf(PVC)).toBe(onHand)
+  })
+})
+
+describe('sale numbering', () => {
+  function storeAt(start: Date) {
+    let clock = start
+    const store = createShopStore({ storage: () => createMemoryStorage(), now: () => clock })
+
+    return {
+      store,
+      setClock: (next: Date) => {
+        clock = next
+      },
+      sell: () => {
+        store.getState().addToCart(PVC, 1)
+
+        return store
+          .getState()
+          .recordSale({ paymentMethod: 'cash', amountPaid: 1_000_000, customerId: null })
+      },
+    }
+  }
+
+  it('continues from the seeded sales of the same day', () => {
+    const start = new Date(2025, 4, 21, 18, 0)
+    const { store, sell } = storeAt(start)
+    const seededToday = store
+      .getState()
+      .sales.filter((sale) => toDayKey(sale.occurredAt) === toDayKey(start)).length
+
+    expect(seededToday).toBeGreaterThan(0)
+
+    const first = sell()
+    const second = sell()
+
+    expect(first.ok && first.sale.saleNumber).toBe(formatSaleNumber(start, seededToday + 1))
+    expect(second.ok && second.sale.saleNumber).toBe(formatSaleNumber(start, seededToday + 2))
+    // Two sales in the same millisecond still get their own ids.
+    expect(first.ok && second.ok && first.sale.id !== second.sale.id).toBe(true)
+  })
+
+  it('restarts at 0001 the next day', () => {
+    const { setClock, sell } = storeAt(new Date(2025, 4, 21, 18, 0))
+
+    sell()
+
+    const tomorrow = new Date(2025, 4, 22, 8, 5)
+    setClock(tomorrow)
+
+    const next = sell()
+
+    expect(next.ok && next.sale.saleNumber).toBe('#20250522-0001')
+    expect(next.ok && next.sale.occurredAt).toBe(tomorrow.toISOString())
   })
 })
 
@@ -338,12 +812,14 @@ describe('adjustStock', () => {
     const onHand = stockOf(PVC)
     const store = useShopStore.getState()
 
-    expect(store.adjustStock({ productId: PVC, quantityDelta: -(onHand + 1), reason: 'Lost' }).ok).toBe(
-      false,
-    )
+    expect(
+      store.adjustStock({ productId: PVC, quantityDelta: -(onHand + 1), reason: 'Lost' }).ok,
+    ).toBe(false)
     expect(stockOf(PVC)).toBe(onHand)
 
-    expect(store.adjustStock({ productId: PVC, quantityDelta: -onHand, reason: 'Lost' }).ok).toBe(true)
+    expect(store.adjustStock({ productId: PVC, quantityDelta: -onHand, reason: 'Lost' }).ok).toBe(
+      true,
+    )
     expect(stockOf(PVC)).toBe(0)
   })
 
@@ -352,8 +828,12 @@ describe('adjustStock', () => {
     const movementsBefore = store.movements.length
 
     expect(store.adjustStock({ productId: PVC, quantityDelta: -1, reason: ' ' }).ok).toBe(false)
-    expect(store.adjustStock({ productId: PVC, quantityDelta: 0, reason: 'Recount' }).ok).toBe(false)
-    expect(store.adjustStock({ productId: PVC, quantityDelta: 1.5, reason: 'Recount' }).ok).toBe(false)
+    expect(store.adjustStock({ productId: PVC, quantityDelta: 0, reason: 'Recount' }).ok).toBe(
+      false,
+    )
+    expect(store.adjustStock({ productId: PVC, quantityDelta: 1.5, reason: 'Recount' }).ok).toBe(
+      false,
+    )
     expect(useShopStore.getState().movements).toHaveLength(movementsBefore)
   })
 })
@@ -425,9 +905,7 @@ describe('recordPayment', () => {
 
   it('refuses zero, negative and fractional-centavo amounts', () => {
     for (const amount of [0, -100, 99.5]) {
-      expect(useShopStore.getState().recordPayment({ customerId: CUSTOMER, amount }).ok).toBe(
-        false,
-      )
+      expect(useShopStore.getState().recordPayment({ customerId: CUSTOMER, amount }).ok).toBe(false)
     }
   })
 

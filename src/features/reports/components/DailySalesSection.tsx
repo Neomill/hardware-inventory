@@ -1,5 +1,6 @@
 import { Calculator, HandCoins, Receipt, ReceiptText, Wallet, type LucideIcon } from 'lucide-react'
 
+import { Pagination } from '@/components/common/Pagination'
 import { SectionCard } from '@/components/common/SectionCard'
 import { StatCard } from '@/components/common/StatCard'
 import type { IconTone } from '@/components/common/IconTile'
@@ -9,7 +10,11 @@ import { ReportSection } from '@/features/reports/components/ReportSection'
 import { formatDayWithWeekday } from '@/features/reports/lib/reportFormat'
 import type { ResolvedRange } from '@/features/reports/lib/reportRange'
 import type { ChartScale } from '@/features/reports/lib/reportViewModel'
+import { usePagedList } from '@/hooks/usePagedList'
 import { formatCurrency, formatNumber } from '@/lib/format'
+
+/** Days per table page; a week and a weekend fit, and a year is 25 pages. */
+export const DAILY_TABLE_PAGE_SIZE = 15
 
 type DailySalesSectionProps = {
   summary: SalesSummary
@@ -101,9 +106,8 @@ export function DailySalesSection({ summary, days, scale, range }: DailySalesSec
         <DailySalesChart days={days} scale={scale} rangeLabel={range.label} />
       </SectionCard>
 
-      <SectionCard title="Daily Breakdown">
-        <DailyTable days={days} summary={summary} />
-      </SectionCard>
+      {/* Keyed by range so a new period starts on page one. */}
+      <DailyTable key={`${range.from}:${range.to}`} days={days} summary={summary} />
     </ReportSection>
   )
 }
@@ -137,7 +141,13 @@ function CollectedSplit({ collected, credit }: { collected: number; credit: numb
         aria-label={`${collectedPercent}% collected (${formatCurrency(collected)}), ${100 - collectedPercent}% on credit (${formatCurrency(credit)})`}
       >
         <defs>
-          <pattern id="credit-hatch" width="1.5" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <pattern
+            id="credit-hatch"
+            width="1.5"
+            height="4"
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(45)"
+          >
             <rect width="1.5" height="4" fill="#EA580C" />
             <rect width="0.5" height="4" fill="#FFFFFF" fillOpacity="0.55" />
           </pattern>
@@ -157,7 +167,8 @@ function CollectedSplit({ collected, credit }: { collected: number; credit: numb
           <span aria-hidden className="h-3 w-3 shrink-0 rounded-sm bg-[#16A34A]" />
           <dt className="text-navy-900">Collected</dt>
           <dd className="ml-auto font-semibold tabular-nums text-navy-900 sm:ml-2">
-            {formatCurrency(collected)} <span className="font-normal text-muted">({collectedPercent}%)</span>
+            {formatCurrency(collected)}{' '}
+            <span className="font-normal text-muted">({collectedPercent}%)</span>
           </dd>
         </div>
         <div className="flex items-center gap-2 sm:justify-end">
@@ -185,10 +196,44 @@ const HEADER_CELL =
 const NUMBER_CELL = 'whitespace-nowrap py-3 pr-4 text-right tabular-nums'
 
 function DailyTable({ days, summary }: { days: DailySales[]; summary: SalesSummary }) {
-  if (days.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted">No days in this period.</p>
-  }
+  const list = usePagedList(days, DAILY_TABLE_PAGE_SIZE)
+  const paged = list.pageCount > 1
 
+  return (
+    <SectionCard title="Daily Breakdown">
+      {days.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted">No days in this period.</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <DailyTableBody days={list.rows} dayCount={days.length} summary={summary} paged={paged} />
+          {paged ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm text-muted">Days {list.rangeLabel}</span>
+              <Pagination
+                page={list.page}
+                pageCount={list.pageCount}
+                onChange={list.setPage}
+                label="Daily breakdown pages"
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
+    </SectionCard>
+  )
+}
+
+function DailyTableBody({
+  days,
+  dayCount,
+  summary,
+  paged,
+}: {
+  days: DailySales[]
+  dayCount: number
+  summary: SalesSummary
+  paged: boolean
+}) {
   return (
     <div className="-mx-5 overflow-x-auto px-5">
       <table className="w-full min-w-[46rem] border-collapse text-left text-sm">
@@ -226,7 +271,11 @@ function DailyTable({ days, summary }: { days: DailySales[]; summary: SalesSumma
             return (
               <tr
                 key={day.day}
-                className={empty ? 'border-t border-slate-100 text-muted' : 'border-t border-slate-100 text-navy-900'}
+                className={
+                  empty
+                    ? 'border-t border-slate-100 text-muted'
+                    : 'border-t border-slate-100 text-navy-900'
+                }
               >
                 <th scope="row" className="whitespace-nowrap py-3 pr-4 font-medium">
                   {formatDayWithWeekday(day.date)}
@@ -242,11 +291,20 @@ function DailyTable({ days, summary }: { days: DailySales[]; summary: SalesSumma
           })}
         </tbody>
 
-        {days.length > 1 ? (
+        {dayCount > 1 ? (
           <tfoot>
             <tr className="border-t-2 border-slate-200 font-semibold text-navy-900">
               <th scope="row" className="py-3 pr-4">
-                Total
+                {paged ? (
+                  <>
+                    Total{' '}
+                    <span className="font-normal text-muted">
+                      (all {formatNumber(dayCount)} days)
+                    </span>
+                  </>
+                ) : (
+                  'Total'
+                )}
               </th>
               <td className={NUMBER_CELL}>{formatNumber(summary.transactionCount)}</td>
               <td className={NUMBER_CELL}>{formatNumber(summary.itemCount)}</td>

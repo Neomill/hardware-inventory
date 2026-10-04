@@ -1,53 +1,93 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
+import { STOCK_QUERY_PARAM } from '@/app/routes'
 import {
   ALL,
   EMPTY_FILTERS,
   distinctValues,
   filterProducts,
   isFiltered,
-  rangeLabel,
+  parseStockFilter,
   summarise,
 } from '@/features/products/lib/productQuery'
+import { usePagedList } from '@/hooks/usePagedList'
 import type { Product } from '@/domain/types'
-import type { ProductFilters } from '@/features/products/types'
+import type { ProductFilters, StockFilterValue } from '@/features/products/types'
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50]
+
+type LocalFilters = Omit<ProductFilters, 'stockStatus'>
+
+const EMPTY_LOCAL_FILTERS: LocalFilters = {
+  search: EMPTY_FILTERS.search,
+  category: EMPTY_FILTERS.category,
+  unit: EMPTY_FILTERS.unit,
+}
 
 /**
  * Search, filter and paginate the catalogue. Kept out of the components so the
  * page stays presentational and the rules stay testable.
+ *
+ * The stock filter lives in the URL (`?stock=`), so a link such as the
+ * dashboard's "View all" opens the list already filtered, and changing the
+ * dropdown keeps the address shareable. The other filters are local state.
  */
 export function useProductList(products: Product[]) {
-  const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [localFilters, setLocalFilters] = useState<LocalFilters>(EMPTY_LOCAL_FILTERS)
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0])
-  const [page, setPage] = useState(1)
+
+  const stockStatus = parseStockFilter(searchParams.get(STOCK_QUERY_PARAM))
+  const filters = useMemo<ProductFilters>(
+    () => ({ ...localFilters, stockStatus }),
+    [localFilters, stockStatus],
+  )
 
   const matches = useMemo(() => filterProducts(products, filters), [products, filters])
   const summary = useMemo(() => summarise(products), [products])
   const categories = useMemo(() => distinctValues(products, 'category'), [products])
   const units = useMemo(() => distinctValues(products, 'unit'), [products])
+  const paged = usePagedList(matches, pageSize)
 
-  const pageCount = Math.max(1, Math.ceil(matches.length / pageSize))
-  // A filter can shrink the list under the current page; clamp instead of
-  // showing an empty table.
-  const currentPage = Math.min(page, pageCount)
-  const rows = matches.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  function setStockFilter(value: StockFilterValue) {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+
+        if (value === ALL) {
+          next.delete(STOCK_QUERY_PARAM)
+        } else {
+          next.set(STOCK_QUERY_PARAM, value)
+        }
+
+        return next
+      },
+      // Refining a filter is not a new page; Back should leave the list.
+      { replace: true },
+    )
+  }
 
   /** Any filter change returns to page one, so results are never off-screen. */
   function updateFilter(key: keyof ProductFilters, value: string) {
-    setFilters((current) => ({ ...current, [key]: value }))
-    setPage(1)
+    if (key === 'stockStatus') {
+      setStockFilter(parseStockFilter(value))
+    } else {
+      setLocalFilters((current) => ({ ...current, [key]: value }))
+    }
+
+    paged.resetPage()
   }
 
   function clearFilters() {
-    setFilters(EMPTY_FILTERS)
-    setPage(1)
+    setLocalFilters(EMPTY_LOCAL_FILTERS)
+    setStockFilter(ALL)
+    paged.resetPage()
   }
 
   function changePageSize(next: number) {
     setPageSize(next)
-    setPage(1)
+    paged.resetPage()
   }
 
   return {
@@ -58,15 +98,14 @@ export function useProductList(products: Product[]) {
     categories,
     units,
     summary,
-    rows,
+    rows: paged.rows,
     matchCount: matches.length,
     matches,
-    page: currentPage,
-    pageCount,
+    page: paged.page,
+    pageCount: paged.pageCount,
     pageSize,
-    setPage,
+    setPage: paged.setPage,
     changePageSize,
-    rangeLabel: rangeLabel(currentPage, pageSize, matches.length),
-    allOption: ALL,
+    rangeLabel: paged.rangeLabel,
   }
 }

@@ -30,7 +30,11 @@ export function Alert({ tone, children, className }: AlertProps) {
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
-      className={cn('flex items-start gap-3 rounded-xl border px-4 py-3 text-sm', TONE_STYLES[tone], className)}
+      className={cn(
+        'flex items-start gap-3 rounded-xl border px-4 py-3 text-sm',
+        TONE_STYLES[tone],
+        className,
+      )}
     >
       <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
       <p className="flex-1">{children}</p>

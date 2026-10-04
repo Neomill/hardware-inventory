@@ -1,17 +1,8 @@
-import { StatusPill, type PillTone } from '@/components/common/StatusPill'
+import { MovementTypePill, QuantityDeltaPill } from '@/components/common/StatusPills'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
-import { MOVEMENT_TYPE_LABELS } from '@/domain/inventory'
-import type { MovementType, Product, StockMovement } from '@/domain/types'
-import { displayReference, formatQuantityDelta } from '@/features/inventory/lib/movementQuery'
+import type { Product, StockMovement } from '@/domain/types'
+import { displayReference } from '@/features/inventory/lib/movementQuery'
 import { formatDateTimeShort } from '@/lib/format'
-
-/** Same tones as the dashboard's Recent Stock Movements widget. */
-const TYPE_TONES: Record<MovementType, PillTone> = {
-  stock_in: 'success',
-  sale: 'danger',
-  sale_reversal: 'info',
-  adjustment: 'warning',
-}
 
 function buildColumns(productsById: Map<string, Product>): SummaryColumn<StockMovement>[] {
   return [
@@ -24,11 +15,7 @@ function buildColumns(productsById: Map<string, Product>): SummaryColumn<StockMo
     {
       id: 'type',
       header: 'Type',
-      cell: (movement) => (
-        <StatusPill tone={TYPE_TONES[movement.type]}>
-          {MOVEMENT_TYPE_LABELS[movement.type]}
-        </StatusPill>
-      ),
+      cell: (movement) => <MovementTypePill type={movement.type} />,
     },
     {
       id: 'product',
@@ -63,15 +50,12 @@ function buildColumns(productsById: Map<string, Product>): SummaryColumn<StockMo
     {
       id: 'quantity',
       header: 'Qty',
-      cell: (movement) => {
-        const unit = productsById.get(movement.productId)?.unit ?? ''
-
-        return (
-          <StatusPill tone={movement.quantityDelta > 0 ? 'success' : 'danger'}>
-            {formatQuantityDelta(movement.quantityDelta)} {unit}
-          </StatusPill>
-        )
-      },
+      cell: (movement) => (
+        <QuantityDeltaPill
+          delta={movement.quantityDelta}
+          unit={productsById.get(movement.productId)?.unit}
+        />
+      ),
     },
     {
       id: 'recordedBy',

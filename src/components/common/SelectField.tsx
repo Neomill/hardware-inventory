@@ -36,7 +36,10 @@ export function SelectField({ label, value, options, onChange, className }: Sele
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-4 h-5 w-5 text-muted" aria-hidden />
+      <ChevronDown
+        className="pointer-events-none absolute right-4 h-5 w-5 text-muted"
+        aria-hidden
+      />
     </label>
   )
 }

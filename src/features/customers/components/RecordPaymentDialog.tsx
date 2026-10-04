@@ -6,17 +6,15 @@ import { useForm } from 'react-hook-form'
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { Dialog } from '@/components/common/Dialog'
+import { FormField } from '@/components/common/FormField'
+import { TextInput } from '@/components/common/TextInput'
 import { computeOutstanding } from '@/domain/ledger'
-import { parseAmountInput } from '@/domain/money'
+import { formatAmountInput, parseAmountInput } from '@/domain/money'
 import type { CustomerPayment } from '@/domain/types'
-import { FormField } from '@/features/customers/components/FormField'
-import { inputClassName } from '@/features/customers/lib/inputStyles'
-import { SubmitButton } from '@/features/customers/components/SubmitButton'
 import {
   buildPaymentFormSchema,
   PAYMENT_NOTE_MAX_LENGTH,
   previewPayment,
-  toAmountInput,
   type PaymentFormValues,
 } from '@/features/customers/lib/forms'
 import { formatCurrency } from '@/lib/format'
@@ -79,7 +77,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
 
   function payFullBalance() {
     setSubmitError(null)
-    setValue('amount', toAmountInput(outstanding), {
+    setValue('amount', formatAmountInput(outstanding), {
       shouldValidate: isSubmitted,
       shouldDirty: true,
     })
@@ -90,7 +88,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
   if (!customer) {
     return (
       <Dialog title={title} onClose={onClose}>
-        <Alert tone="error">This customer is not in the current session.</Alert>
+        <Alert tone="error">This customer is not saved on this device.</Alert>
       </Dialog>
     )
   }
@@ -115,29 +113,20 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
           <Alert tone="info">This customer has no outstanding balance. Nothing to collect.</Alert>
         ) : (
           <>
+            {/* No autoFocus: Dialog focuses the first control in its body, the amount. */}
             <FormField label="Amount received" error={errors.amount?.message}>
-              {({ inputId, describedBy }) => (
+              {(field) => (
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <span className="relative flex flex-1 items-center">
-                    <span className="pointer-events-none absolute left-4 text-lg text-muted">
-                      &#8369;
-                    </span>
-                    <input
-                      id={inputId}
-                      type="text"
-                      inputMode="decimal"
-                      autoComplete="off"
-                      autoFocus
-                      placeholder="0.00"
-                      aria-invalid={errors.amount ? true : undefined}
-                      aria-describedby={describedBy}
-                      className={inputClassName(
-                        Boolean(errors.amount),
-                        'h-16 pl-10 text-right text-2xl font-bold tabular-nums',
-                      )}
-                      {...register('amount', { onChange: () => setSubmitError(null) })}
-                    />
-                  </span>
+                  <TextInput
+                    {...field}
+                    prefix="₱"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="0.00"
+                    wrapperClassName="flex-1"
+                    className="h-16 text-right text-2xl font-bold tabular-nums"
+                    {...register('amount', { onChange: () => setSubmitError(null) })}
+                  />
                   <Button onClick={payFullBalance} className="h-16 sm:w-44">
                     Pay full balance
                   </Button>
@@ -148,7 +137,9 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
             <div
               className={cn(
                 'flex items-center justify-between rounded-xl px-4 py-3',
-                preview.settlesInFull ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-50 text-navy-900',
+                preview.settlesInFull
+                  ? 'bg-emerald-50 text-emerald-800'
+                  : 'bg-slate-50 text-navy-900',
               )}
             >
               <span className="text-sm font-semibold">
@@ -159,16 +150,13 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
               </span>
             </div>
 
-            <FormField label="Note" hint="Optional" error={errors.note?.message}>
-              {({ inputId, describedBy }) => (
-                <input
-                  id={inputId}
-                  type="text"
+            <FormField label="Note" optional error={errors.note?.message}>
+              {(field) => (
+                <TextInput
+                  {...field}
                   autoComplete="off"
                   maxLength={PAYMENT_NOTE_MAX_LENGTH}
                   placeholder="e.g. Paid by GCash, collected by Ramon"
-                  aria-describedby={describedBy}
-                  className={inputClassName(Boolean(errors.note))}
                   {...register('note')}
                 />
               )}
@@ -182,11 +170,17 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
           <Button onClick={onClose} className="sm:w-36">
             Cancel
           </Button>
-          <SubmitButton icon={Wallet} disabled={outstanding <= 0} className="sm:w-56">
+          <Button
+            type="submit"
+            variant="primary"
+            icon={Wallet}
+            disabled={outstanding <= 0}
+            className="sm:w-56"
+          >
             {preview.amount === null
               ? 'Record Payment'
               : `Record ${formatCurrency(preview.amount)}`}
-          </SubmitButton>
+          </Button>
         </div>
       </form>
     </Dialog>

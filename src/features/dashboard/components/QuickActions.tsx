@@ -13,6 +13,8 @@ type QuickAction = {
   subtitle: string
   icon: LucideIcon
   variant: ActionVariant
+  /** Router location state for the destination page. */
+  state?: Record<string, unknown>
 }
 
 const VARIANT_STYLES: Record<ActionVariant, string> = {
@@ -55,6 +57,8 @@ const ACTIONS: QuickAction[] = [
     subtitle: 'Quick Lookup',
     icon: Search,
     variant: 'outline',
+    // The Products page focuses its search box when it receives this state.
+    state: { focusSearch: true },
   },
 ]
 
@@ -72,6 +76,7 @@ export function QuickActions() {
             <Link
               key={action.to}
               to={action.to}
+              state={action.state}
               className={cn(
                 'flex items-center gap-3 rounded-xl px-5 py-4 transition-colors',
                 VARIANT_STYLES[action.variant],

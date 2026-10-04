@@ -1,8 +1,36 @@
-import { deriveStockStatus } from '@/domain/stock'
+import { isProductStockFilter, type ProductStockFilter } from '@/app/routes'
+import { STOCK_STATUS_LABELS, deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
-import type { ProductFilters, ProductSummary } from '@/features/products/types'
+import type { ProductFilters, ProductSummary, StockFilterValue } from '@/features/products/types'
 
 export const ALL = 'all'
+
+/** Dropdown order and labels. `restock` is what the dashboard's Low Stock card counts. */
+export const STOCK_FILTER_OPTIONS: { value: ProductStockFilter; label: string }[] = [
+  { value: 'in_stock', label: STOCK_STATUS_LABELS.in_stock },
+  { value: 'low_stock', label: STOCK_STATUS_LABELS.low_stock },
+  { value: 'out_of_stock', label: STOCK_STATUS_LABELS.out_of_stock },
+  { value: 'restock', label: 'Needs restocking' },
+]
+
+/**
+ * Reads the `?stock=` query value. Anything missing or unknown means no stock
+ * filter, so a stale or hand-typed link still opens the full list.
+ */
+export function parseStockFilter(value: string | null | undefined): StockFilterValue {
+  return isProductStockFilter(value) ? value : ALL
+}
+
+/** `restock` is low or out of stock: stock at or under the reorder level. */
+export function matchesStockFilter(product: Product, filter: StockFilterValue): boolean {
+  if (filter === ALL) {
+    return true
+  }
+
+  const status = deriveStockStatus(product.stock, product.reorderLevel)
+
+  return filter === 'restock' ? status !== 'in_stock' : status === filter
+}
 
 export const EMPTY_FILTERS: ProductFilters = {
   search: '',
@@ -28,9 +56,7 @@ function matchesSearch(product: Product, search: string): boolean {
     return true
   }
 
-  return (
-    product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term)
-  )
+  return product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term)
 }
 
 export function filterProducts(products: Product[], filters: ProductFilters): Product[] {
@@ -47,14 +73,7 @@ export function filterProducts(products: Product[], filters: ProductFilters): Pr
       return false
     }
 
-    if (
-      filters.stockStatus !== ALL &&
-      deriveStockStatus(product.stock, product.reorderLevel) !== filters.stockStatus
-    ) {
-      return false
-    }
-
-    return true
+    return matchesStockFilter(product, filters.stockStatus)
   })
 }
 
@@ -80,16 +99,4 @@ export function summarise(products: Product[]): ProductSummary {
 /** Sorted, de-duplicated values for a filter dropdown. */
 export function distinctValues(products: Product[], key: 'category' | 'unit'): string[] {
   return [...new Set(products.map((product) => product[key]))].sort((a, b) => a.localeCompare(b))
-}
-
-/** "1-10 of 42", or "0 of 0" when a filter matches nothing. */
-export function rangeLabel(page: number, pageSize: number, total: number): string {
-  if (total === 0) {
-    return '0 of 0'
-  }
-
-  const first = (page - 1) * pageSize + 1
-  const last = Math.min(page * pageSize, total)
-
-  return `${first}-${last} of ${total}`
 }

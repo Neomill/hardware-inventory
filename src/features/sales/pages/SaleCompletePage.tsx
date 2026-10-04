@@ -4,17 +4,29 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { ROUTES } from '@/app/routes'
+import { useMemo } from 'react'
+
+import { remainingBySale } from '@/domain/ledger'
 import { breakDownVat } from '@/domain/money'
 import { PAYMENT_LABELS } from '@/domain/sale'
-import { describeSettlement } from '@/features/sales/lib/salesMetrics'
+import { describeSettlement, formatItemCount } from '@/features/sales/lib/salesMetrics'
 import { useShopStore } from '@/stores/useShopStore'
-import { formatCurrency, formatDateLabel, formatNumber, formatTime } from '@/lib/format'
+import {
+  formatCurrency,
+  formatDateLabel,
+  formatNumber,
+  formatTaxRatePercent,
+  formatTime,
+} from '@/lib/format'
 
 export function SaleCompletePage() {
   const { saleId } = useParams()
   const location = useLocation()
   const sale = useShopStore((state) => state.sales.find((candidate) => candidate.id === saleId))
   const settings = useShopStore((state) => state.settings)
+  const sales = useShopStore((state) => state.sales)
+  const payments = useShopStore((state) => state.payments)
+  const remaining = useMemo(() => remainingBySale(sales, payments), [sales, payments])
 
   const justCompleted = (location.state as { completed?: boolean } | null)?.completed === true
 
@@ -35,7 +47,9 @@ export function SaleCompletePage() {
 
   const occurredAt = new Date(sale.occurredAt)
   const vat = breakDownVat(sale.total, sale.taxRate)
-  const settlement = describeSettlement(sale)
+  // Status as it stands now, after any later customer payments (same as the Ledger).
+  const settlement = describeSettlement(sale, remaining.get(sale.id) ?? 0)
+  const itemCount = sale.lines.reduce((count, line) => count + line.quantity, 0)
 
   return (
     <div className="flex flex-col gap-5">
@@ -70,22 +84,39 @@ export function SaleCompletePage() {
           <p className="text-sm text-muted">
             Sale No. {sale.saleNumber} &middot; Served by {sale.recordedBy}
           </p>
+          {sale.customerId !== null ? (
+            <p className="mt-1 text-sm font-semibold text-navy-900">
+              Customer: {sale.customerName}
+            </p>
+          ) : null}
         </header>
 
         <div className="overflow-x-auto">
           <table className="mt-4 w-full min-w-[28rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200">
-                <th scope="col" className="pb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                <th
+                  scope="col"
+                  className="pb-2 text-xs font-semibold uppercase tracking-wide text-muted"
+                >
                   Item
                 </th>
-                <th scope="col" className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted">
+                <th
+                  scope="col"
+                  className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted"
+                >
                   Qty
                 </th>
-                <th scope="col" className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted">
+                <th
+                  scope="col"
+                  className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted"
+                >
                   Unit Price
                 </th>
-                <th scope="col" className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted">
+                <th
+                  scope="col"
+                  className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted"
+                >
                   Amount
                 </th>
               </tr>
@@ -113,29 +144,41 @@ export function SaleCompletePage() {
           </table>
         </div>
 
-        <dl className="ml-auto mt-4 w-full max-w-xs space-y-1.5 text-sm">
-          <Row label={`Subtotal (${sale.lines.length} lines)`} value={formatCurrency(sale.subtotal)} />
+        <dl className="ml-auto mt-4 w-full max-w-sm space-y-1.5 text-sm">
+          <Row
+            label={`Subtotal (${formatItemCount(itemCount)})`}
+            value={formatCurrency(sale.subtotal)}
+          />
           <Row label="Discount" value={formatCurrency(sale.discountAmount)} />
 
-          <div className="flex items-baseline justify-between border-t border-slate-300 pt-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 border-t border-slate-300 pt-2">
             <dt className="text-base font-bold uppercase text-navy-900">Total</dt>
             <dd className="text-xl font-bold text-navy-900">{formatCurrency(sale.total)}</dd>
           </div>
 
           <Row
-            label={`Includes VAT (${Math.round(sale.taxRate * 100)}%)`}
+            label={`Includes VAT (${formatTaxRatePercent(sale.taxRate)})`}
             value={formatCurrency(vat.vat)}
             muted
           />
 
           <div className="mt-2 space-y-1.5 border-t border-dashed border-slate-300 pt-2">
-            <Row label={`Paid by ${PAYMENT_LABELS[sale.paymentMethod]}`} value={formatCurrency(sale.amountPaid)} />
+            <Row
+              label={`Paid by ${PAYMENT_LABELS[sale.paymentMethod]}`}
+              value={formatCurrency(sale.amountPaid)}
+            />
             {sale.paymentMethod === 'cash' ? (
               <Row label="Change" value={formatCurrency(sale.changeGiven)} />
             ) : (
-              <Row label="Balance on ledger" value={formatCurrency(sale.balanceDue)} />
+              <>
+                {/* Frozen at the counter; later payments are separate records. */}
+                <Row label="Balance at time of sale" value={formatCurrency(sale.balanceDue)} />
+                {settlement.remaining !== sale.balanceDue ? (
+                  <Row label="Balance now" value={formatCurrency(settlement.remaining)} />
+                ) : null}
+              </>
             )}
-            <Row label="Status" value={settlement.label} muted />
+            <Row label="Status now" value={settlement.label} muted />
           </div>
         </dl>
 
@@ -146,13 +189,18 @@ export function SaleCompletePage() {
 
       <Alert tone="info">
         Stock was reduced for {sale.lines.length} product
-        {sale.lines.length === 1 ? '' : 's'} and this sale is recorded in today&apos;s history
+        {sale.lines.length === 1 ? '' : 's'} and this sale is recorded in the sales history
         {sale.balanceDue > 0 ? ', with the unpaid balance on the customer ledger' : ''}.
       </Alert>
 
       {/* Equal weight: printing a receipt is as normal as starting the next sale. */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button variant="primary" icon={ShoppingCart} to={ROUTES.newSale} className="h-14 text-base">
+        <Button
+          variant="primary"
+          icon={ShoppingCart}
+          to={ROUTES.newSale}
+          className="h-14 text-base"
+        >
           Start New Sale
         </Button>
         <Button icon={Printer} onClick={() => window.print()} className="h-14 text-base">
@@ -185,8 +233,8 @@ function SummaryCell({
       <p
         className={
           emphasis
-            ? 'mt-1 truncate text-2xl font-bold text-emerald-600'
-            : 'mt-1 truncate text-lg font-semibold text-navy-900'
+            ? 'mt-1 text-2xl font-bold text-emerald-600 [overflow-wrap:anywhere]'
+            : 'mt-1 text-lg font-semibold text-navy-900 [overflow-wrap:anywhere]'
         }
       >
         {value}
@@ -197,9 +245,11 @@ function SummaryCell({
 
 function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4">
       <dt className={muted ? 'text-muted' : 'text-navy-800'}>{label}</dt>
-      <dd className={muted ? 'text-muted' : 'font-semibold text-navy-900'}>{value}</dd>
+      <dd className={muted ? 'ml-auto text-muted' : 'ml-auto font-semibold text-navy-900'}>
+        {value}
+      </dd>
     </div>
   )
 }

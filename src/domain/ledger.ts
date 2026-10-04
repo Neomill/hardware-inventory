@@ -189,6 +189,60 @@ export function listOpenCharges(
   return open
 }
 
+/**
+ * What is still unpaid on every sale, keyed by sale id, after the customers'
+ * payments are allocated oldest charge first -- the same allocation as
+ * listOpenCharges, so the two always agree. Sales that never charged anything
+ * (cash, walk-in, cancelled) map to 0.
+ */
+export function remainingBySale(sales: Sale[], payments: CustomerPayment[]): Map<string, Centavos> {
+  const unallocated = new Map<string, Centavos>()
+
+  for (const payment of payments) {
+    unallocated.set(payment.customerId, (unallocated.get(payment.customerId) ?? 0) + payment.amount)
+  }
+
+  const remaining = new Map<string, Centavos>()
+
+  for (const sale of [...sales].sort(byOccurredAt)) {
+    const charged = chargedAmount(sale)
+
+    if (charged <= 0 || sale.customerId === null) {
+      remaining.set(sale.id, 0)
+      continue
+    }
+
+    const available = unallocated.get(sale.customerId) ?? 0
+    const settled = Math.min(charged, available)
+    unallocated.set(sale.customerId, available - settled)
+    remaining.set(sale.id, charged - settled)
+  }
+
+  return remaining
+}
+
+export type SettlementStatus = 'paid' | 'partially_paid' | 'outstanding'
+
+export const SETTLEMENT_LABELS: Record<SettlementStatus, string> = {
+  paid: 'Paid',
+  partially_paid: 'Partially Paid',
+  outstanding: 'Outstanding',
+}
+
+/**
+ * Where a sale stands now, from what is still unpaid on it (see
+ * remainingBySale) -- not from `balanceDue`, which is frozen at the counter.
+ * A credit sale later paid down is partially paid; paid off, it is paid.
+ * Cancellation is a separate question: read `sale.status` for that.
+ */
+export function settlementStatus(sale: Sale, remaining: Centavos): SettlementStatus {
+  if (remaining <= 0) {
+    return 'paid'
+  }
+
+  return remaining < sale.total ? 'partially_paid' : 'outstanding'
+}
+
 export type LedgerEntryType = 'charge' | 'payment'
 
 export type LedgerEntry = {

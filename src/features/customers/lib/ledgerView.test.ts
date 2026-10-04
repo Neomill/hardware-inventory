@@ -60,7 +60,11 @@ describe('summarizeBalances', () => {
   it('reports nothing open when everyone is settled', () => {
     const summary = summarizeBalances([balance({ customerId: 'A' })])
 
-    expect(summary).toEqual({ totalOutstanding: 0, customersWithBalance: 0, oldestOpenCharge: null })
+    expect(summary).toEqual({
+      totalOutstanding: 0,
+      customersWithBalance: 0,
+      oldestOpenCharge: null,
+    })
   })
 })
 

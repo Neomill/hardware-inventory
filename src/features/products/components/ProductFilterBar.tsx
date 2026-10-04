@@ -2,18 +2,13 @@ import { RotateCcw } from 'lucide-react'
 
 import { Button } from '@/components/common/Button'
 import { SelectField, type SelectOption } from '@/components/common/SelectField'
-import { ALL } from '@/features/products/lib/productQuery'
-import { STOCK_STATUS_LABELS } from '@/domain/stock'
-import type { StockStatus } from '@/domain/types'
+import { ALL, STOCK_FILTER_OPTIONS } from '@/features/products/lib/productQuery'
 import type { ProductFilters } from '@/features/products/types'
 
-const STOCK_STATUS_ORDER: StockStatus[] = ['in_stock', 'low_stock', 'out_of_stock']
+const STOCK_STATUS_OPTIONS: SelectOption[] = [{ value: ALL, label: 'All' }, ...STOCK_FILTER_OPTIONS]
 
 function toOptions(values: string[], allLabel: string): SelectOption[] {
-  return [
-    { value: ALL, label: allLabel },
-    ...values.map((value) => ({ value, label: value })),
-  ]
+  return [{ value: ALL, label: allLabel }, ...values.map((value) => ({ value, label: value }))]
 }
 
 type ProductFilterBarProps = {
@@ -33,14 +28,6 @@ export function ProductFilterBar({
   onChange,
   onClear,
 }: ProductFilterBarProps) {
-  const stockStatusOptions: SelectOption[] = [
-    { value: ALL, label: 'All' },
-    ...STOCK_STATUS_ORDER.map((status) => ({
-      value: status,
-      label: STOCK_STATUS_LABELS[status],
-    })),
-  ]
-
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
       <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -53,7 +40,7 @@ export function ProductFilterBar({
         <SelectField
           label="Stock Status"
           value={filters.stockStatus}
-          options={stockStatusOptions}
+          options={STOCK_STATUS_OPTIONS}
           onChange={(value) => onChange('stockStatus', value)}
         />
         <SelectField

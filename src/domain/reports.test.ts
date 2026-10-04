@@ -23,8 +23,19 @@ const NAILS = testLine('NAI-200', 9000, 1, 'Nails 2"')
 
 const SALES = [
   testSale({ occurredAt: at(19), lines: [PIPE, CEMENT] }), // 80000 cash
-  testSale({ occurredAt: at(19, 15), lines: [NAILS], paymentMethod: 'credit', customerId: 'CUS-001' }), // 9000
-  testSale({ occurredAt: at(21), lines: [PIPE], paymentMethod: 'partial', amountPaid: 10000, customerId: 'CUS-002' }), // 28000
+  testSale({
+    occurredAt: at(19, 15),
+    lines: [NAILS],
+    paymentMethod: 'credit',
+    customerId: 'CUS-001',
+  }), // 9000
+  testSale({
+    occurredAt: at(21),
+    lines: [PIPE],
+    paymentMethod: 'partial',
+    amountPaid: 10000,
+    customerId: 'CUS-002',
+  }), // 28000
   testSale({ occurredAt: at(21, 12), lines: [CEMENT, NAILS], status: 'cancelled' }), // ignored
 ]
 
@@ -68,11 +79,17 @@ describe('summarizeSales', () => {
   it('records discounts separately from the total', () => {
     const sale = testSale({ occurredAt: at(1), lines: [CEMENT], discountAmount: 2000 })
 
-    expect(summarizeSales([sale])).toMatchObject({ grossSales: 52000, discounts: 2000, totalSales: 50000 })
+    expect(summarizeSales([sale])).toMatchObject({
+      grossSales: 52000,
+      discounts: 2000,
+      totalSales: 50000,
+    })
   })
 
   it('rounds the average sale to whole centavos', () => {
-    const sales = [100, 100, 101].map((total, index) => testSale({ occurredAt: at(index + 1), total }))
+    const sales = [100, 100, 101].map((total, index) =>
+      testSale({ occurredAt: at(index + 1), total }),
+    )
 
     expect(summarizeSales(sales).averageSale).toBe(100)
     expect(Number.isInteger(summarizeSales(sales).averageSale)).toBe(true)
@@ -83,7 +100,9 @@ describe('summarizeSales', () => {
   })
 
   it('respects a date range', () => {
-    expect(summarizeSales(SALES, dayRange(new Date(2025, 4, 21), new Date(2025, 4, 21))).totalSales).toBe(28000)
+    expect(
+      summarizeSales(SALES, dayRange(new Date(2025, 4, 21), new Date(2025, 4, 21))).totalSales,
+    ).toBe(28000)
   })
 })
 
@@ -141,7 +160,10 @@ describe('top products', () => {
 
   it('breaks ties predictably and honours the limit', () => {
     const sales = [
-      testSale({ occurredAt: at(1), lines: [testLine('B', 100, 5, 'Bolt'), testLine('A', 100, 5, 'Anchor')] }),
+      testSale({
+        occurredAt: at(1),
+        lines: [testLine('B', 100, 5, 'Bolt'), testLine('A', 100, 5, 'Anchor')],
+      }),
     ]
 
     expect(topProductsByQuantity(sales).map((row) => row.productName)).toEqual(['Anchor', 'Bolt'])
