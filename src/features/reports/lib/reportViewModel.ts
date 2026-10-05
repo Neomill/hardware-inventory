@@ -66,6 +66,8 @@ const compactCurrencyFormatter = new Intl.NumberFormat(LOCALE, {
   style: 'currency',
   currency: CURRENCY,
   notation: 'compact',
+  // Older ICU builds (Node 20) default currency to 2 minimum digits and print "₱150.0K".
+  minimumFractionDigits: 0,
   maximumFractionDigits: 1,
 })
 
