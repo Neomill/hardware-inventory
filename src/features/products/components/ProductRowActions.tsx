@@ -36,19 +36,33 @@ export function ProductRowActions({ productId, productName }: ProductRowActionsP
     )
   }
 
-  // A fixed menu would drift from its row, so scrolling or resizing closes it.
+  // A fixed menu would drift from its row, so it follows the trigger on scroll
+  // or resize, and closes once the trigger leaves the screen. Closing on any
+  // scroll lost the menu when a tap scrolled a sideways table to its button.
   useEffect(() => {
     if (!isOpen) {
       return undefined
     }
 
-    const close = () => setPlacement(null)
-    window.addEventListener('scroll', close, true)
-    window.addEventListener('resize', close)
+    const follow = () => {
+      const rect = triggerRef.current?.getBoundingClientRect()
+      const viewport = { width: window.innerWidth, height: window.innerHeight }
+      const onScreen =
+        rect !== undefined &&
+        rect.bottom > 0 &&
+        rect.right > 0 &&
+        rect.top < viewport.height &&
+        rect.left < viewport.width
+
+      setPlacement(onScreen ? placeMenu(rect, MENU_HEIGHT, viewport) : null)
+    }
+
+    window.addEventListener('scroll', follow, true)
+    window.addEventListener('resize', follow)
 
     return () => {
-      window.removeEventListener('scroll', close, true)
-      window.removeEventListener('resize', close)
+      window.removeEventListener('scroll', follow, true)
+      window.removeEventListener('resize', follow)
     }
   }, [isOpen])
 

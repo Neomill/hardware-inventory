@@ -62,7 +62,7 @@ describe('data export', () => {
     const exported = buildDataExport({ ...seed, extra: () => 1 } as typeof seed, now)
 
     expect(exported.app).toBe('olaer-store')
-    expect(exported.schemaVersion).toBe(2)
+    expect(exported.schemaVersion).toBe(3)
     expect(exported.data.sales).toHaveLength(seed.sales.length)
     expect('extra' in exported.data).toBe(false)
     expect(exportFileName(now)).toBe('olaer-store-data-2025-05-21.json')

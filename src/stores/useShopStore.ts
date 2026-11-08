@@ -13,12 +13,25 @@ import {
 } from '@/domain/heldSale'
 import { nextSequentialId } from '@/domain/ids'
 import {
+  buildOpeningStockMovement,
   isWholePositiveQuantity,
-  normalizeSupplierInvoice,
   validateStockAdjustment,
-  validateStockReceipt,
 } from '@/domain/inventory'
 import { computeOutstanding, validateCustomerPayment } from '@/domain/ledger'
+import {
+  applyProductChanges,
+  buildNewProduct,
+  validateNewProduct,
+  validateProductChanges,
+  type NewProductInput,
+  type ProductChanges,
+} from '@/domain/product'
+import {
+  buildSaleReversalMovements,
+  checkCancellable,
+  SALE_NOT_FOUND_MESSAGE,
+  validateCancelReason,
+} from '@/domain/saleCancellation'
 import { normalizeTaxRate, validateSettingsUpdate, type SettingsUpdate } from '@/domain/settings'
 import {
   computeBalanceDue,
@@ -29,6 +42,12 @@ import {
   nextSaleSequence,
   validatePayment,
 } from '@/domain/sale'
+import {
+  buildInvoiceMovements,
+  buildSupplierInvoice,
+  validateSupplierInvoice,
+  type ReceiveInvoiceInput,
+} from '@/domain/supplierInvoice'
 import type { Centavos } from '@/domain/money'
 import type {
   CartAdjustment,
@@ -42,21 +61,26 @@ import type {
   SaleLine,
   StockMovement,
   StoreSettings,
+  SupplierInvoice,
 } from '@/domain/types'
 import { CURRENT_USER } from '@/config/app'
+import { formatCurrency } from '@/lib/format'
 import {
   buildSeedData,
   createSafeShopStorage,
   DEFAULT_STORE_SETTINGS,
   getBrowserStorage,
+  getBrowserWindow,
   inspectPersistedShop,
   runPersistedMigrations,
   saveUnreadableBackup,
   selectPersistedData,
   SHOP_STORAGE_KEY,
   SHOP_STORAGE_VERSION,
+  subscribeToShopStorage,
   type DataRecovery,
   type PersistedShopData,
+  type StorageEventSource,
 } from '@/stores/shopPersistence'
 
 export { DEFAULT_STORE_SETTINGS }
@@ -74,16 +98,6 @@ export type RecordSaleInput = {
 }
 
 export type RecordSaleResult = { ok: true; sale: Sale } | { ok: false; message: string }
-
-export type ReceiveStockInput = {
-  productId: string
-  /** Whole units, more than zero. */
-  quantity: number
-  /** "INV-10021" (E6). Case and surrounding spaces are forgiven. */
-  supplierInvoice?: string
-  supplier?: string
-  note?: string
-}
 
 export type AdjustStockInput = {
   productId: string
@@ -122,11 +136,29 @@ export type HoldCartResult = { ok: true; heldSale: HeldSale } | { ok: false; mes
 export type ResumeHeldSaleResult =
   { ok: true; adjustments: CartAdjustment[] } | { ok: false; message: string }
 
+export type CancelSaleInput = { saleId: string; reason: string }
+
+export type CancelSaleResult =
+  { ok: true; sale: Sale; movements: StockMovement[] } | { ok: false; message: string }
+
+export type AddProductInput = NewProductInput
+
+export type AddProductResult =
+  { ok: true; product: Product; movement: StockMovement } | { ok: false; message: string }
+
+export type { NewProductInput, ProductChanges, ReceiveInvoiceInput }
+
+export type ReceiveInvoiceResult =
+  | { ok: true; invoice: SupplierInvoice; movements: StockMovement[] }
+  | { ok: false; message: string }
+
 type ShopState = {
   products: Product[]
   customers: Customer[]
   sales: Sale[]
   movements: StockMovement[]
+  /** Supplier invoices, oldest first. Never edited (D10). */
+  invoices: SupplierInvoice[]
   /** The sale being built at the counter. */
   cart: CartLine[]
   /** Carts set aside with Hold Sale, oldest first. They reserve no stock (D6). */
@@ -153,7 +185,14 @@ type ShopState = {
   discardHeldSale: (heldSaleId: string) => ActionResult
   swapWithHeldSale: (heldSaleId: string, input?: HoldCartInput) => ResumeHeldSaleResult
   recordSale: (input: RecordSaleInput) => RecordSaleResult
-  receiveStock: (input: ReceiveStockInput) => StockMovementResult
+  /** Marks a completed sale cancelled and returns its stock, in one update (D8). */
+  cancelSale: (input: CancelSaleInput) => CancelSaleResult
+  /** Creates a product with a generated SKU and its opening stock movement (D9). */
+  addProduct: (input: AddProductInput) => AddProductResult
+  /** Changes name, category, price, reorder level or active only. Never SKU, unit or stock. */
+  updateProduct: (productId: string, changes: ProductChanges) => ActionResult
+  /** Records a supplier invoice and one stock_in per line, in one update (D10). */
+  receiveInvoice: (input: ReceiveInvoiceInput) => ReceiveInvoiceResult
   adjustStock: (input: AdjustStockInput) => StockMovementResult
   recordPayment: (input: RecordPaymentInput) => RecordPaymentResult
   addCustomer: (input: AddCustomerInput) => AddCustomerResult
@@ -172,6 +211,12 @@ export type CreateShopStoreOptions = {
    * every record an action writes. Defaults to the real time.
    */
   now?: () => Date
+  /**
+   * Where other tabs' writes are announced (`storage` events). Defaults to the
+   * browser window; tests pass their own EventTarget, or return undefined to
+   * turn cross-tab sync off.
+   */
+  storageEvents?: () => StorageEventSource | undefined
 }
 
 /** Blank optional text is stored as null rather than as an empty string. */
@@ -202,11 +247,30 @@ function toSaleLine(product: Product, quantity: number): SaleLine {
 export function createShopStore({
   storage = getBrowserStorage,
   now = () => new Date(),
+  storageEvents = getBrowserWindow,
 }: CreateShopStoreOptions = {}) {
   /** The raw text of the last read from storage, kept for a backup if it cannot be used. */
   let lastRead: string | null = null
+  /** True while reloading because another tab saved, rather than on first load. */
+  let syncing = false
 
-  return create<ShopState>()(
+  /**
+   * On a cross-tab reload this tab keeps its own cart (each tab is its own
+   * counter, so another tab's sale must not empty or fill it), less any line
+   * whose product is gone. Everything else, held sales included, is taken
+   * from storage. Stock is checked again on checkout, as always.
+   */
+  const withLocalCart = (data: PersistedShopData, current: ShopState): PersistedShopData => {
+    if (!syncing) {
+      return data
+    }
+
+    const productIds = new Set(data.products.map((product) => product.id))
+
+    return { ...data, cart: current.cart.filter((line) => productIds.has(line.productId)) }
+  }
+
+  const store = create<ShopState>()(
     persist<ShopState, [], [], PersistedShopData>(
       (set, get) => ({
         ...buildSeedData(now()),
@@ -476,6 +540,7 @@ export function createShopStore({
             customerName: customer?.name ?? 'Walk-in Customer',
             status: 'completed',
             recordedBy: CURRENT_USER.name,
+            cancellation: null,
           }
 
           const saleMovements: StockMovement[] = lines.map((line) => ({
@@ -505,52 +570,153 @@ export function createShopStore({
           return { ok: true, sale }
         },
 
-        receiveStock({ productId, quantity, supplierInvoice, supplier, note }) {
+        cancelSale({ saleId, reason }) {
+          const { sales, payments, products, movements } = get()
+          const sale = sales.find((candidate) => candidate.id === saleId)
+
+          if (!sale) {
+            return { ok: false, message: SALE_NOT_FOUND_MESSAGE }
+          }
+
+          const check = checkCancellable(sale, sales, payments, formatCurrency)
+
+          if (!check.ok && check.kind === 'already_cancelled') {
+            return { ok: false, message: check.message }
+          }
+
+          const reasonCheck = validateCancelReason(reason)
+
+          if (!reasonCheck.ok) {
+            return { ok: false, message: reasonCheck.message ?? 'Give a reason.' }
+          }
+
+          if (!check.ok) {
+            return { ok: false, message: check.message }
+          }
+
+          // A movement for a product that is gone would break the stock check on load.
+          const missing = sale.lines.find(
+            (line) => !products.some((product) => product.id === line.productId),
+          )
+
+          if (missing) {
+            return {
+              ok: false,
+              message: `${missing.productName} is no longer in the product list, so its stock cannot be returned.`,
+            }
+          }
+
+          const cancellation = {
+            cancelledAt: now().toISOString(),
+            cancelledBy: CURRENT_USER.name,
+            reason: reason.trim(),
+          }
+          const cancelled: Sale = { ...sale, status: 'cancelled', cancellation }
+          const reversals = buildSaleReversalMovements(sale, cancellation)
+
+          // One update: the cancelled sale, its reversals and the returned stock.
+          // Inactive products get their stock back too: inactive only blocks selling.
+          set({
+            sales: sales.map((candidate) => (candidate.id === saleId ? cancelled : candidate)),
+            movements: [...movements, ...reversals],
+            products: products.map((product) => {
+              const returned = reversals
+                .filter((movement) => movement.productId === product.id)
+                .reduce((sum, movement) => sum + movement.quantityDelta, 0)
+
+              return returned > 0 ? { ...product, stock: product.stock + returned } : product
+            }),
+          })
+
+          return { ok: true, sale: cancelled, movements: reversals }
+        },
+
+        addProduct(input) {
           const { products, movements } = get()
+          const validation = validateNewProduct(input, products)
+
+          if (!validation.ok) {
+            return { ok: false, message: validation.message ?? 'This product cannot be added.' }
+          }
+
+          const product = buildNewProduct(input, products)
+
+          if (!product) {
+            return { ok: false, message: 'This product cannot be added.' }
+          }
+
+          // Written even at 0, so every product's log starts on the day it was added.
+          const movement = buildOpeningStockMovement({
+            productId: product.id,
+            quantity: product.stock,
+            occurredAt: now().toISOString(),
+            recordedBy: CURRENT_USER.name,
+          })
+
+          if (movements.some((existing) => existing.id === movement.id)) {
+            return { ok: false, message: 'This product cannot be added.' }
+          }
+
+          set({ products: [...products, product], movements: [...movements, movement] })
+
+          return { ok: true, product, movement }
+        },
+
+        updateProduct(productId, changes) {
+          const { products } = get()
           const product = products.find((candidate) => candidate.id === productId)
 
           if (!product) {
             return { ok: false, message: 'That product no longer exists.' }
           }
 
-          const validation = validateStockReceipt({ quantity, supplierInvoice })
+          const validation = validateProductChanges(productId, changes, products)
 
           if (!validation.ok) {
-            return { ok: false, message: validation.message ?? 'This delivery cannot be recorded.' }
+            return { ok: false, message: validation.message ?? 'These changes cannot be saved.' }
           }
 
-          const invoice = supplierInvoice ? normalizeSupplierInvoice(supplierInvoice) : null
-          const supplierName = optionalText(supplier)
+          // Past sales keep their own copied prices and names; only the product changes.
+          const updated = applyProductChanges(product, changes, products)
 
-          const movement: StockMovement = {
-            id: nextSequentialId(
-              'MOV-IN-',
-              movements.map((existing) => existing.id),
-              5,
-            ),
-            productId,
-            type: 'stock_in',
-            quantityDelta: quantity,
-            // Blank when a delivery came without an invoice.
-            reference: invoice ?? '',
-            description: supplierName ? `Received from ${supplierName}` : 'Stock received',
-            reason: null,
-            note: optionalText(note),
-            recordedBy: CURRENT_USER.name,
-            occurredAt: now().toISOString(),
-          }
-
-          // Stock only ever moves together with the movement that explains it.
           set({
-            movements: [...movements, movement],
             products: products.map((candidate) =>
-              candidate.id === productId
-                ? { ...candidate, stock: candidate.stock + quantity }
-                : candidate,
+              candidate.id === productId ? updated : candidate,
             ),
           })
 
-          return { ok: true, movement }
+          return { ok: true, message: 'Product saved.' }
+        },
+
+        receiveInvoice(input) {
+          const { products, movements, invoices } = get()
+          const context = { invoices, movements, products, today: now() }
+          const validation = validateSupplierInvoice(input, context)
+
+          if (!validation.ok) {
+            return { ok: false, message: validation.message ?? 'This invoice cannot be recorded.' }
+          }
+
+          const invoice = buildSupplierInvoice(input, { ...context, receivedBy: CURRENT_USER.name })
+
+          if (!invoice) {
+            return { ok: false, message: 'This invoice cannot be recorded.' }
+          }
+
+          const received = buildInvoiceMovements(invoice)
+
+          // One update: the invoice, one stock_in per line and the raised stock.
+          set({
+            invoices: [...invoices, invoice],
+            movements: [...movements, ...received],
+            products: products.map((product) => {
+              const line = invoice.lines.find((candidate) => candidate.productId === product.id)
+
+              return line ? { ...product, stock: product.stock + line.quantity } : product
+            }),
+          })
+
+          return { ok: true, invoice, movements: received }
         },
 
         adjustStock({ productId, quantityDelta, reason }) {
@@ -715,7 +881,7 @@ export function createShopStore({
           const { data, dropped } = inspectPersistedShop(persisted, now())
 
           if (data && dropped.length === 0) {
-            return { ...current, ...data }
+            return { ...current, ...withLocalCart(data, current) }
           }
 
           // Nothing was saved: a first visit, not a problem.
@@ -733,11 +899,34 @@ export function createShopStore({
             dropped,
           }
 
-          return data ? { ...current, ...data, dataRecovery } : { ...current, dataRecovery }
+          return data
+            ? { ...current, ...withLocalCart(data, current), dataRecovery }
+            : { ...current, dataRecovery }
         },
       },
     ),
   )
+
+  // Cross-tab sync: the whole dataset is one saved snapshot, so a tab acting on
+  // stale data would overwrite what another tab saved (last writer wins). When
+  // another tab saves, reload through the same migrate-and-check path as a
+  // first load, so every action works on the latest data. The storage is
+  // synchronous, so the reload finishes before the next action runs.
+  subscribeToShopStorage(
+    storageEvents(),
+    () => {
+      syncing = true
+
+      try {
+        void store.persist.rehydrate()
+      } finally {
+        syncing = false
+      }
+    },
+    storage,
+  )
+
+  return store
 }
 
 /**

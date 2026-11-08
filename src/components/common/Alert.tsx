@@ -1,19 +1,22 @@
-import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Info, TriangleAlert } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-export type AlertTone = 'info' | 'success' | 'error'
+/** `error` is announced assertively (role="alert"); every other tone politely (role="status"). */
+export type AlertTone = 'info' | 'success' | 'warning' | 'error'
 
 const TONE_STYLES: Record<AlertTone, string> = {
   info: 'border-blue-200 bg-blue-50 text-blue-900',
   success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900',
   error: 'border-rose-200 bg-rose-50 text-rose-900',
 }
 
 const TONE_ICONS: Record<AlertTone, LucideIcon> = {
   info: Info,
   success: CheckCircle2,
+  warning: TriangleAlert,
   error: AlertCircle,
 }
 

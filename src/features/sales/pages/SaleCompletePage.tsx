@@ -4,11 +4,15 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { ROUTES } from '@/app/routes'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { remainingBySale } from '@/domain/ledger'
 import { breakDownVat } from '@/domain/money'
 import { PAYMENT_LABELS } from '@/domain/sale'
+import { describeCounterMoney } from '@/domain/saleCancellation'
+import { CancelSaleSection } from '@/features/sales/components/CancelSaleSection'
+import { CancelledSaleBanner } from '@/features/sales/components/CancelledSaleBanner'
+import { SALE_CANCELLED_NOTICE, describeCancelledSale } from '@/features/sales/lib/cancelSale'
 import { describeSettlement, formatItemCount } from '@/features/sales/lib/salesMetrics'
 import { useShopStore } from '@/stores/useShopStore'
 import {
@@ -27,6 +31,16 @@ export function SaleCompletePage() {
   const sales = useShopStore((state) => state.sales)
   const payments = useShopStore((state) => state.payments)
   const remaining = useMemo(() => remainingBySale(sales, payments), [sales, payments])
+
+  const [cancelNotice, setCancelNotice] = useState<string | null>(null)
+  const cancelledHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  // After cancelling, the Cancel Sale button is gone: move focus to the new state.
+  useEffect(() => {
+    if (cancelNotice) {
+      cancelledHeadingRef.current?.focus()
+    }
+  }, [cancelNotice])
 
   const justCompleted = (location.state as { completed?: boolean } | null)?.completed === true
 
@@ -50,10 +64,19 @@ export function SaleCompletePage() {
   // Status as it stands now, after any later customer payments (same as the Ledger).
   const settlement = describeSettlement(sale, remaining.get(sale.id) ?? 0)
   const itemCount = sale.lines.reduce((count, line) => count + line.quantity, 0)
+  // Null while the sale stands (spec 04 sale cancellation s.7.1).
+  const cancelled = describeCancelledSale(sale)
+  const counterMoney = cancelled ? describeCounterMoney(sale, formatCurrency) : null
 
   return (
     <div className="flex flex-col gap-5">
-      {justCompleted ? (
+      {cancelNotice ? <Alert tone="success">{cancelNotice}</Alert> : null}
+
+      {cancelled ? <CancelledSaleBanner ref={cancelledHeadingRef} summary={cancelled} /> : null}
+
+      {counterMoney ? <Alert tone="info">{counterMoney}</Alert> : null}
+
+      {justCompleted && !cancelled ? (
         <div className="flex flex-col items-center gap-2 rounded-card border border-emerald-200 bg-emerald-50 px-6 py-6 text-center">
           <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
           <h2 className="text-2xl font-bold text-emerald-700">Sale Completed</h2>
@@ -73,6 +96,11 @@ export function SaleCompletePage() {
       {/* The receipt is the only thing that prints; see the print rules in index.css. */}
       <section className="receipt card px-5 py-6 tabular-nums sm:px-8">
         <header className="border-b border-dashed border-slate-300 pb-4 text-center">
+          {cancelled ? (
+            <p className="mb-2 text-lg font-bold uppercase tracking-widest text-rose-700">
+              Cancelled
+            </p>
+          ) : null}
           <h2 className="text-xl font-bold uppercase tracking-wide text-navy-900">
             {settings.storeName}
           </h2>
@@ -173,7 +201,7 @@ export function SaleCompletePage() {
               <>
                 {/* Frozen at the counter; later payments are separate records. */}
                 <Row label="Balance at time of sale" value={formatCurrency(sale.balanceDue)} />
-                {settlement.remaining !== sale.balanceDue ? (
+                {!cancelled && settlement.remaining !== sale.balanceDue ? (
                   <Row label="Balance now" value={formatCurrency(settlement.remaining)} />
                 ) : null}
               </>
@@ -187,11 +215,18 @@ export function SaleCompletePage() {
         </p>
       </section>
 
-      <Alert tone="info">
-        Stock was reduced for {sale.lines.length} product
-        {sale.lines.length === 1 ? '' : 's'} and this sale is recorded in the sales history
-        {sale.balanceDue > 0 ? ', with the unpaid balance on the customer ledger' : ''}.
-      </Alert>
+      {cancelled ? (
+        <Alert tone="info">
+          {cancelled.stockReturned ? `${cancelled.stockReturned} ` : ''}This sale stays in the sales
+          history but no longer counts in sales, reports or the customer ledger.
+        </Alert>
+      ) : (
+        <Alert tone="info">
+          Stock was reduced for {sale.lines.length} product
+          {sale.lines.length === 1 ? '' : 's'} and this sale is recorded in the sales history
+          {sale.balanceDue > 0 ? ', with the unpaid balance on the customer ledger' : ''}.
+        </Alert>
+      )}
 
       {/* Equal weight: printing a receipt is as normal as starting the next sale. */}
       <div className="grid gap-3 sm:grid-cols-2">
@@ -207,6 +242,10 @@ export function SaleCompletePage() {
           Print Receipt
         </Button>
       </div>
+
+      {cancelled ? null : (
+        <CancelSaleSection sale={sale} onCancelled={() => setCancelNotice(SALE_CANCELLED_NOTICE)} />
+      )}
 
       <Link
         to={ROUTES.sales}

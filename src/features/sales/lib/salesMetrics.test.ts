@@ -196,6 +196,30 @@ describe('describeSettlement', () => {
     })
   })
 
+  // F1 (spec 04 sale cancellation s.10.4): a cancelled sale is never "Paid".
+  it('reads Cancelled, neutral, with nothing left, for a cancelled sale', () => {
+    const cancelled = testSale({
+      occurredAt: at(5, 9),
+      total: 50000,
+      status: 'cancelled',
+      cancellation: { cancelledAt: at(5, 10), cancelledBy: 'Tester', reason: 'Wrong item' },
+    })
+    // remainingBySale gives 0 for a cancelled sale; the label must not fall back to Paid.
+    const remaining = remainingBySale([cancelled], []).get(cancelled.id) ?? 0
+
+    expect(describeSettlement(cancelled, remaining)).toEqual({
+      status: 'cancelled',
+      label: 'Cancelled',
+      tone: 'neutral',
+      remaining: 0,
+    })
+    // Even if a caller passed an unpaid amount, the sale reads Cancelled with no "left" line.
+    expect(describeSettlement({ ...credit, status: 'cancelled' }, 50000)).toMatchObject({
+      label: 'Cancelled',
+      remaining: 0,
+    })
+  })
+
   it('reads Paid when nothing is left', () => {
     expect(describeSettlement(credit, 0)).toMatchObject({
       label: 'Paid',

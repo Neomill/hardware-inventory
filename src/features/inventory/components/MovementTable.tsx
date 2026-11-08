@@ -1,10 +1,16 @@
+import { Link } from 'react-router-dom'
+
+import { ROUTES } from '@/app/routes'
 import { MovementTypePill, QuantityDeltaPill } from '@/components/common/StatusPills'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
 import type { Product, StockMovement } from '@/domain/types'
 import { displayReference } from '@/features/inventory/lib/movementQuery'
 import { formatDateTimeShort } from '@/lib/format'
 
-function buildColumns(productsById: Map<string, Product>): SummaryColumn<StockMovement>[] {
+function buildColumns(
+  productsById: Map<string, Product>,
+  invoiceNumbers: Set<string>,
+): SummaryColumn<StockMovement>[] {
   return [
     {
       id: 'time',
@@ -44,7 +50,18 @@ function buildColumns(productsById: Map<string, Product>): SummaryColumn<StockMo
     {
       id: 'reference',
       header: 'Reference',
-      cell: (movement) => displayReference(movement.reference),
+      // A saved invoice opens its page; older receipts have no record and stay text.
+      cell: (movement) =>
+        invoiceNumbers.has(movement.reference) ? (
+          <Link
+            to={ROUTES.invoiceDetail(movement.reference)}
+            className="font-semibold text-navy-900 underline-offset-2 hover:text-brand-600 hover:underline"
+          >
+            {movement.reference}
+          </Link>
+        ) : (
+          displayReference(movement.reference)
+        ),
       cellClassName: 'text-muted',
     },
     {
@@ -68,13 +85,20 @@ function buildColumns(productsById: Map<string, Product>): SummaryColumn<StockMo
 type MovementTableProps = {
   rows: StockMovement[]
   productsById: Map<string, Product>
+  /** Numbers with a saved supplier invoice; those references become links. */
+  invoiceNumbers: Set<string>
   emptyMessage: string
 }
 
-export function MovementTable({ rows, productsById, emptyMessage }: MovementTableProps) {
+export function MovementTable({
+  rows,
+  productsById,
+  invoiceNumbers,
+  emptyMessage,
+}: MovementTableProps) {
   return (
     <SummaryTable
-      columns={buildColumns(productsById)}
+      columns={buildColumns(productsById, invoiceNumbers)}
       rows={rows}
       rowKey={(movement) => movement.id}
       minWidthClassName="min-w-[62rem]"

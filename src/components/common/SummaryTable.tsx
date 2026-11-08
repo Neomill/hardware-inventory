@@ -22,7 +22,8 @@ type SummaryTableProps<T> = {
 /**
  * Display-only table. Filtering and pagination belong to the caller, so the
  * same component serves a three-row dashboard widget and a paged product list.
- * Wide content scrolls inside the card rather than the page.
+ * Wide content scrolls inside the card rather than the page; in print the
+ * table drops its minimum width and rows are not split across pages.
  */
 export function SummaryTable<T>({
   columns,
@@ -37,8 +38,14 @@ export function SummaryTable<T>({
   }
 
   return (
-    <div className="-mx-5 overflow-x-auto px-5">
-      <table className={cn('w-full border-collapse text-left text-sm', minWidthClassName)}>
+    <div className="-mx-5 overflow-x-auto px-5 print:mx-0 print:overflow-visible print:px-0">
+      <table
+        className={cn(
+          'w-full border-collapse text-left text-sm',
+          minWidthClassName,
+          'print:min-w-0',
+        )}
+      >
         <thead>
           <tr>
             {columns.map((column) => (

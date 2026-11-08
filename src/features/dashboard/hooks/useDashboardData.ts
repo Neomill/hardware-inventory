@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 
-import { useCalendarDay } from '@/features/dashboard/hooks/useCalendarDay'
-import { computeDashboardData, dayFromKey } from '@/features/dashboard/lib/dashboardMetrics'
+import { fromDayKey } from '@/domain/dates'
+import { computeDashboardData } from '@/features/dashboard/lib/dashboardMetrics'
 import type { DashboardData } from '@/features/dashboard/types'
+import { useCalendarDay } from '@/hooks/useCalendarDay'
 import { useShopStore } from '@/stores/useShopStore'
 
 /**
@@ -19,7 +20,7 @@ export function useDashboardData(): DashboardData {
   const today = useCalendarDay()
 
   return useMemo(
-    () => computeDashboardData({ products, sales, movements, payments }, dayFromKey(today)),
+    () => computeDashboardData({ products, sales, movements, payments }, fromDayKey(today)),
     [products, sales, movements, payments, today],
   )
 }

@@ -180,3 +180,39 @@ test.describe('VAT is inclusive (D1, E2)', () => {
     await expect(receipt.getByText(/^Includes VAT/)).toBeVisible()
   })
 })
+
+test.describe('POS cart bar on narrow screens', () => {
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 768, height: 1024 },
+  ]) {
+    test(`at ${viewport.width}px shows the cart total and jumps to the cart`, async ({ page }) => {
+      test.skip(test.info().project.name !== 'desktop', 'Viewport is set by the test')
+      await page.setViewportSize(viewport)
+      await gotoRoute(page, '/sales/new')
+
+      const bar = page.getByRole('region', { name: 'Cart summary' })
+      await expect(bar).toHaveCount(0)
+
+      await addToCart(page, HAMMER, 2)
+      await expect(bar).toBeVisible()
+      await expect(bar).toContainText('2 items')
+
+      // Same figure as the cart, both from store data.
+      await expect(bar).toContainText(await cartTotal(cartPanel(page)).innerText())
+
+      await bar.getByRole('button', { name: /^View cart/ }).click()
+      await expect(page.getByRole('heading', { name: /^Current Sale/ })).toBeFocused()
+      await expect(page.getByRole('heading', { name: /^Current Sale/ })).toBeInViewport()
+    })
+  }
+
+  test('is not shown at desktop width, where the cart is beside the grid', async ({ page }) => {
+    test.skip(test.info().project.name !== 'desktop', 'Desktop layout only')
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await gotoRoute(page, '/sales/new')
+    await addToCart(page, HAMMER, 1)
+
+    await expect(page.getByRole('region', { name: 'Cart summary' })).toBeHidden()
+  })
+})

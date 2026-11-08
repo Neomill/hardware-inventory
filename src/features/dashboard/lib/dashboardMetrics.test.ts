@@ -3,14 +3,9 @@ import { describe, expect, it } from 'vitest'
 import type { Product } from '@/domain/types'
 import {
   computeDashboardData,
-  dayFromKey,
-  dayKey,
-  msUntilNextDay,
   needsRestock,
   percentChange,
   restockQueue,
-  startOfDay,
-  startOfNextDay,
   type DashboardInput,
 } from '@/features/dashboard/lib/dashboardMetrics'
 import { testMovement, testPayment, testSale } from '@/test/fixtures'
@@ -37,29 +32,6 @@ function input(overrides: Partial<DashboardInput> = {}): DashboardInput {
 function at(year: number, month: number, day: number, hour = 12, minute = 0): string {
   return new Date(year, month - 1, day, hour, minute).toISOString()
 }
-
-describe('calendar day', () => {
-  it('starts the day at local midnight', () => {
-    const start = startOfDay(new Date(2026, 9, 4, 15, 30))
-    expect(start).toEqual(new Date(2026, 9, 4, 0, 0, 0, 0))
-    expect(startOfNextDay(new Date(2026, 9, 4, 15, 30))).toEqual(new Date(2026, 9, 5))
-  })
-
-  it('rolls over month and year ends', () => {
-    expect(startOfNextDay(new Date(2026, 11, 31, 23, 59))).toEqual(new Date(2027, 0, 1))
-  })
-
-  it('counts the time left until midnight', () => {
-    expect(msUntilNextDay(new Date(2026, 9, 4, 23, 59, 0))).toBe(60_000)
-    expect(msUntilNextDay(new Date(2026, 9, 4, 0, 0, 0))).toBe(24 * 60 * 60 * 1000)
-  })
-
-  it('keys a day in local time and round-trips the key', () => {
-    expect(dayKey(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05')
-    expect(dayKey(new Date(2026, 0, 6, 0, 0))).toBe('2026-01-06')
-    expect(dayFromKey('2026-01-05')).toEqual(new Date(2026, 0, 5))
-  })
-})
 
 describe('needsRestock', () => {
   it('includes low and out of stock, at the reorder level inclusive', () => {
@@ -132,7 +104,44 @@ describe('computeDashboardData', () => {
 
     expect(data.kpis.todaysSales).toBe(30000)
     expect(data.kpis.todaysSalesChange).toBe(50)
-    expect(data.recentSales).toHaveLength(2)
+    expect(data.recentSales).toHaveLength(1)
+  })
+
+  // Spec 04 F2: a sale cancelled today leaves Recent Sales and every KPI.
+  it('F2: leaves a cancelled sale out of Recent Sales and the KPIs', () => {
+    const kept = testSale({
+      id: 'S-KEPT',
+      occurredAt: at(2026, 10, 4, 8),
+      total: 15000,
+      paymentMethod: 'credit',
+      customerId: 'C1',
+    })
+    const cancelled = testSale({
+      id: 'S-CANCELLED',
+      occurredAt: at(2026, 10, 4, 8, 30),
+      total: 25000,
+      paymentMethod: 'credit',
+      customerId: 'C1',
+    })
+    const cancellation = {
+      cancelledAt: at(2026, 10, 4, 8, 45),
+      cancelledBy: 'Tester',
+      reason: 'Wrong item',
+    }
+
+    const standing = computeDashboardData(input({ sales: [kept, cancelled] }), day)
+    const data = computeDashboardData(
+      input({ sales: [kept, { ...cancelled, status: 'cancelled', cancellation }] }),
+      day,
+    )
+
+    expect(standing.recentSales.map((sale) => sale.id)).toEqual(['S-CANCELLED', 'S-KEPT'])
+    expect(data.recentSales.map((sale) => sale.id)).toEqual(['S-KEPT'])
+    expect(data.kpis.todaysSales).toBe(15000)
+    expect(data.kpis.outstandingCredit).toBe(15000)
+    expect(data.kpis.outstandingCreditChange).toBe(
+      computeDashboardData(input({ sales: [kept] }), day).kpis.outstandingCreditChange,
+    )
   })
 
   it('follows the day it is given, so the figures roll over at midnight', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, PauseCircle } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -8,11 +8,13 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { ROUTES } from '@/app/routes'
 import type { Product } from '@/domain/types'
 import { AddToCartDialog } from '@/features/sales/components/AddToCartDialog'
+import { CartBar } from '@/features/sales/components/CartBar'
 import { CartNoticePanel } from '@/features/sales/components/CartNoticePanel'
 import { CartPanel } from '@/features/sales/components/CartPanel'
 import { HoldSaleDialog } from '@/features/sales/components/HoldSaleDialog'
 import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
 import { useCart } from '@/features/sales/hooks/useCart'
+import { cartBarSummary } from '@/features/sales/lib/cartBar'
 import {
   buildLiveCartNotice,
   holdAvailability,
@@ -30,6 +32,8 @@ export function PosPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const holdHintId = useId()
+  const cartId = useId()
+  const cartHeadingRef = useRef<HTMLHeadingElement>(null)
   const products = useShopStore((state) => state.products)
   const addToCart = useShopStore((state) => state.addToCart)
   const setCartQuantity = useShopStore((state) => state.setCartQuantity)
@@ -131,6 +135,24 @@ export function PosPage() {
     navigate(ROUTES.sales, { state })
   }
 
+  // Below xl the cart sits under the product grid: move focus to its heading
+  // (so keyboard and screen-reader users land in the cart) and bring it into view.
+  function handleViewCart() {
+    const heading = cartHeadingRef.current
+
+    if (!heading) {
+      return
+    }
+
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    heading.focus({ preventScroll: true })
+    heading
+      .closest('section')
+      ?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  }
+
+  const barSummary = cartBarSummary(totals, cartLineCount, unavailable.length)
+
   const inCart = selected
     ? (entries.find((entry) => entry.line.productId === selected.id)?.line.quantity ?? 0)
     : 0
@@ -202,6 +224,8 @@ export function PosPage() {
             onRemove={removeFromCart}
             onClear={clearCart}
             onCheckout={() => navigate(ROUTES.checkout)}
+            id={cartId}
+            headingRef={cartHeadingRef}
           />
         </div>
       </div>
@@ -226,6 +250,8 @@ export function PosPage() {
           ) : null}
         </div>
       </div>
+
+      <CartBar summary={barSummary} cartId={cartId} onViewCart={handleViewCart} />
 
       {isHoldOpen ? (
         <HoldSaleDialog onClose={() => setHoldOpen(false)} onHeld={handleHeld} />

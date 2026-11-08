@@ -32,6 +32,68 @@
 }
 
 /*
+ * Printing any page other than a receipt prints the whole page, not only the
+ * first screen. On screen the shell is viewport-high with one scroll
+ * container; in print every height is released and scroll containers stop
+ * clipping, so the content flows onto as many pages as it needs.
+ *
+ * Hiding something from print: add Tailwind's `print:hidden` class (navigation,
+ * clocks, action bars, sticky or fixed bars). Do not add a separate class.
+ *
+ * Pages holding a .receipt keep the viewport-high shell: the rest of that page
+ * is invisible but still takes space, and releasing it would add blank pages.
+ */
+@media print {
+  html:not(:has(.receipt)),
+  html:not(:has(.receipt)) body,
+  html:not(:has(.receipt)) #root {
+    height: auto;
+  }
+
+  body:not(:has(.receipt)) .overflow-auto,
+  body:not(:has(.receipt)) .overflow-x-auto,
+  body:not(:has(.receipt)) .overflow-y-auto {
+    overflow: visible !important;
+  }
+
+  body:not(:has(.receipt)) .sticky {
+    position: static !important;
+  }
+
+  /*
+   * Chromium mis-sizes a column flex box whose table breaks across pages: the
+   * card ends a row early and clips the last rows. Cards print as blocks.
+   */
+  body:not(:has(.receipt)) .card.flex-col {
+    display: block;
+  }
+
+  /* Wide on-screen tables shrink to the paper instead of running off it. */
+  body:not(:has(.receipt)) table {
+    min-width: 0 !important;
+  }
+
+  /* Rows never split across a page break; the header repeats on each page. */
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}
+
+/*
  * Printing a receipt must not print the whole application. Only a page that
  * contains a .receipt hides everything else; every other page prints as it
  * looks on screen.

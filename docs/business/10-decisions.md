@@ -295,3 +295,141 @@ forbid.
 The owner wants a way to leave messages for the cashier at the till,
 for example because the owner does not open the store
 (`08-observations.md`). The proposal must be approved again first.
+
+---
+
+# D8 --- Any completed sale can be cancelled, with a reason
+
+Date: 2026-11-01. Spec: `specs/04/04-sale-cancellation-spec.md` (Approved, owner,
+2026-11-01).
+
+## Decision
+
+The owner decided:
+
+-   Any completed sale, from any day, can be cancelled. A **reason is
+    required**. The sale stays in history marked **Cancelled**, with who
+    cancelled it, when and why. Completed sales are otherwise immutable.
+-   Its stock comes back through one `sale_reversal` movement per line.
+-   Reports, the customer ledger and the Dashboard leave it out.
+-   A partial or credit sale **cannot be cancelled once the customer has
+    paid something toward it**. The cashier is told why and what to do.
+    The exact test: cancellation is blocked **only when the ledger has
+    applied a customer payment to the sale** under its oldest-first
+    allocation (spec section 5.3). The cashier is told: "Leave the sale
+    as it is and tell the owner. Refunds are not recorded in this
+    version."
+-   **No refund records.** Money taken at the counter is shown as not
+    refunded; any money handed back is handled outside the app.
+-   The action is on the sale page, behind a confirmation dialog.
+
+## Rationale
+
+`09-open-questions.md` allows cashiers to cancel and keeps cancelled
+sales for audit; `04-business-rules.md` keeps them in history. The model
+already has `SaleStatus 'cancelled'` and the `sale_reversal` movement
+type. Customer payments are not tied to a sale, so cancelling a sale
+that a payment was applied to would leave that money belonging to
+nothing; blocking it keeps every balance correct without refunds.
+
+## Consequences
+
+-   `Sale` gains `cancellation: { cancelledAt, cancelledBy, reason } |
+    null`. The storage version goes from 2 to 3 (shared with D9 and D10),
+    with a migration that sets it to null on existing sales.
+-   The Dashboard Recent Sales list and the "Paid" status label change to
+    leave out or name cancelled sales; reports and the ledger already do.
+-   New store action `cancelSale`.
+
+## Revisit when
+
+The store needs refunds or partial returns, or the owner wants
+cancelling restricted to the owner (needs a login, D3).
+
+---
+
+# D9 --- Add Product generates the SKU and records opening stock
+
+Date: 2026-11-01. Spec: `specs/04/04-add-product-and-details-spec.md` (Approved, owner,
+2026-11-01).
+
+## Decision
+
+The owner decided:
+
+-   Add Product takes name, category, unit, price, reorder level,
+    opening stock and active status. The **SKU is generated**, not typed:
+    the **first three letters of the category name** plus the next free
+    number (CEM-003, PLU-001). Existing SKUs carry product-family codes,
+    not category codes, so this rule replaces guessing from them. New
+    categories are allowed.
+-   **Opening stock** is recorded as a `stock_in` movement described
+    "Opening stock". Stock changes only through movements.
+-   Product Details (`/products/:productId`) shows the product, its
+    current stock and status, its stock movements and the sales it was
+    in. Product names in the Products list link there.
+-   The owner can **edit** name, category, price, reorder level and
+    active status on Product Details. **Never** SKU, unit or stock. Past
+    sales keep their own prices because each sale line copies the price.
+
+## Rationale
+
+The PRD and the information architecture list Products, Categories and
+Product Details; both pages were placeholders waiting for a SKU rule and
+an opening-stock rule. Opening stock as a movement follows the existing
+convention in `src/domain/inventory.ts` and the seed.
+
+## Consequences
+
+-   New store actions `addProduct` and `updateProduct`; new
+    `src/domain/product.ts`.
+-   No change to the stored shape for products.
+
+## Revisit when
+
+The store starts labelling products with its own codes, or needs price
+history.
+
+---
+
+# D10 --- A supplier invoice covers many products and is stored
+
+Date: 2026-11-01. Spec: `specs/04/04-supplier-invoices-spec.md` (Approved, owner,
+2026-11-01).
+
+## Decision
+
+The owner decided:
+
+-   One invoice covers **many products**. It records supplier (free
+    text), invoice number (`INV-NNNNN`, **unique**), invoice date, who
+    received it (the fixed user, D3), the product lines with quantities,
+    and the **total typed from the paper invoice**. There are no
+    per-item costs.
+-   Saving writes one `stock_in` movement per line with the invoice
+    number as reference, and stores the invoice record.
+-   Invoices can be listed and opened from Inventory.
+-   The seeded receipts INV-10018 to INV-10021 become invoice records.
+-   **An invoice is required** to receive stock. A delivery with no
+    paper invoice is recorded with Adjust Stock (add, with a reason).
+-   Receipts saved before this change **stay as stock movements**; they
+    are not turned into invoices, and their numbers stay reserved.
+
+## Rationale
+
+`09-open-questions.md` lists what Version 1 records for a supplier
+invoice. Today's Receive Stock takes one product per save and keeps no
+invoice, so a delivery is re-typed line by line and its total is lost.
+
+## Consequences
+
+-   New `SupplierInvoice` type and `invoices` store slice; storage
+    version 3 (shared with D8 and D9).
+-   Receive Stock becomes the invoice form; `receiveStock` is replaced by
+    `receiveInvoice` (one flow, spec section 5.1).
+-   A fourth Inventory tab, Invoices, with a detail page.
+
+## Revisit when
+
+The store wants unit costs and margins, scanned invoices, or a supplier
+list.

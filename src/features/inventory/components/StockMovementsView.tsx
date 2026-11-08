@@ -5,6 +5,7 @@ import { Button } from '@/components/common/Button'
 import { Pagination } from '@/components/common/Pagination'
 import { SelectField, type SelectOption } from '@/components/common/SelectField'
 import { MovementTable } from '@/features/inventory/components/MovementTable'
+import { savedInvoiceNumbers } from '@/features/inventory/lib/invoiceQuery'
 import { useMovementLog } from '@/features/inventory/hooks/useMovementLog'
 import {
   ALL,
@@ -35,12 +36,14 @@ type StockMovementsViewProps = {
 export function StockMovementsView({ initialProductId }: StockMovementsViewProps) {
   const movements = useShopStore((state) => state.movements)
   const products = useShopStore((state) => state.products)
+  const invoices = useShopStore((state) => state.invoices)
   const log = useMovementLog(movements, initialProductId)
 
   const productsById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products],
   )
+  const invoiceNumbers = useMemo(() => savedInvoiceNumbers(invoices), [invoices])
   const productOptions: SelectOption[] = useMemo(
     () => [
       { value: ALL, label: 'All Products' },
@@ -114,6 +117,7 @@ export function StockMovementsView({ initialProductId }: StockMovementsViewProps
           <MovementTable
             rows={log.rows}
             productsById={productsById}
+            invoiceNumbers={invoiceNumbers}
             emptyMessage={
               log.isFiltered
                 ? 'No stock movements match these filters.'

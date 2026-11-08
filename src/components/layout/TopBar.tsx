@@ -33,7 +33,7 @@ export function TopBar({
   const now = useCurrentTime()
 
   return (
-    <header className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-6 lg:px-8 print:px-0 print:pt-0">
       <button
         ref={menuButtonRef}
         type="button"
@@ -41,7 +41,7 @@ export function TopBar({
         aria-haspopup="dialog"
         aria-expanded={isMenuOpen}
         aria-controls={isMenuOpen ? menuControls : undefined}
-        className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-navy-800 lg:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-navy-800 lg:hidden print:hidden"
         aria-label="Open navigation menu"
       >
         <Menu className="h-5 w-5" aria-hidden />
@@ -53,7 +53,10 @@ export function TopBar({
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
 
         {showBreadcrumb && !subtitle ? (
-          <nav aria-label="Breadcrumb" className="mt-1 flex items-center gap-2 text-sm">
+          <nav
+            aria-label="Breadcrumb"
+            className="mt-1 flex items-center gap-2 text-sm print:hidden"
+          >
             <Link
               to={ROUTES.dashboard}
               className="text-muted transition-colors hover:text-navy-700"
@@ -66,7 +69,8 @@ export function TopBar({
         ) : null}
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* The page title prints; the clock and the menu button do not. */}
+      <div className="flex items-center gap-3 print:hidden">
         <InfoChip icon={<CalendarDays className="h-5 w-5 text-navy-700" aria-hidden />}>
           {formatDateLabel(now)}
         </InfoChip>

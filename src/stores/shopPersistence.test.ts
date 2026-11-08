@@ -1,15 +1,18 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { SEED_PRODUCTS } from '@/data/mock/catalog'
-import { isOpeningStockMovement, stockFromMovements } from '@/domain/inventory'
-import type { HeldSale } from '@/domain/types'
+import { isOpeningStockMovement, RECONCILED_BY, stockFromMovements } from '@/domain/inventory'
+import { LEGACY_CANCELLATION_REASON } from '@/domain/saleCancellation'
+import type { HeldSale, Sale } from '@/domain/types'
 import {
   buildSeedData,
   createMemoryStorage,
   createSafeShopStorage,
   DEFAULT_STORE_SETTINGS,
+  getBrowserStorage,
   isDeviceStorageAvailable,
   migrateHeldCartsToHeldSales,
+  migrateToPhase4,
   inspectPersistedShop,
   migratePersistedShop,
   runPersistedMigrations,
@@ -36,7 +39,7 @@ function stockOf(store: ReturnType<typeof createShopStore>, productId: string) {
 describe('shop persistence', () => {
   it('uses a namespaced, versioned key', () => {
     expect(SHOP_STORAGE_KEY).toBe('olaer-store:shop')
-    expect(SHOP_STORAGE_VERSION).toBe(2)
+    expect(SHOP_STORAGE_VERSION).toBe(3)
   })
 
   it('starts from the seed when nothing is saved', () => {
@@ -69,6 +72,7 @@ describe('shop persistence', () => {
         'cart',
         'customers',
         'heldSales',
+        'invoices',
         'movements',
         'payments',
         'products',
@@ -237,7 +241,7 @@ describe('migratePersistedShop', () => {
 
     expect(store.getState().heldSales).toHaveLength(1)
     expect(store.getState().heldSales[0].lines[0]).toMatchObject({ productId: PVC, quantity: 4 })
-    expect(saved(storage).version).toBe(2)
+    expect(saved(storage).version).toBe(SHOP_STORAGE_VERSION)
     expect('heldCarts' in saved(storage).state).toBe(false)
   })
 
@@ -777,5 +781,397 @@ describe('data recovery on load', () => {
     ])
     expect(runPersistedMigrations('text', 1, clock)).toBeNull()
     expect(runPersistedMigrations({}, 99, clock)).toEqual({})
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Phase 4: version 2 to 3, supplier invoice salvage
+// ---------------------------------------------------------------------------
+
+/** The seed as version 2 stored it: no cancellation key on sales, no invoices list. */
+function versionTwoSnapshot(now: Date) {
+  const { invoices: _invoices, ...rest } = buildSeedData(now)
+  void _invoices
+
+  return {
+    ...rest,
+    sales: rest.sales.map((sale) => {
+      const { cancellation: _cancellation, ...legacy } = sale
+      void _cancellation
+
+      return legacy
+    }),
+  }
+}
+
+describe('migrateToPhase4 (version 2 to 3)', () => {
+  const clock = new Date('2025-05-22T08:30:00')
+
+  it('upgrades a stored version-2 snapshot with nothing dropped (M1)', () => {
+    const v2 = versionTwoSnapshot(new Date('2025-05-21T10:00:00'))
+
+    expect(v2.sales.length).toBeGreaterThan(0)
+    expect(v2.sales.every((sale) => !('cancellation' in sale))).toBe(true)
+
+    const storage = createMemoryStorage({
+      [SHOP_STORAGE_KEY]: JSON.stringify({ state: v2, version: 2 }),
+    })
+    const store = createShopStore({ storage: () => storage, now: () => clock })
+
+    expect(store.getState().dataRecovery).toBeNull()
+    expect(store.getState().sales).toHaveLength(v2.sales.length)
+    expect(store.getState().sales.every((sale) => sale.cancellation === null)).toBe(true)
+    expect(store.getState().invoices).toEqual([])
+    expect(store.getState().movements).toEqual(v2.movements)
+    expect(saved(storage).version).toBe(SHOP_STORAGE_VERSION)
+    expect(saved(storage).state.invoices).toEqual([])
+  })
+
+  it('gives a sale stored as cancelled the placeholder cancellation (M2)', () => {
+    const occurredAt = '2025-05-20T03:00:00.000Z'
+    const state = {
+      sales: [
+        { id: 'S-1', status: 'completed', occurredAt },
+        { id: 'S-2', status: 'cancelled', occurredAt },
+        { id: 'S-3', status: 'cancelled', occurredAt: 42 },
+        {
+          id: 'S-4',
+          status: 'cancelled',
+          cancellation: { cancelledAt: occurredAt, cancelledBy: 'Ana', reason: 'Kept' },
+        },
+        'not a sale',
+      ],
+    }
+
+    const migrated = migrateToPhase4(state, clock)
+
+    expect(migrated.sales).toEqual([
+      { id: 'S-1', status: 'completed', occurredAt, cancellation: null },
+      {
+        id: 'S-2',
+        status: 'cancelled',
+        occurredAt,
+        cancellation: {
+          cancelledAt: occurredAt,
+          cancelledBy: RECONCILED_BY,
+          reason: LEGACY_CANCELLATION_REASON,
+        },
+      },
+      {
+        id: 'S-3',
+        status: 'cancelled',
+        occurredAt: 42,
+        cancellation: {
+          cancelledAt: clock.toISOString(),
+          cancelledBy: RECONCILED_BY,
+          reason: LEGACY_CANCELLATION_REASON,
+        },
+      },
+      state.sales[3],
+      'not a sale',
+    ])
+    expect(migrated.invoices).toEqual([])
+    // The input is not changed in place.
+    expect('cancellation' in (state.sales[0] as object)).toBe(false)
+  })
+
+  it('loads a version-2 cancelled sale with its placeholder through the full checks', () => {
+    const v2 = versionTwoSnapshot(new Date('2025-05-21T10:00:00'))
+    const target = v2.sales[0]
+    const withCancelled = {
+      ...v2,
+      sales: v2.sales.map((sale) =>
+        sale.id === target.id ? { ...sale, status: 'cancelled' as const } : sale,
+      ),
+    }
+
+    const migrated = migratePersistedShop(withCancelled, 2, clock)
+    const sale = migrated?.sales.find((candidate) => candidate.id === target.id)
+
+    expect(sale?.status).toBe('cancelled')
+    expect(sale?.cancellation).toEqual({
+      cancelledAt: target.occurredAt,
+      cancelledBy: RECONCILED_BY,
+      reason: LEGACY_CANCELLATION_REASON,
+    })
+  })
+
+  it('keeps invoices already present, and leaves a non-list of sales to the checks', () => {
+    const invoices = buildSeedData(clock).invoices
+    const migrated = migrateToPhase4({ sales: 'nope', invoices }, clock)
+
+    expect(migrated.invoices).toBe(invoices)
+    expect(migrated.sales).toBe('nope')
+    expect(migratePersistedShop({ ...versionTwoSnapshot(clock), sales: 'nope' }, 2)).toBeNull()
+  })
+
+  it('takes version 0 and 1 snapshots through every step to version 3 (M3)', () => {
+    const v2 = versionTwoSnapshot(new Date('2025-05-21T10:00:00'))
+    const { heldSales: _held, payments: _payments, settings: _settings, ...v0 } = v2
+    void _held
+    void _payments
+    void _settings
+    const { heldSales: _unused, ...v1 } = v2
+    void _unused
+
+    for (const [snapshot, version] of [
+      [v0, 0],
+      [{ ...v1, heldCarts: [] }, 1],
+    ] as const) {
+      const state = runPersistedMigrations(snapshot, version, clock)
+
+      expect(state?.invoices).toEqual([])
+      expect((state?.sales as Sale[]).every((sale) => sale.cancellation === null)).toBe(true)
+      expect(migratePersistedShop(snapshot, version, clock)).not.toBeNull()
+    }
+  })
+})
+
+describe('sale status and cancellation agree on load', () => {
+  const now = new Date('2025-05-21T10:00:00')
+  const cancellation = {
+    cancelledAt: '2025-05-21T09:30:00.000Z',
+    cancelledBy: 'Ana',
+    reason: 'Wrong item rung up',
+  }
+
+  function loadWith(change: (sale: Sale) => Record<string, unknown>) {
+    const seed = buildSeedData(now)
+    const target = seed.sales[0]
+    const result = inspectPersistedShop(
+      { ...seed, sales: seed.sales.map((sale) => (sale.id === target.id ? change(sale) : sale)) },
+      now,
+    )
+
+    return { target, result, sale: result.data?.sales.find((sale) => sale.id === target.id) }
+  }
+
+  it('clears a cancellation stored on a completed sale', () => {
+    const { result, sale } = loadWith((sale) => ({ ...sale, status: 'completed', cancellation }))
+
+    expect(result.dropped).toEqual([])
+    expect(sale?.status).toBe('completed')
+    expect(sale?.cancellation).toBeNull()
+  })
+
+  it('gives a cancelled sale with no cancellation the legacy placeholder at its own time', () => {
+    for (const missing of [{ cancellation: null }, {}]) {
+      const { target, result, sale } = loadWith((sale) => {
+        const { cancellation: _dropped, ...rest } = sale
+        void _dropped
+
+        return { ...rest, status: 'cancelled', ...missing }
+      })
+
+      expect(result.dropped).toEqual([])
+      expect(sale?.status).toBe('cancelled')
+      expect(sale?.cancellation).toEqual({
+        cancelledAt: target.occurredAt,
+        cancelledBy: RECONCILED_BY,
+        reason: LEGACY_CANCELLATION_REASON,
+      })
+    }
+  })
+
+  it('keeps a recorded cancellation on a cancelled sale as it is', () => {
+    const { sale } = loadWith((sale) => ({ ...sale, status: 'cancelled', cancellation }))
+
+    expect(sale?.cancellation).toEqual(cancellation)
+  })
+
+  it('leaves a completed sale without a cancellation untouched', () => {
+    const { target, sale } = loadWith((sale) => ({ ...sale }))
+
+    expect(sale).toEqual(target)
+  })
+
+  it('applies the same rules when the store loads from storage', () => {
+    const seed = buildSeedData(now)
+    const [first, second] = seed.sales
+    const storage = createMemoryStorage({
+      [SHOP_STORAGE_KEY]: JSON.stringify({
+        state: {
+          ...seed,
+          sales: seed.sales.map((sale) =>
+            sale.id === first.id
+              ? { ...sale, cancellation }
+              : sale.id === second.id
+                ? { ...sale, status: 'cancelled', cancellation: null }
+                : sale,
+          ),
+        },
+        version: SHOP_STORAGE_VERSION,
+      }),
+    })
+    const store = createShopStore({ storage: () => storage, now: () => now })
+    const byId = (id: string) => store.getState().sales.find((sale) => sale.id === id)
+
+    expect(store.getState().dataRecovery).toBeNull()
+    expect(byId(first.id)?.cancellation).toBeNull()
+    expect(byId(second.id)?.cancellation?.reason).toBe(LEGACY_CANCELLATION_REASON)
+  })
+})
+
+describe('supplier invoice salvage', () => {
+  const seed = buildSeedData(new Date('2025-05-21T10:00:00'))
+  const [first, second, third] = seed.invoices
+
+  it('has seed invoices to work with', () => {
+    expect(seed.invoices.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('drops one malformed invoice among three and reports it (M2)', () => {
+    const result = inspectPersistedShop({
+      ...seed,
+      invoices: [first, { ...second, total: 0 }, third],
+    })
+
+    expect(result.data?.invoices).toEqual([first, third])
+    expect(result.dropped).toEqual(['1 supplier invoice'])
+    // Stock rests on movements, which are all still there.
+    expect(result.data?.movements).toEqual(seed.movements)
+  })
+
+  it('drops every kind of bad record one by one', () => {
+    const bad = [
+      { ...first, invoiceNumber: '10021' },
+      { ...first, invoiceNumber: 'inv-10021' },
+      { ...first, invoiceDate: '2025-02-30' },
+      { ...first, total: 10.5 },
+      { ...first, lines: [] },
+      { ...first, lines: [{ ...first.lines[0], quantity: 1.5 }] },
+      { ...first, recordedAt: 'yesterday' },
+      { ...first, note: undefined },
+      null,
+      'INV-10021',
+    ]
+
+    const result = inspectPersistedShop({ ...seed, invoices: [...bad, second] })
+
+    expect(result.data?.invoices).toEqual([second])
+    expect(result.dropped).toEqual([`${bad.length} supplier invoices`])
+  })
+
+  it('keeps the first of two invoices with one number and drops the other (M3)', () => {
+    const repeat = { ...first, supplier: 'Someone Else' }
+
+    const result = inspectPersistedShop({ ...seed, invoices: [first, second, repeat] })
+
+    expect(result.data?.invoices).toEqual([first, second])
+    expect(result.dropped).toEqual(['1 supplier invoice'])
+  })
+
+  it('reads a missing list as empty, and a non-list as one dropped record', () => {
+    const { invoices: _unused, ...withoutInvoices } = seed
+    void _unused
+
+    const missing = inspectPersistedShop(withoutInvoices)
+    const notAList = inspectPersistedShop({ ...seed, invoices: { 0: first } })
+
+    expect(missing.data?.invoices).toEqual([])
+    expect(missing.dropped).toEqual([])
+    expect(notAList.data?.invoices).toEqual([])
+    expect(notAList.dropped).toEqual(['1 supplier invoice'])
+  })
+
+  it('tells the user on load when invoices were dropped, keeping a copy', () => {
+    const clock = new Date('2025-05-22T08:30:00')
+    const raw = JSON.stringify({
+      state: { ...seed, invoices: [first, first] },
+      version: SHOP_STORAGE_VERSION,
+    })
+    const storage = createMemoryStorage({ [SHOP_STORAGE_KEY]: raw })
+
+    const store = createShopStore({ storage: () => storage, now: () => clock })
+
+    expect(store.getState().invoices).toEqual([first])
+    expect(store.getState().dataRecovery).toMatchObject({
+      outcome: 'salvaged',
+      dropped: ['1 supplier invoice'],
+    })
+    expect(storage.dump()[unreadableBackupKey(clock)]).toBe(raw)
+  })
+})
+
+describe('storage edge cases', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('drops a held sale whose label is not text', () => {
+    const seed = buildSeedData(new Date('2025-05-21T10:00:00'))
+    const line = { productId: PVC, quantity: 1, productName: 'PVC Pipe 1/2"', unitPrice: 2800 }
+    const heldAt = '2025-05-21T09:00:00.000Z'
+
+    const result = inspectPersistedShop({
+      ...seed,
+      heldSales: [
+        { id: 'HOLD-1', label: 7, lines: [line], heldAt },
+        { id: 'HOLD-2', label: null, lines: [line], heldAt },
+      ],
+    })
+
+    expect(result.data?.heldSales.map((held) => held.id)).toEqual(['HOLD-2'])
+    expect(result.dropped).toEqual(['1 held sale'])
+
+    // A held-sales value that is not a list reads as none, and is not reported.
+    const notAList = inspectPersistedShop({ ...seed, heldSales: 'nope' })
+
+    expect(notAList.data?.heldSales).toEqual([])
+    expect(notAList.dropped).toEqual([])
+  })
+
+  it('reads JSON that is not a saved snapshot as nothing saved', () => {
+    const backend = createMemoryStorage({ list: '[1,2]', bare: '{"version":3}', text: '"hi"' })
+    const storage = createSafeShopStorage(() => backend)
+
+    expect(storage.getItem('list')).toBeNull()
+    expect(storage.getItem('bare')).toBeNull()
+    expect(storage.getItem('text')).toBeNull()
+    expect(storage.getItem('missing')).toBeNull()
+  })
+
+  it('removes the saved copy, and never throws when it cannot', () => {
+    const backend = createMemoryStorage({ key: '{"state":{}}' })
+    const storage = createSafeShopStorage(() => backend)
+
+    storage.removeItem('key')
+
+    expect(backend.dump()).toEqual({})
+
+    const broken = createSafeShopStorage(() => ({
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {
+        throw new Error('SecurityError')
+      },
+    }))
+
+    expect(() => broken.removeItem('key')).not.toThrow()
+    expect(() => createSafeShopStorage(() => undefined).removeItem('key')).not.toThrow()
+  })
+
+  it('finds the browser storage when there is one, and none when access throws', () => {
+    expect(getBrowserStorage()).toBeUndefined()
+
+    const localStorage = createMemoryStorage()
+    vi.stubGlobal('window', { localStorage })
+
+    expect(getBrowserStorage()).toBe(localStorage)
+
+    vi.stubGlobal('window', { localStorage: null })
+
+    expect(getBrowserStorage()).toBeUndefined()
+
+    vi.stubGlobal(
+      'window',
+      Object.defineProperty({}, 'localStorage', {
+        get() {
+          throw new Error('SecurityError')
+        },
+      }),
+    )
+
+    expect(getBrowserStorage()).toBeUndefined()
   })
 })

@@ -1,3 +1,4 @@
+import { toDayKey } from '@/domain/dates'
 import { buildOpeningStockMovement, stockFromMovements } from '@/domain/inventory'
 import { computeOutstanding } from '@/domain/ledger'
 import { applyRate } from '@/domain/money'
@@ -16,6 +17,7 @@ import type {
   Sale,
   SaleLine,
   StockMovement,
+  SupplierInvoice,
 } from '@/domain/types'
 
 /** When something happened: whole days before today, and the local time of day. */
@@ -194,18 +196,23 @@ function buildLines(items: SaleSeed['items'], products: Product[]): SaleLine[] {
     .filter((line): line is SaleLine => line !== null)
 }
 
-/** Supplier deliveries, newest first. Numbered INV-NNNNN (E6). */
-const RECEIPTS: [
-  reference: string,
+/**
+ * Supplier invoices, newest first, numbered INV-NNNNN (E6), one product each.
+ * Totals are illustrative demo values in centavos, each below the retail value
+ * of the goods; they come from no screenshot.
+ */
+const INVOICES: [
+  invoiceNumber: string,
   sku: string,
   quantity: number,
   supplier: string,
   at: SeedTime,
+  total: number,
 ][] = [
-  ['INV-10021', 'PVC-050', 150, 'ABC Trading', [0, '16:45']],
-  ['INV-10020', 'CEM-001', 50, 'XYZ Supplies', [1, '08:00']],
-  ['INV-10019', 'WIR-020', 20, 'Metro Electrical', [2, '10:00']],
-  ['INV-10018', 'LED-009', 60, 'Metro Electrical', [3, '14:00']],
+  ['INV-10021', 'PVC-050', 150, 'ABC Trading', [0, '16:45'], 345000],
+  ['INV-10020', 'CEM-001', 50, 'XYZ Supplies', [1, '08:00'], 1150000],
+  ['INV-10019', 'WIR-020', 20, 'Metro Electrical', [2, '10:00'], 1650000],
+  ['INV-10018', 'LED-009', 60, 'Metro Electrical', [3, '14:00'], 720000],
 ]
 
 /** Manual corrections, oldest first. Each carries the reason the audit trail needs. */
@@ -235,6 +242,8 @@ export type SeededHistory = {
   sales: Sale[]
   movements: StockMovement[]
   payments: CustomerPayment[]
+  /** Oldest first, each matching its one stock_in movement. */
+  invoices: SupplierInvoice[]
 }
 
 function minutesOfDay(time: string): number {
@@ -246,7 +255,7 @@ function minutesOfDay(time: string): number {
 /** Every time of day used today, so the latest one can be fitted before `now`. */
 const TODAY_TIMES: string[] = [
   ...SEEDS.map((seed) => seed.at),
-  ...RECEIPTS.map((receipt) => receipt[4]),
+  ...INVOICES.map((invoice) => invoice[4]),
   ...ADJUSTMENTS.map((adjustment) => adjustment[3]),
   ...PAYMENTS.map((payment) => payment[3]),
 ]
@@ -334,6 +343,7 @@ export function buildSeedHistory(
       customerName: customer?.name ?? 'Walk-in Customer',
       status: 'completed',
       recordedBy: SEED_RECORDER,
+      cancellation: null,
     }
 
     sales.push(sale)
@@ -353,25 +363,51 @@ export function buildSeedHistory(
     }
   })
 
-  // Supplier receipts and adjustments, so the movement log is not only sales.
-  for (const [reference, sku, quantity, supplier, at] of RECEIPTS) {
+  // Supplier invoices and adjustments, so the movement log is not only sales.
+  // Each invoice's movement keeps its original id (MOV-INV-10021), so seeded
+  // stock and opening figures are unchanged by the invoice records.
+  const invoices: SupplierInvoice[] = []
+
+  for (const [invoiceNumber, sku, quantity, supplier, at, total] of INVOICES) {
     const product = products.find((candidate) => candidate.sku === sku)
 
     if (!product) {
       continue
     }
 
+    const recordedAt = clock(at)
+
+    // INVOICES is newest first; the store keeps invoices oldest first.
+    invoices.unshift({
+      invoiceNumber,
+      supplier,
+      invoiceDate: toDayKey(recordedAt),
+      total,
+      lines: [
+        {
+          productId: product.id,
+          productName: product.name,
+          sku: product.sku,
+          unit: product.unit,
+          quantity,
+        },
+      ],
+      note: null,
+      receivedBy: SEED_RECORDER,
+      recordedAt: recordedAt.toISOString(),
+    })
+
     history.push({
-      id: `MOV-${reference}`,
+      id: `MOV-${invoiceNumber}`,
       productId: product.id,
       type: 'stock_in',
       quantityDelta: quantity,
-      reference,
+      reference: invoiceNumber,
       description: `Received from ${supplier}`,
       reason: null,
       note: null,
       recordedBy: SEED_RECORDER,
-      occurredAt: clock(at).toISOString(),
+      occurredAt: recordedAt.toISOString(),
     })
   }
 
@@ -434,5 +470,5 @@ export function buildSeedHistory(
     })
   }
 
-  return { sales, movements, payments }
+  return { sales, movements, payments, invoices }
 }

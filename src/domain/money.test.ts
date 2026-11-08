@@ -4,6 +4,7 @@ import {
   applyRate,
   breakDownVat,
   formatAmountInput,
+  formatPesoText,
   fromPesos,
   parseAmountInput,
   toPesos,
@@ -89,5 +90,17 @@ describe('formatAmountInput', () => {
     expect(formatAmountInput(99.6)).toBe('1.00')
     expect(formatAmountInput(Number.NaN)).toBe('')
     expect(formatAmountInput(Number.POSITIVE_INFINITY)).toBe('')
+  })
+})
+
+describe('formatPesoText', () => {
+  it('writes plain-text pesos with grouping and two decimals', () => {
+    expect(formatPesoText(20000)).toBe('PHP 200.00')
+    expect(formatPesoText(0)).toBe('PHP 0.00')
+    expect(formatPesoText(5)).toBe('PHP 0.05')
+    expect(formatPesoText(123456789)).toBe('PHP 1,234,567.89')
+    expect(formatPesoText(-150000)).toBe('-PHP 1,500.00')
+    expect(formatPesoText(99.6)).toBe('PHP 1.00')
+    expect(formatPesoText(Number.NaN)).toBe('')
   })
 })

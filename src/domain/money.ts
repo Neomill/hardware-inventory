@@ -49,6 +49,25 @@ export function parseAmountInput(raw: string): Centavos | null {
 }
 
 /**
+ * "PHP 1,200.00": plain-text money for messages the domain writes itself.
+ * Integer math only. Screens pass formatCurrency from '@/lib/format' instead
+ * wherever a rule takes a formatter.
+ */
+export function formatPesoText(amount: Centavos): string {
+  const text = formatAmountInput(amount)
+
+  if (text === '') {
+    return ''
+  }
+
+  const [whole, cents] = text.split('.')
+  const sign = whole.startsWith('-') ? '-' : ''
+  const grouped = whole.slice(sign.length).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  return `${sign}PHP ${grouped}.${cents}`
+}
+
+/**
  * The value an amount field starts with: 63100 becomes "631.00". Integer math
  * only, so the text always parses back to the same centavos with
  * parseAmountInput. No grouping separators: this is for inputs, not display.

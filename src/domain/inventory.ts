@@ -27,25 +27,6 @@ export function isWholePositiveQuantity(quantity: number): boolean {
   return Number.isSafeInteger(quantity) && quantity > 0
 }
 
-export function validateStockReceipt(input: {
-  quantity: number
-  supplierInvoice?: string
-}): ValidationResult {
-  if (!isWholePositiveQuantity(input.quantity)) {
-    return { ok: false, message: 'Enter a whole number of units greater than zero.' }
-  }
-
-  if (
-    input.supplierInvoice !== undefined &&
-    input.supplierInvoice.trim() !== '' &&
-    normalizeSupplierInvoice(input.supplierInvoice) === null
-  ) {
-    return { ok: false, message: 'Supplier invoice numbers look like INV-10021.' }
-  }
-
-  return { ok: true, message: null }
-}
-
 /**
  * A manual correction: a whole, non-zero change with a stated reason, that
  * never takes stock below zero (inventory can never be negative).

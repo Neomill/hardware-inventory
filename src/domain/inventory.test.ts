@@ -13,7 +13,6 @@ import {
   stockFromMovements,
   summarizeMovements,
   validateStockAdjustment,
-  validateStockReceipt,
 } from '@/domain/inventory'
 import type { Product } from '@/domain/types'
 import { testMovement, testSale } from '@/test/fixtures'
@@ -46,27 +45,6 @@ describe('isWholePositiveQuantity', () => {
     for (const quantity of [0, -1, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
       expect(isWholePositiveQuantity(quantity)).toBe(false)
     }
-  })
-})
-
-describe('validateStockReceipt', () => {
-  it('accepts a delivery with or without an invoice', () => {
-    expect(validateStockReceipt({ quantity: 10 }).ok).toBe(true)
-    expect(validateStockReceipt({ quantity: 10, supplierInvoice: '' }).ok).toBe(true)
-    expect(validateStockReceipt({ quantity: 10, supplierInvoice: 'inv-10022' }).ok).toBe(true)
-  })
-
-  it('refuses fractional, zero and negative quantities', () => {
-    for (const quantity of [0, -5, 2.5]) {
-      expect(validateStockReceipt({ quantity }).ok).toBe(false)
-    }
-  })
-
-  it('refuses an invoice number in the wrong format', () => {
-    const result = validateStockReceipt({ quantity: 10, supplierInvoice: '#20250521-0042' })
-
-    expect(result.ok).toBe(false)
-    expect(result.message).toContain('INV-10021')
   })
 })
 

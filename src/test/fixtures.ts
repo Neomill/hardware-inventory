@@ -33,6 +33,7 @@ export function testSale(overrides: {
   balanceDue?: number
   customerId?: string | null
   status?: Sale['status']
+  cancellation?: Sale['cancellation']
   taxRate?: number
   discountAmount?: number
   id?: string
@@ -63,6 +64,7 @@ export function testSale(overrides: {
     customerName: overrides.customerId ? `Customer ${overrides.customerId}` : 'Walk-in Customer',
     status: overrides.status ?? 'completed',
     recordedBy: 'Tester',
+    cancellation: overrides.cancellation ?? null,
   }
 }
 
