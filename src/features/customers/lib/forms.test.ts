@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildNewCustomerFormSchema,
   buildPaymentFormSchema,
+  exceedsOutstanding,
   previewPayment,
 } from '@/features/customers/lib/forms'
 import { formatAmountInput } from '@/domain/money'
@@ -41,6 +42,31 @@ describe('buildPaymentFormSchema', () => {
     const result = buildPaymentFormSchema(1000).safeParse({ amount: '5', note: 'x'.repeat(121) })
 
     expect(result.success).toBe(false)
+  })
+})
+
+describe('exceedsOutstanding', () => {
+  it('flags a parseable amount above the balance', () => {
+    expect(exceedsOutstanding('1500.01', 150000)).toBe(true)
+    expect(exceedsOutstanding('₱2,000', 150000)).toBe(true)
+    expect(exceedsOutstanding('1', 0)).toBe(true)
+  })
+
+  it('does not flag the full balance or less', () => {
+    expect(exceedsOutstanding('1,500', 150000)).toBe(false)
+    expect(exceedsOutstanding(formatAmountInput(150050), 150050)).toBe(false)
+    expect(exceedsOutstanding('0', 150000)).toBe(false)
+  })
+
+  it('does not flag blank or half-typed input', () => {
+    expect(exceedsOutstanding('', 150000)).toBe(false)
+    expect(exceedsOutstanding('abc', 150000)).toBe(false)
+    expect(exceedsOutstanding('12.345', 1000)).toBe(false)
+  })
+
+  it('agrees with the submit check on the overpayment message', () => {
+    expect(exceedsOutstanding('1500.01', 150000)).toBe(true)
+    expect(amountError(150000, '1500.01')).toBe('That is more than the customer owes.')
   })
 })
 

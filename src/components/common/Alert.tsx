@@ -22,12 +22,20 @@ const TONE_ICONS: Record<AlertTone, LucideIcon> = {
 
 type AlertProps = {
   tone: AlertTone
+  /** Phrasing content only: it is rendered inside a <p>. */
   children: React.ReactNode
+  /** Id on the message paragraph, so a control can point at it with aria-describedby. */
+  id?: string
+  /**
+   * A control for the message, such as a Dismiss button. It sits to the right
+   * from `sm` up and wraps under the text (aligned with it) on a phone.
+   */
+  action?: React.ReactNode
   className?: string
 }
 
 /** Plain-language message. Errors are never silent (handbook section 17). */
-export function Alert({ tone, children, className }: AlertProps) {
+export function Alert({ tone, children, id, action, className }: AlertProps) {
   const Icon = TONE_ICONS[tone]
 
   return (
@@ -35,12 +43,16 @@ export function Alert({ tone, children, className }: AlertProps) {
       role={tone === 'error' ? 'alert' : 'status'}
       className={cn(
         'flex items-start gap-3 rounded-xl border px-4 py-3 text-sm',
+        action ? 'flex-wrap sm:flex-nowrap' : null,
         TONE_STYLES[tone],
         className,
       )}
     >
       <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
-      <p className="flex-1">{children}</p>
+      <p id={id} className="min-w-0 flex-1">
+        {children}
+      </p>
+      {action ? <div className="w-full pl-8 sm:w-auto sm:shrink-0 sm:pl-0">{action}</div> : null}
     </div>
   )
 }

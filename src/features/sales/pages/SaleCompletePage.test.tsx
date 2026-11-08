@@ -112,6 +112,50 @@ describe('SaleCompletePage: a sale that stands', () => {
   })
 })
 
+describe('SaleCompletePage: completion wording', () => {
+  it('says Sale Completed when arriving from checkout', () => {
+    const sale = addSale()
+    const text = textOf(renderSale(sale.id, { completed: true }))
+
+    expect(text).toContain('Sale Completed')
+    expect(text).toContain('Stock was reduced for 1 product')
+  })
+
+  it('uses neutral wording for a sale opened from the sales history', () => {
+    const sale = addSale()
+    const text = textOf(renderSale(sale.id))
+
+    expect(text).not.toContain('Sale Completed')
+    expect(text).not.toContain('Stock was reduced')
+    expect(text).toContain('This sale reduced stock for 1 product.')
+  })
+})
+
+describe('SaleCompletePage: receipt payment lines', () => {
+  it('reads a credit sale as charged to account, with no zero "Paid by" line', () => {
+    const sale = addSale({ paymentMethod: 'credit', customerId: 'CUS-T4' })
+    const text = textOf(renderSale(sale.id))
+
+    expect(text).not.toMatch(/Paid by/)
+    expect(text).not.toContain(`Paid at counter ${formatCurrency(0)}`)
+    expect(text).toContain('Payment On credit, charged to account')
+    expect(text).toContain(`Balance at time of sale ${formatCurrency(sale.total)}`)
+  })
+
+  it('shows what a partial sale paid at the counter and the balance', () => {
+    const sale = addSale({
+      paymentMethod: 'partial',
+      customerId: 'CUS-T5',
+      total: 15000,
+      amountPaid: 5000,
+    })
+    const text = textOf(renderSale(sale.id))
+
+    expect(text).toContain(`Paid at counter ${formatCurrency(5000)}`)
+    expect(text).toContain(`Balance at time of sale ${formatCurrency(10000)}`)
+  })
+})
+
 describe('SaleCompletePage: a cancelled sale', () => {
   function cancel(sale: Sale, reason = 'Customer changed his mind'): Sale {
     const result = useShopStore.getState().cancelSale({ saleId: sale.id, reason })

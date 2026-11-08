@@ -53,6 +53,17 @@ export function buildPaymentFormSchema(outstanding: Centavos) {
     })
 }
 
+/**
+ * True once the amount field holds a parseable amount above the balance. The
+ * dialog uses this to show the overpayment message while the user types,
+ * before the first submit, without flagging a blank or half-typed field.
+ */
+export function exceedsOutstanding(raw: string, outstanding: Centavos): boolean {
+  const amount = parseAmountInput(raw)
+
+  return amount !== null && amount > outstanding
+}
+
 export type PaymentPreview = {
   /** Null while the field does not hold a usable amount. */
   amount: Centavos | null

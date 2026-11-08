@@ -7,7 +7,6 @@ import {
   parseRangeParams,
   parseSectionParam,
   parseTopMetricParam,
-  reportsHref,
   resolveRange,
   writeRangeParams,
 } from '@/features/reports/lib/reportRange'
@@ -134,14 +133,5 @@ describe('range query params', () => {
     expect(parseSectionParam(new URLSearchParams('section=elsewhere'))).toBeNull()
     expect(parseTopMetricParam(new URLSearchParams('top=revenue'))).toBe('revenue')
     expect(parseTopMetricParam(new URLSearchParams('top=junk'))).toBe('quantity')
-  })
-})
-
-describe('reportsHref', () => {
-  it('builds plain and deep links', () => {
-    expect(reportsHref()).toBe('/reports')
-    expect(reportsHref({ range: { preset: 'today' }, section: 'top-products' })).toBe(
-      '/reports?range=today&section=top-products',
-    )
   })
 })

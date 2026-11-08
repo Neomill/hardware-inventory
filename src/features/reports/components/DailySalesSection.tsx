@@ -76,7 +76,7 @@ export function DailySalesSection({ summary, days, scale, range }: DailySalesSec
       value: formatCurrency(summary.creditExtended),
       icon: Wallet,
       tone: 'orange',
-      footer: 'left owing on these sales',
+      footer: 'charged to customer accounts in this period',
     },
   ]
 

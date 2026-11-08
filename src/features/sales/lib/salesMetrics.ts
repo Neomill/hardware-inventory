@@ -1,3 +1,4 @@
+import { toDayKey } from '@/domain/dates'
 import { SETTLEMENT_LABELS, remainingBySale, settlementStatus } from '@/domain/ledger'
 import type { SettlementStatus } from '@/domain/ledger'
 import type { Centavos } from '@/domain/money'
@@ -36,8 +37,9 @@ export type SalesMetrics = {
   topProducts: TopProduct[]
 }
 
+/** True when `iso` falls on the same local calendar day as `day`. */
 export function isSameDay(iso: string, day: Date): boolean {
-  return new Date(iso).toDateString() === day.toDateString()
+  return toDayKey(iso) === toDayKey(day)
 }
 
 export function salesOnDay(sales: Sale[], day: Date): Sale[] {

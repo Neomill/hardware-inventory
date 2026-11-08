@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
+import { fromDayKey } from '@/domain/dates'
 import { DailySalesSection } from '@/features/reports/components/DailySalesSection'
 import { OutstandingCreditSection } from '@/features/reports/components/OutstandingCreditSection'
 import { PaymentBreakdownSection } from '@/features/reports/components/PaymentBreakdownSection'
@@ -18,6 +19,7 @@ import {
   type TopProductsMetric,
 } from '@/features/reports/lib/reportRange'
 import { buildReportViewModel } from '@/features/reports/lib/reportViewModel'
+import { useCalendarDay } from '@/hooks/useCalendarDay'
 import { useShopStore } from '@/stores/useShopStore'
 
 function scrollToSection(id: ReportSectionId) {
@@ -27,7 +29,7 @@ function scrollToSection(id: ReportSectionId) {
 /**
  * Reports (Phase 9, D4). The period, the top-products ranking and the section
  * to open on all live in the query string, so other screens can deep-link with
- * reportsHref() and a refresh keeps the view.
+ * ROUTES.reportsFor() and a refresh keeps the view.
  */
 export function ReportsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -35,8 +37,10 @@ export function ReportsPage() {
   const payments = useShopStore((state) => state.payments)
   const customers = useShopStore((state) => state.customers)
 
-  // Fixed for the visit, so "today" does not shift under the user mid-read.
-  const [now] = useState(() => new Date())
+  // Ranges are whole local days, so only today's date matters. The shared hook
+  // rolls it over at midnight, so a page left open overnight moves to the new day.
+  const today = useCalendarDay()
+  const now = useMemo(() => fromDayKey(today), [today])
 
   const selection = parseRangeParams(searchParams)
   const resolved = resolveRange(selection, now)
