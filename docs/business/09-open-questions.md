@@ -32,6 +32,22 @@ Cancelled sales should remain in the system for audit purposes.
 
 ---
 
+## Sale Cancellation (resolved 2026-11-01, see `10-decisions.md` D8)
+
+Full scope: `specs/04/04-sale-cancellation-spec.md`.
+
+- Which sales can be cancelled? **Resolved: any completed sale, from any day**, with a required
+  reason. It stays in history marked Cancelled with who, when and why.
+- What happens to stock? **Resolved: returned** through one `sale_reversal` movement per line.
+- Do reports, the ledger and the dashboard count it? **Resolved: no.**
+- A partial or credit sale the customer has paid toward? **Resolved: cannot be cancelled**; the
+  cashier is told why. The exact test: blocked **only when the ledger has applied a customer
+  payment to the sale** (spec Q1). The cashier is told to leave the sale and tell the owner
+  (spec Q2).
+- Refunds? **Resolved: not recorded** in Version 1.
+
+---
+
 ## Discounts
 
 Discounts are allowed.
@@ -65,6 +81,34 @@ Version 1 can record:
 - Total amount
 - Purchase items
 - Received by
+
+### Resolved 2026-11-01 (see `10-decisions.md` D10)
+
+Full scope: `specs/04/04-supplier-invoices-spec.md`.
+
+- Storage method? **Resolved: an invoice record is stored** in the app, beside one Stock In
+  movement per line.
+- What is recorded? **Resolved:** supplier (free text), unique `INV-NNNNN` number, invoice date,
+  received by, product lines with quantities, and the total typed from the paper. No per-item
+  costs.
+- One product per delivery or many? **Resolved: many** on one invoice.
+- Deliveries without a paper invoice? **Resolved: an invoice is required**; a paperless delivery
+  goes through Adjust Stock with a reason (spec Q1).
+- Receipts saved before this change? **Resolved: left as stock movements**, numbers reserved
+  (spec Q2).
+
+---
+
+## Add Product and Product Details (resolved 2026-11-01, see `10-decisions.md` D9)
+
+Full scope: `specs/04/04-add-product-and-details-spec.md`.
+
+- SKU? **Resolved: generated** from the first three letters of the category name plus the next
+  free number (spec Q2).
+- Opening stock? **Resolved: recorded as an "Opening stock" Stock In movement.**
+- New categories? **Resolved: allowed.**
+- Editing a product on Product Details? **Resolved: yes**, name, category, price, Reorder At and
+  active status; never SKU, unit or stock (spec Q1).
 
 ---
 

@@ -1,15 +1,12 @@
 import { z } from 'zod'
 
-import {
-  isWholePositiveQuantity,
-  normalizeSupplierInvoice,
-  validateStockAdjustment,
-} from '@/domain/inventory'
+import { isWholePositiveQuantity, validateStockAdjustment } from '@/domain/inventory'
 
 /** Form values stay strings: an empty number field is "", never NaN. */
 const WHOLE_NUMBER = /^\d+$/
 
-function parseWholeQuantity(raw: string): number | null {
+/** "20" -> 20. Null for blank, zero, negative, decimal or non-numeric text. */
+export function parseWholeQuantity(raw: string): number | null {
   const trimmed = raw.trim()
 
   if (!WHOLE_NUMBER.test(trimmed)) {
@@ -21,57 +18,13 @@ function parseWholeQuantity(raw: string): number | null {
   return isWholePositiveQuantity(quantity) ? quantity : null
 }
 
+export const QUANTITY_MESSAGE = 'Enter a whole number of units greater than zero.'
+
 const quantityField = z
   .string()
   .trim()
   .min(1, 'Enter how many units.')
-  .refine((value) => parseWholeQuantity(value) !== null, {
-    message: 'Enter a whole number of units greater than zero.',
-  })
-
-export const receiveStockSchema = z.object({
-  productId: z.string().min(1, 'Choose the product that was delivered.'),
-  quantity: quantityField,
-  supplier: z.string().trim().max(80, 'Keep the supplier name under 80 characters.'),
-  supplierInvoice: z
-    .string()
-    .trim()
-    .refine((value) => value === '' || normalizeSupplierInvoice(value) !== null, {
-      message: 'Supplier invoice numbers look like INV-10021.',
-    }),
-  note: z.string().trim().max(200, 'Keep the note under 200 characters.'),
-})
-
-export type ReceiveStockValues = z.infer<typeof receiveStockSchema>
-
-export const EMPTY_RECEIVE_VALUES: ReceiveStockValues = {
-  productId: '',
-  quantity: '',
-  supplier: '',
-  supplierInvoice: '',
-  note: '',
-}
-
-export type ReceiveStockRequest = {
-  productId: string
-  quantity: number
-  supplierInvoice?: string
-  supplier?: string
-  note?: string
-}
-
-/** Validated form values to the store's input. Blank optional text is omitted. */
-export function toReceiveStockRequest(values: ReceiveStockValues): ReceiveStockRequest {
-  const optional = (value: string) => (value.trim() === '' ? undefined : value.trim())
-
-  return {
-    productId: values.productId,
-    quantity: parseWholeQuantity(values.quantity) ?? 0,
-    supplierInvoice: optional(values.supplierInvoice),
-    supplier: optional(values.supplier),
-    note: optional(values.note),
-  }
-}
+  .refine((value) => parseWholeQuantity(value) !== null, { message: QUANTITY_MESSAGE })
 
 export type AdjustmentDirection = 'add' | 'remove'
 

@@ -4,13 +4,15 @@ import { Link } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'navy' | 'ghost'
+/** `destructive` is for irreversible actions (cancel a sale, delete, reset data). */
+export type ButtonVariant = 'primary' | 'secondary' | 'navy' | 'ghost' | 'destructive'
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
   primary: 'bg-brand-500 text-white hover:bg-brand-600',
   secondary: 'border border-slate-200 bg-white text-navy-900 hover:bg-slate-50',
   navy: 'bg-navy-800 text-white hover:bg-navy-700',
   ghost: 'text-navy-700 hover:bg-navy-50',
+  destructive: 'bg-rose-600 text-white hover:bg-rose-700',
 }
 
 /** h-12 keeps every control a comfortable tap target on a tablet. */

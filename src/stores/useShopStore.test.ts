@@ -3,9 +3,17 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SEED_CUSTOMERS } from '@/data/mock/customers'
 import { SEED_PRODUCTS } from '@/data/mock/catalog'
 import { toDayKey } from '@/domain/dates'
+import { stockFromMovements } from '@/domain/inventory'
 import { computeOutstanding } from '@/domain/ledger'
+import { nextProductSku } from '@/domain/product'
 import { formatSaleNumber } from '@/domain/sale'
-import { createMemoryStorage } from '@/stores/shopPersistence'
+import {
+  CANCEL_REASON_MAX,
+  SALE_ALREADY_CANCELLED_MESSAGE,
+  SALE_NOT_FOUND_MESSAGE,
+} from '@/domain/saleCancellation'
+import { createMemoryStorage, SHOP_STORAGE_KEY } from '@/stores/shopPersistence'
+import { testLine, testMovement, testSale } from '@/test/fixtures'
 import { createShopStore, DEFAULT_STORE_SETTINGS, useShopStore } from '@/stores/useShopStore'
 
 const PVC = 'PVC-050'
@@ -15,6 +23,7 @@ const CUSTOMER = 'CUS-001'
 const seededSales = useShopStore.getState().sales
 const seededMovements = useShopStore.getState().movements
 const seededPayments = useShopStore.getState().payments
+const seededInvoices = useShopStore.getState().invoices
 
 function reset() {
   useShopStore.setState({
@@ -23,6 +32,7 @@ function reset() {
     movements: seededMovements,
     customers: SEED_CUSTOMERS,
     payments: seededPayments,
+    invoices: seededInvoices,
     taxRate: 0.12,
     settings: DEFAULT_STORE_SETTINGS,
     cart: [],
@@ -698,83 +708,6 @@ describe('sale numbering', () => {
   })
 })
 
-describe('receiveStock', () => {
-  beforeEach(reset)
-
-  it('adds stock and logs a stock_in movement with the supplier invoice', () => {
-    const before = stockOf(PVC)
-    const movementsBefore = useShopStore.getState().movements.length
-
-    const result = useShopStore.getState().receiveStock({
-      productId: PVC,
-      quantity: 40,
-      supplierInvoice: ' inv-10022 ',
-      supplier: 'ABC Trading',
-      note: 'Two boxes short, to follow',
-    })
-
-    expect(result.ok).toBe(true)
-
-    if (!result.ok) {
-      return
-    }
-
-    expect(stockOf(PVC)).toBe(before + 40)
-    expect(useShopStore.getState().movements).toHaveLength(movementsBefore + 1)
-    expect(result.movement).toMatchObject({
-      productId: PVC,
-      type: 'stock_in',
-      quantityDelta: 40,
-      reference: 'INV-10022',
-      description: 'Received from ABC Trading',
-      note: 'Two boxes short, to follow',
-      reason: null,
-      recordedBy: 'Juan Dela Cruz',
-    })
-  })
-
-  it('accepts a delivery with no invoice and gives every movement its own id', () => {
-    const first = useShopStore.getState().receiveStock({ productId: PVC, quantity: 1 })
-    const second = useShopStore.getState().receiveStock({ productId: PVC, quantity: 1 })
-
-    expect(first.ok && first.movement.reference).toBe('')
-    expect(first.ok && first.movement.description).toBe('Stock received')
-    expect(first.ok && second.ok && first.movement.id !== second.movement.id).toBe(true)
-  })
-
-  it('refuses fractional, zero and negative quantities and changes nothing', () => {
-    const before = stockOf(PVC)
-    const movementsBefore = useShopStore.getState().movements.length
-
-    for (const quantity of [0, -5, 2.5]) {
-      expect(useShopStore.getState().receiveStock({ productId: PVC, quantity }).ok).toBe(false)
-    }
-
-    expect(stockOf(PVC)).toBe(before)
-    expect(useShopStore.getState().movements).toHaveLength(movementsBefore)
-  })
-
-  it('refuses a malformed invoice number', () => {
-    const result = useShopStore
-      .getState()
-      .receiveStock({ productId: PVC, quantity: 5, supplierInvoice: 'INV-2025-0521' })
-
-    expect(result.ok).toBe(false)
-  })
-
-  it('refuses an unknown product', () => {
-    expect(useShopStore.getState().receiveStock({ productId: 'NOPE', quantity: 5 }).ok).toBe(false)
-  })
-
-  it('makes an out-of-stock product sellable again', () => {
-    expect(useShopStore.getState().addToCart(SOLD_OUT, 1).ok).toBe(false)
-
-    useShopStore.getState().receiveStock({ productId: SOLD_OUT, quantity: 3 })
-
-    expect(useShopStore.getState().addToCart(SOLD_OUT, 1).ok).toBe(true)
-  })
-})
-
 describe('adjustStock', () => {
   beforeEach(reset)
 
@@ -1028,5 +961,697 @@ describe('updateSettings', () => {
     useShopStore.getState().updateSettings({ taxRate: 0.1 + 0.02 })
 
     expect(useShopStore.getState().taxRate).toBe(0.12)
+  })
+})
+
+describe('cart edge cases', () => {
+  beforeEach(reset)
+
+  it('refuses an unknown or inactive product and changes nothing', () => {
+    useShopStore.setState({
+      products: useShopStore
+        .getState()
+        .products.map((product) =>
+          product.id === PVC ? { ...product, isActive: false } : product,
+        ),
+    })
+
+    const unknown = useShopStore.getState().addToCart('NOPE-001', 1)
+    const inactive = useShopStore.getState().addToCart(PVC, 1)
+
+    expect(unknown).toEqual({ ok: false, message: 'That product no longer exists.' })
+    expect(inactive.ok).toBe(false)
+    expect(inactive.message).toContain('not available for sale')
+    expect(useShopStore.getState().cart).toEqual([])
+  })
+
+  it('refuses a quantity change above stock, keeping the line', () => {
+    useShopStore.getState().addToCart(PVC, 2)
+
+    const result = useShopStore.getState().setCartQuantity(PVC, stockOf(PVC) + 1)
+
+    expect(result.ok).toBe(false)
+    expect(result.message).toContain('left in stock')
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 2 }])
+  })
+
+  it('removes one line, or clears the whole cart', () => {
+    useShopStore.getState().addToCart(PVC, 2)
+    useShopStore.getState().addToCart('CEM-001', 1)
+
+    useShopStore.getState().removeFromCart(PVC)
+    expect(useShopStore.getState().cart).toEqual([{ productId: 'CEM-001', quantity: 1 }])
+
+    useShopStore.getState().clearCart()
+    expect(useShopStore.getState().cart).toEqual([])
+  })
+
+  it('refuses a sale whose cart names a product that is gone', () => {
+    useShopStore.setState({ cart: [{ productId: 'NOPE-001', quantity: 1 }] })
+    const before = useShopStore.getState()
+
+    const result = before.recordSale({ paymentMethod: 'cash', amountPaid: 100, customerId: null })
+
+    expect(result).toEqual({ ok: false, message: 'A product in this sale no longer exists.' })
+    expect(useShopStore.getState().sales).toBe(before.sales)
+  })
+
+  it('refuses to adjust an unknown product', () => {
+    const result = useShopStore
+      .getState()
+      .adjustStock({ productId: 'NOPE-001', quantityDelta: -1, reason: 'Damaged' })
+
+    expect(result).toEqual({ ok: false, message: 'That product no longer exists.' })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Phase 4: cancelSale, addProduct, updateProduct, receiveInvoice (specs/04)
+// ---------------------------------------------------------------------------
+
+const CLOCK = new Date(2025, 4, 21, 18, 0)
+
+function phase4Store(storage = createMemoryStorage()) {
+  let clock = CLOCK
+  const store = createShopStore({ storage: () => storage, now: () => clock })
+
+  return {
+    store,
+    storage,
+    setClock: (next: Date) => {
+      clock = next
+    },
+  }
+}
+
+type Phase4Store = ReturnType<typeof phase4Store>['store']
+
+function stockIn(store: Phase4Store, productId: string): number {
+  return store.getState().products.find((product) => product.id === productId)?.stock ?? -1
+}
+
+/** The records an action may write: a refused call must leave every one untouched. */
+function recordsOf(store: Phase4Store) {
+  const { products, sales, movements, payments, invoices, customers } = store.getState()
+
+  return { products, sales, movements, payments, invoices, customers }
+}
+
+function expectStockMatchesMovements(store: Phase4Store) {
+  const { products, movements } = store.getState()
+
+  for (const product of products) {
+    expect(stockFromMovements(movements, product.id), product.id).toBe(product.stock)
+  }
+}
+
+type SalePayment = {
+  paymentMethod: 'cash' | 'partial' | 'credit'
+  amountPaid: number
+  customerId: string | null
+}
+
+const CASH: SalePayment = { paymentMethod: 'cash', amountPaid: 10_000_000, customerId: null }
+const CREDIT: SalePayment = { paymentMethod: 'credit', amountPaid: 0, customerId: CUSTOMER }
+
+function sell(store: Phase4Store, lines: [string, number][], payment: SalePayment = CASH) {
+  for (const [productId, quantity] of lines) {
+    expect(store.getState().addToCart(productId, quantity).ok).toBe(true)
+  }
+
+  const result = store.getState().recordSale(payment)
+
+  if (!result.ok) {
+    throw new Error(result.message)
+  }
+
+  return result.sale
+}
+
+describe('cancelSale', () => {
+  it('cancels a cash sale, stamps it and returns the stock through reversals (S1, S8)', () => {
+    const { store, setClock } = phase4Store()
+    const pvcBefore = stockIn(store, PVC)
+    const cementBefore = stockIn(store, 'CEM-001')
+    const sale = sell(store, [
+      [PVC, 3],
+      ['CEM-001', 2],
+    ])
+    const salesCount = store.getState().sales.length
+    const cancelledAt = new Date(2025, 4, 21, 18, 30)
+    setClock(cancelledAt)
+
+    const result = store.getState().cancelSale({ saleId: sale.id, reason: '  Wrong item  ' })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.sale).toEqual({
+      ...sale,
+      status: 'cancelled',
+      cancellation: {
+        cancelledAt: cancelledAt.toISOString(),
+        cancelledBy: sale.recordedBy,
+        reason: 'Wrong item',
+      },
+    })
+    expect(result.movements.map((movement) => [movement.type, movement.quantityDelta])).toEqual([
+      ['sale_reversal', 3],
+      ['sale_reversal', 2],
+    ])
+    expect(result.movements[0].id).toBe(`MOV-REV-${sale.id}-${PVC}`)
+
+    const state = store.getState()
+    // Still in history; nothing deleted.
+    expect(state.sales).toHaveLength(salesCount)
+    expect(state.sales.find((candidate) => candidate.id === sale.id)).toEqual(result.sale)
+    expect(state.movements.slice(-2)).toEqual(result.movements)
+    expect(stockIn(store, PVC)).toBe(pvcBefore)
+    expect(stockIn(store, 'CEM-001')).toBe(cementBefore)
+    expectStockMatchesMovements(store)
+  })
+
+  it('refuses a blank or over-long reason and writes nothing (S2)', () => {
+    const { store } = phase4Store()
+    const sale = sell(store, [[PVC, 1]])
+    const before = recordsOf(store)
+
+    for (const reason of ['', '   ', 'x'.repeat(CANCEL_REASON_MAX + 1)]) {
+      expect(store.getState().cancelSale({ saleId: sale.id, reason }).ok).toBe(false)
+    }
+
+    expect(recordsOf(store)).toEqual(before)
+    expect(store.getState().sales).toBe(before.sales)
+  })
+
+  it('accepts a reason of exactly the maximum length', () => {
+    const { store } = phase4Store()
+    const sale = sell(store, [[PVC, 1]])
+    const reason = 'x'.repeat(CANCEL_REASON_MAX)
+
+    expect(store.getState().cancelSale({ saleId: sale.id, reason }).ok).toBe(true)
+  })
+
+  it('refuses a second cancel, even with a blank reason, keeping one set of reversals (S3)', () => {
+    const { store } = phase4Store()
+    const sale = sell(store, [[PVC, 4]])
+
+    expect(store.getState().cancelSale({ saleId: sale.id, reason: 'Wrong item' }).ok).toBe(true)
+
+    const before = recordsOf(store)
+    const refused = { ok: false, message: SALE_ALREADY_CANCELLED_MESSAGE }
+
+    expect(store.getState().cancelSale({ saleId: sale.id, reason: 'Again' })).toEqual(refused)
+    // "Already cancelled" wins over the reason check, so the screen says the useful thing.
+    expect(store.getState().cancelSale({ saleId: sale.id, reason: '' })).toEqual(refused)
+    expect(recordsOf(store)).toEqual(before)
+    expect(
+      store.getState().movements.filter((movement) => movement.type === 'sale_reversal'),
+    ).toHaveLength(1)
+    expectStockMatchesMovements(store)
+  })
+
+  it('refuses a credit sale a customer payment was applied to, and writes nothing (S4)', () => {
+    const { store } = phase4Store()
+    // A clean ledger, so the payment can only be applied to this sale.
+    store.setState({ sales: [], payments: [] })
+    const sale = sell(store, [[PVC, 2]], CREDIT)
+
+    expect(store.getState().recordPayment({ customerId: CUSTOMER, amount: 100 }).ok).toBe(true)
+
+    const before = recordsOf(store)
+    const result = store.getState().cancelSale({ saleId: sale.id, reason: 'Wrong item' })
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.message).toContain('has already paid')
+    expect(recordsOf(store)).toEqual(before)
+  })
+
+  it('cancels an unpaid credit sale and takes it off the balance (S5)', () => {
+    const { store } = phase4Store()
+    const owed = () =>
+      computeOutstanding(store.getState().sales, store.getState().payments, CUSTOMER)
+    const owedBefore = owed()
+    const sale = sell(store, [[PVC, 2]], CREDIT)
+
+    expect(owed()).toBe(owedBefore + sale.balanceDue)
+    expect(store.getState().cancelSale({ saleId: sale.id, reason: 'Changed mind' }).ok).toBe(true)
+    expect(owed()).toBe(owedBefore)
+  })
+
+  it('cancels a partial sale whose only money is the down payment at the counter', () => {
+    const { store } = phase4Store()
+    store.setState({ sales: [], payments: [] })
+    const sale = sell(store, [[PVC, 2]], { ...CREDIT, paymentMethod: 'partial', amountPaid: 1000 })
+
+    expect(store.getState().cancelSale({ saleId: sale.id, reason: 'Wrong item' }).ok).toBe(true)
+    expect(computeOutstanding(store.getState().sales, store.getState().payments, CUSTOMER)).toBe(0)
+  })
+
+  it('returns stock to a product deactivated since the sale (S6)', () => {
+    const { store } = phase4Store()
+    const before = stockIn(store, PVC)
+    const sale = sell(store, [[PVC, 5]])
+
+    expect(store.getState().updateProduct(PVC, { isActive: false }).ok).toBe(true)
+    expect(store.getState().cancelSale({ saleId: sale.id, reason: 'Wrong item' }).ok).toBe(true)
+    expect(stockIn(store, PVC)).toBe(before)
+    expect(store.getState().products.find((product) => product.id === PVC)?.isActive).toBe(false)
+  })
+
+  it('refuses an unknown sale id (S7)', () => {
+    const { store } = phase4Store()
+    const before = recordsOf(store)
+
+    expect(store.getState().cancelSale({ saleId: 'SALE-NOPE', reason: 'Wrong item' })).toEqual({
+      ok: false,
+      message: SALE_NOT_FOUND_MESSAGE,
+    })
+    expect(recordsOf(store)).toEqual(before)
+  })
+
+  it('refuses a sale whose product is no longer in the list, and writes nothing', () => {
+    const { store } = phase4Store()
+    const orphan = testSale({
+      id: 'SALE-ORPHAN',
+      occurredAt: CLOCK.toISOString(),
+      lines: [testLine(PVC, 2800, 1), testLine('GONE-001', 500, 2, 'Old Hinge')],
+    })
+    store.setState({ sales: [...store.getState().sales, orphan] })
+    const before = recordsOf(store)
+
+    const result = store.getState().cancelSale({ saleId: orphan.id, reason: 'Wrong item' })
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.message).toContain('Old Hinge')
+    expect(recordsOf(store)).toEqual(before)
+  })
+
+  it('survives a reload with the same sale and movements (M4)', () => {
+    const { store, storage } = phase4Store()
+    const sale = sell(store, [[PVC, 2]])
+
+    expect(store.getState().cancelSale({ saleId: sale.id, reason: 'Wrong item' }).ok).toBe(true)
+
+    const reloaded = phase4Store(storage).store
+
+    expect(reloaded.getState().dataRecovery).toBeNull()
+    expect(reloaded.getState().sales).toEqual(store.getState().sales)
+    expect(reloaded.getState().movements).toEqual(store.getState().movements)
+    expect(stockIn(reloaded, PVC)).toBe(stockIn(store, PVC))
+  })
+})
+
+describe('addProduct', () => {
+  const valid = {
+    name: '  Hose   Clamp 1" ',
+    category: 'plumbing',
+    unit: 'PCS',
+    price: 1500,
+    reorderLevel: 5,
+    openingStock: 25,
+    isActive: true,
+  }
+
+  it('adds the product with a generated SKU and its opening movement (S1)', () => {
+    const { store } = phase4Store()
+    const sku = nextProductSku('Plumbing', store.getState().products) ?? 'PLU-?'
+    const productCount = store.getState().products.length
+
+    const result = store.getState().addProduct(valid)
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.product).toEqual({
+      id: sku,
+      sku,
+      name: 'Hose Clamp 1"',
+      category: 'Plumbing',
+      unit: 'pcs',
+      price: 1500,
+      stock: 25,
+      reorderLevel: 5,
+      isActive: true,
+    })
+    expect(result.movement).toMatchObject({
+      id: `MOV-OPEN-${sku}`,
+      productId: sku,
+      type: 'stock_in',
+      quantityDelta: 25,
+      occurredAt: CLOCK.toISOString(),
+    })
+
+    const state = store.getState()
+    expect(state.products).toHaveLength(productCount + 1)
+    expect(state.products.at(-1)).toEqual(result.product)
+    expect(state.movements.at(-1)).toEqual(result.movement)
+    expect(stockFromMovements(state.movements, sku)).toBe(25)
+    expectStockMatchesMovements(store)
+  })
+
+  it('writes the opening movement even at zero stock (S2)', () => {
+    const { store } = phase4Store()
+
+    const result = store.getState().addProduct({ ...valid, openingStock: 0 })
+
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.movement.quantityDelta).toBe(0)
+    expect(result.ok && result.product.stock).toBe(0)
+  })
+
+  it('numbers products in one category one after another', () => {
+    const { store } = phase4Store()
+
+    const first = store.getState().addProduct({ ...valid, category: 'Garden', name: 'Rake' })
+    const second = store.getState().addProduct({ ...valid, category: 'garden', name: 'Hoe' })
+
+    expect(first.ok && first.product.sku).toBe('GAR-001')
+    expect(second.ok && second.product.sku).toBe('GAR-002')
+    expect(second.ok && second.product.category).toBe('Garden')
+  })
+
+  it('refuses every invalid input and writes nothing (S3)', () => {
+    const { store } = phase4Store()
+    const before = recordsOf(store)
+    const existingName = store.getState().products[0].name.toUpperCase()
+
+    const invalid = [
+      { ...valid, name: '   ' },
+      { ...valid, name: existingName },
+      { ...valid, name: 'x'.repeat(81) },
+      { ...valid, category: '' },
+      { ...valid, category: '123' },
+      { ...valid, unit: ' ' },
+      { ...valid, price: 0 },
+      { ...valid, price: -100 },
+      { ...valid, price: 10.5 },
+      { ...valid, reorderLevel: -1 },
+      { ...valid, openingStock: 2.5 },
+      { ...valid, openingStock: -1 },
+      { ...valid, isActive: 'yes' as unknown as boolean },
+    ]
+
+    for (const input of invalid) {
+      const result = store.getState().addProduct(input)
+
+      expect(result.ok, JSON.stringify(input)).toBe(false)
+      expect(!result.ok && result.message).toBeTruthy()
+    }
+
+    expect(recordsOf(store)).toEqual(before)
+  })
+
+  it('refuses when the opening movement id is already taken, and writes nothing', () => {
+    const { store } = phase4Store()
+    const sku = nextProductSku('Plumbing', store.getState().products) ?? 'PLU-?'
+    const stray = testMovement({
+      id: `MOV-OPEN-${sku}`,
+      occurredAt: CLOCK.toISOString(),
+      productId: sku,
+    })
+    store.setState({ movements: [...store.getState().movements, stray] })
+    const before = recordsOf(store)
+
+    expect(store.getState().addProduct(valid)).toEqual({
+      ok: false,
+      message: 'This product cannot be added.',
+    })
+    expect(recordsOf(store)).toEqual(before)
+  })
+
+  it('can be sold straight away (S4)', () => {
+    const { store } = phase4Store()
+    const added = store.getState().addProduct(valid)
+
+    if (!added.ok) throw new Error(added.message)
+
+    const sale = sell(store, [[added.product.id, 3]])
+
+    expect(sale.lines[0]).toMatchObject({ productId: added.product.id, unitPrice: 1500 })
+    expect(stockIn(store, added.product.id)).toBe(22)
+    expectStockMatchesMovements(store)
+  })
+})
+
+describe('updateProduct', () => {
+  function pvc(store: Phase4Store) {
+    const product = store.getState().products.find((candidate) => candidate.id === PVC)
+
+    if (!product) throw new Error('PVC missing from the seed')
+
+    return product
+  }
+
+  it('changes only the editable fields; past sales keep their copies (S5)', () => {
+    const { store } = phase4Store()
+    const sale = sell(store, [[PVC, 1]])
+    const original = pvc(store)
+
+    const result = store.getState().updateProduct(PVC, {
+      name: '  PVC Pipe  Half Inch ',
+      category: 'plumbing',
+      price: 3100,
+      reorderLevel: 0,
+      isActive: false,
+    })
+
+    expect(result).toEqual({ ok: true, message: 'Product saved.' })
+    expect(pvc(store)).toEqual({
+      ...original,
+      name: 'PVC Pipe Half Inch',
+      category: 'Plumbing',
+      price: 3100,
+      reorderLevel: 0,
+      isActive: false,
+    })
+
+    const kept = store.getState().sales.find((candidate) => candidate.id === sale.id)
+
+    expect(kept?.lines[0]).toEqual(sale.lines[0])
+    expect(kept?.lines[0].unitPrice).toBe(original.price)
+  })
+
+  it('ignores SKU, unit and stock even if sent', () => {
+    const { store } = phase4Store()
+    const original = pvc(store)
+    const sneaky = { price: 3000, sku: 'X-1', unit: 'box', stock: 999 }
+
+    expect(store.getState().updateProduct(PVC, sneaky).ok).toBe(true)
+    expect(pvc(store)).toEqual({ ...original, price: 3000 })
+  })
+
+  it('lets a product keep its own name in another case', () => {
+    const { store } = phase4Store()
+
+    expect(store.getState().updateProduct(PVC, { name: pvc(store).name.toLowerCase() }).ok).toBe(
+      true,
+    )
+  })
+
+  it('treats no changes as a save that changes nothing', () => {
+    const { store } = phase4Store()
+    const before = pvc(store)
+
+    expect(store.getState().updateProduct(PVC, {}).ok).toBe(true)
+    expect(pvc(store)).toEqual(before)
+  })
+
+  it('refuses an unknown product and invalid changes, writing nothing', () => {
+    const { store } = phase4Store()
+    const before = recordsOf(store)
+    const otherName = store.getState().products.find((product) => product.id !== PVC)?.name ?? ''
+
+    expect(store.getState().updateProduct('NOPE-001', { price: 100 })).toEqual({
+      ok: false,
+      message: 'That product no longer exists.',
+    })
+
+    const invalid = [
+      { name: '' },
+      { name: otherName.toUpperCase() },
+      { category: '!!' },
+      { price: 0 },
+      { price: 99.5 },
+      { reorderLevel: -1 },
+      { reorderLevel: 1.5 },
+      { isActive: 'no' as unknown as boolean },
+    ]
+
+    for (const changes of invalid) {
+      const result = store.getState().updateProduct(PVC, changes)
+
+      expect(result.ok, JSON.stringify(changes)).toBe(false)
+      expect(result.message).toBeTruthy()
+    }
+
+    expect(recordsOf(store)).toEqual(before)
+  })
+})
+
+describe('receiveInvoice', () => {
+  const valid = {
+    invoiceNumber: ' inv-20001 ',
+    supplier: '  Ram   Hardware ',
+    invoiceDate: '2025-05-20',
+    total: 500_000,
+    lines: [
+      { productId: PVC, quantity: 10 },
+      { productId: 'CEM-001', quantity: 5 },
+    ],
+    note: '  Two boxes damaged on arrival ',
+  }
+
+  it('records the invoice and one stock_in per line, raising stock (S1)', () => {
+    const { store } = phase4Store()
+    const pvcBefore = stockIn(store, PVC)
+    const cementBefore = stockIn(store, 'CEM-001')
+    const invoiceCount = store.getState().invoices.length
+
+    const result = store.getState().receiveInvoice(valid)
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.invoice).toMatchObject({
+      invoiceNumber: 'INV-20001',
+      supplier: 'Ram Hardware',
+      invoiceDate: '2025-05-20',
+      total: 500_000,
+      note: 'Two boxes damaged on arrival',
+      recordedAt: CLOCK.toISOString(),
+    })
+    expect(result.invoice.lines.map((line) => [line.productId, line.quantity])).toEqual([
+      [PVC, 10],
+      ['CEM-001', 5],
+    ])
+    expect(
+      result.movements.map((movement) => [movement.type, movement.reference, movement.productId]),
+    ).toEqual([
+      ['stock_in', 'INV-20001', PVC],
+      ['stock_in', 'INV-20001', 'CEM-001'],
+    ])
+
+    const state = store.getState()
+    expect(state.invoices).toHaveLength(invoiceCount + 1)
+    expect(state.invoices.at(-1)).toEqual(result.invoice)
+    expect(state.movements.slice(-2)).toEqual(result.movements)
+    expect(stockIn(store, PVC)).toBe(pvcBefore + 10)
+    expect(stockIn(store, 'CEM-001')).toBe(cementBefore + 5)
+    expectStockMatchesMovements(store)
+  })
+
+  it('merges a product listed twice into one line (S4)', () => {
+    const { store } = phase4Store()
+    const before = stockIn(store, PVC)
+
+    const result = store.getState().receiveInvoice({
+      ...valid,
+      lines: [
+        { productId: PVC, quantity: 4 },
+        { productId: PVC, quantity: 6 },
+      ],
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.invoice.lines).toHaveLength(1)
+    expect(result.invoice.lines[0].quantity).toBe(10)
+    expect(result.movements).toHaveLength(1)
+    expect(stockIn(store, PVC)).toBe(before + 10)
+    expectStockMatchesMovements(store)
+  })
+
+  it('accepts an invoice dated today and leaves a blank note out', () => {
+    const { store } = phase4Store()
+
+    const result = store
+      .getState()
+      .receiveInvoice({ ...valid, invoiceDate: toDayKey(CLOCK), note: '   ' })
+
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.invoice.note).toBeNull()
+  })
+
+  it('refuses a number already used, on an invoice or an older receipt (S2)', () => {
+    const { store } = phase4Store()
+
+    expect(store.getState().receiveInvoice(valid).ok).toBe(true)
+
+    const before = recordsOf(store)
+    const seeded = store
+      .getState()
+      .movements.find(
+        (movement) => /^INV-\d{5}$/.test(movement.reference) && movement.reference !== 'INV-20001',
+      )
+
+    expect(store.getState().receiveInvoice({ ...valid, invoiceNumber: 'INV-20001' })).toEqual({
+      ok: false,
+      message: 'INV-20001 is already recorded.',
+    })
+    expect(seeded).toBeDefined()
+    expect(
+      store.getState().receiveInvoice({ ...valid, invoiceNumber: ` ${seeded?.reference ?? ''} ` })
+        .ok,
+    ).toBe(false)
+    expect(recordsOf(store)).toEqual(before)
+  })
+
+  it('refuses the whole invoice when anything is wrong, with no partial save (S3)', () => {
+    const { store } = phase4Store()
+    const before = recordsOf(store)
+
+    const invalid = [
+      { ...valid, invoiceNumber: '10021' },
+      { ...valid, supplier: '   ' },
+      { ...valid, supplier: 'x'.repeat(81) },
+      { ...valid, invoiceDate: '' },
+      { ...valid, invoiceDate: '2025-02-30' },
+      { ...valid, invoiceDate: '2025-05-22' },
+      { ...valid, total: 0 },
+      { ...valid, total: 100.5 },
+      { ...valid, lines: [] },
+      { ...valid, lines: [...valid.lines, { productId: 'GONE-001', quantity: 1 }] },
+      { ...valid, lines: [{ productId: PVC, quantity: 0 }] },
+      { ...valid, lines: [{ productId: PVC, quantity: -3 }] },
+      { ...valid, lines: [{ productId: PVC, quantity: 1.5 }] },
+      {
+        ...valid,
+        lines: [
+          { productId: PVC, quantity: Number.MAX_SAFE_INTEGER },
+          { productId: PVC, quantity: 1 },
+        ],
+      },
+      { ...valid, note: 'x'.repeat(201) },
+    ]
+
+    for (const input of invalid) {
+      const result = store.getState().receiveInvoice(input)
+
+      expect(result.ok, JSON.stringify(input).slice(0, 120)).toBe(false)
+      expect(!result.ok && result.message).toBeTruthy()
+    }
+
+    expect(recordsOf(store)).toEqual(before)
+  })
+
+  it('survives a reload, and a reset brings back the seed invoices (S5)', () => {
+    const { store, storage } = phase4Store()
+    const seededInvoices = store.getState().invoices
+
+    expect(store.getState().receiveInvoice(valid).ok).toBe(true)
+    expect(JSON.parse(storage.dump()[SHOP_STORAGE_KEY]).state.invoices).toHaveLength(
+      seededInvoices.length + 1,
+    )
+
+    const reloaded = phase4Store(storage).store
+
+    expect(reloaded.getState().dataRecovery).toBeNull()
+    expect(reloaded.getState().invoices).toEqual(store.getState().invoices)
+
+    reloaded.getState().resetToSeedData()
+
+    expect(reloaded.getState().invoices).toEqual(seededInvoices)
   })
 })

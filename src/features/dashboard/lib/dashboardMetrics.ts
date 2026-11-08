@@ -1,3 +1,4 @@
+import { startOfDay } from '@/domain/dates'
 import { computeTotalOutstanding } from '@/domain/ledger'
 import { deriveStockStatus } from '@/domain/stock'
 import type { CustomerPayment, Product, Sale, StockMovement } from '@/domain/types'
@@ -7,40 +8,6 @@ import type { DashboardData } from '@/features/dashboard/types'
 export const RECENT_SALES_LIMIT = 5
 export const LOW_STOCK_LIMIT = 5
 export const RECENT_MOVEMENTS_LIMIT = 4
-
-// ---- Calendar day ----------------------------------------------------------
-
-/** Local midnight at the start of `date`'s day. */
-export function startOfDay(date: Date): Date {
-  const start = new Date(date)
-  start.setHours(0, 0, 0, 0)
-  return start
-}
-
-/** Local midnight at the start of the day after `date`. */
-export function startOfNextDay(date: Date): Date {
-  const next = startOfDay(date)
-  next.setDate(next.getDate() + 1)
-  return next
-}
-
-/** Milliseconds from `now` until the next local midnight (always > 0). */
-export function msUntilNextDay(now: Date): number {
-  return Math.max(1, startOfNextDay(now).getTime() - now.getTime())
-}
-
-/** "2026-10-04" in local time; equal keys mean the same calendar day. */
-export function dayKey(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${date.getFullYear()}-${month}-${day}`
-}
-
-/** Midnight at the start of the day encoded by `dayKey`. */
-export function dayFromKey(key: string): Date {
-  const [year, month, day] = key.split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
 
 // ---- Stock -----------------------------------------------------------------
 
@@ -117,7 +84,10 @@ export function computeDashboardData(
       lowStockCount: restock.length,
       totalActiveProducts: products.filter((product) => product.isActive).length,
     },
-    recentSales: newestFirst(salesOnDay(sales, today)).slice(0, RECENT_SALES_LIMIT),
+    // Completed only: a cancelled sale is kept in Sales history, not here (spec 04 s.7.4).
+    recentSales: newestFirst(
+      salesOnDay(sales, today).filter((sale) => sale.status === 'completed'),
+    ).slice(0, RECENT_SALES_LIMIT),
     lowStockItems: restock.slice(0, LOW_STOCK_LIMIT),
     recentMovements: [...movements]
       .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())

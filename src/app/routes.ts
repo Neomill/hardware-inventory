@@ -75,6 +75,7 @@ function reportsFor(options: ReportsLinkOptions = {}): string {
 
 const RECEIVE_STOCK = '/inventory/receive'
 const STOCK_MOVEMENTS = '/inventory/movements'
+const INVOICES = '/inventory/invoices'
 
 export const ROUTES = {
   dashboard: '/',
@@ -100,6 +101,10 @@ export const ROUTES = {
   /** "/inventory/movements?product=<id>" */
   movementsFor: (productId: string) =>
     withQuery(STOCK_MOVEMENTS, { [PRODUCT_QUERY_PARAM]: productId }),
+  /** Supplier invoices list. */
+  invoices: INVOICES,
+  /** "/inventory/invoices/INV-10021" */
+  invoiceDetail: (invoiceNumber: string) => `${INVOICES}/${encodeURIComponent(invoiceNumber)}`,
 
   customers: '/customers',
   customerDetail: (customerId: string) => `/customers/${encodeURIComponent(customerId)}`,
@@ -113,6 +118,7 @@ export const ROUTES = {
   patterns: {
     productDetail: '/products/:productId',
     saleDetail: '/sales/:saleId',
+    invoiceDetail: '/inventory/invoices/:invoiceNumber',
     customerDetail: '/customers/:customerId',
   },
 } as const

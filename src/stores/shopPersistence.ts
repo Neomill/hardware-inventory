@@ -6,6 +6,8 @@ import { SEED_PRODUCTS } from '@/data/mock/catalog'
 import { buildSeedHistory } from '@/data/mock/seedSales'
 import { HELD_SALE_LABEL_MAX, nextHeldSaleId, UNKNOWN_PRODUCT_NAME } from '@/domain/heldSale'
 import { isWholePositiveQuantity, reconcileOpeningStock } from '@/domain/inventory'
+import { buildLegacyCancellation } from '@/domain/saleCancellation'
+import { isValidDayKey } from '@/domain/supplierInvoice'
 import { mergeCartLines } from '@/domain/sale'
 import { normalizeTaxRate, validateTaxRate } from '@/domain/settings'
 import type {
@@ -19,6 +21,8 @@ import type {
   SaleLine,
   StockMovement,
   StoreSettings,
+  SupplierInvoice,
+  SupplierInvoiceLine,
 } from '@/domain/types'
 import { APP_NAME, CURRENT_USER, STORAGE_NAMESPACE, VAT_RATE } from '@/config/app'
 
@@ -36,7 +40,7 @@ export const SHOP_STORAGE_KEY = `${STORAGE_NAMESPACE}:shop`
  * Bump when the stored shape changes, and add a step to `MIGRATIONS` that
  * turns the previous version into the new one.
  */
-export const SHOP_STORAGE_VERSION = 2
+export const SHOP_STORAGE_VERSION = 3
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   storeName: APP_NAME,
@@ -51,6 +55,8 @@ export type PersistedShopData = {
   sales: Sale[]
   movements: StockMovement[]
   payments: CustomerPayment[]
+  /** Supplier invoices, oldest first (spec 04 supplier invoices, D10). */
+  invoices: SupplierInvoice[]
   cart: CartLine[]
   /** Carts set aside with Hold Sale, oldest first (spec 03, D6). */
   heldSales: HeldSale[]
@@ -65,6 +71,7 @@ export function selectPersistedData(state: PersistedShopData): PersistedShopData
     sales: state.sales,
     movements: state.movements,
     payments: state.payments,
+    invoices: state.invoices,
     cart: state.cart,
     heldSales: state.heldSales,
     taxRate: state.taxRate,
@@ -85,6 +92,7 @@ export function buildSeedData(now: Date = new Date()): PersistedShopData {
     sales: history.sales,
     movements: history.movements,
     payments: history.payments,
+    invoices: history.invoices,
     cart: [],
     heldSales: [],
     taxRate: VAT_RATE,
@@ -135,24 +143,40 @@ const saleLineSchema = z.object({
   lineTotal: nonNegative,
 }) satisfies z.ZodType<SaleLine>
 
-const saleSchema = z.object({
-  id: z.string(),
-  saleNumber: z.string(),
-  occurredAt: timestamp,
-  lines: z.array(saleLineSchema).min(1),
-  subtotal: nonNegative,
-  discountAmount: nonNegative,
-  total: nonNegative,
-  taxRate: z.number().finite().min(0).max(1),
-  paymentMethod: z.enum(['cash', 'partial', 'credit']),
-  amountPaid: nonNegative,
-  changeGiven: nonNegative,
-  balanceDue: nonNegative,
-  customerId: z.string().nullable(),
-  customerName: z.string(),
-  status: z.enum(['completed', 'cancelled']),
-  recordedBy: z.string(),
-}) satisfies z.ZodType<Sale>
+const saleSchema = z
+  .object({
+    id: z.string(),
+    saleNumber: z.string(),
+    occurredAt: timestamp,
+    lines: z.array(saleLineSchema).min(1),
+    subtotal: nonNegative,
+    discountAmount: nonNegative,
+    total: nonNegative,
+    taxRate: z.number().finite().min(0).max(1),
+    paymentMethod: z.enum(['cash', 'partial', 'credit']),
+    amountPaid: nonNegative,
+    changeGiven: nonNegative,
+    balanceDue: nonNegative,
+    customerId: z.string().nullable(),
+    customerName: z.string(),
+    status: z.enum(['completed', 'cancelled']),
+    recordedBy: z.string(),
+    // A missing key reads as null rather than failing: sales are never dropped,
+    // so a strict check would turn one odd record into a full reset.
+    cancellation: z
+      .object({ cancelledAt: timestamp, cancelledBy: z.string(), reason: z.string() })
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
+  })
+  // Status and cancellation must agree: a completed sale has no cancellation,
+  // and a cancelled one without a record gets the legacy placeholder rather
+  // than being dropped (sales are never dropped).
+  .transform((sale) =>
+    sale.status === 'completed'
+      ? { ...sale, cancellation: null }
+      : { ...sale, cancellation: sale.cancellation ?? buildLegacyCancellation(sale.occurredAt) },
+  ) satisfies z.ZodType<Sale, z.ZodTypeDef, unknown>
 
 const movementSchema = z.object({
   id: z.string(),
@@ -176,6 +200,25 @@ const paymentSchema = z.object({
   recordedBy: z.string(),
   occurredAt: timestamp,
 }) satisfies z.ZodType<CustomerPayment>
+
+const invoiceLineSchema = z.object({
+  productId: z.string(),
+  productName: z.string(),
+  sku: z.string(),
+  unit: z.string(),
+  quantity: positive,
+}) satisfies z.ZodType<SupplierInvoiceLine>
+
+const invoiceSchema = z.object({
+  invoiceNumber: z.string().regex(/^INV-\d{5}$/),
+  supplier: z.string(),
+  invoiceDate: z.string().refine(isValidDayKey, 'Expected a day'),
+  total: positive,
+  lines: z.array(invoiceLineSchema).min(1),
+  note: z.string().nullable(),
+  receivedBy: z.string(),
+  recordedAt: timestamp,
+}) satisfies z.ZodType<SupplierInvoice>
 
 /** Every record valid, or null: one bad record means the list cannot be trusted. */
 function parseRecords<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, value: unknown): T[] | null {
@@ -326,6 +369,37 @@ function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`
 }
 
+/**
+ * Supplier invoices are salvaged one by one: stock rests on movements, which
+ * are never dropped, so an invoice is the paper's record, not the stock's. A
+ * repeated number keeps the first and drops the rest. A missing list is empty;
+ * any other non-list counts as one dropped record.
+ */
+function sanitizeInvoices(value: unknown): { kept: SupplierInvoice[]; dropped: number } {
+  if (value === undefined) {
+    return { kept: [], dropped: 0 }
+  }
+
+  const salvaged = salvageRecords(invoiceSchema, value)
+
+  if (!salvaged) {
+    return { kept: [], dropped: 1 }
+  }
+
+  const numbers = new Set<string>()
+  const kept = salvaged.kept.filter((invoice) => {
+    if (numbers.has(invoice.invoiceNumber)) {
+      return false
+    }
+
+    numbers.add(invoice.invoiceNumber)
+
+    return true
+  })
+
+  return { kept, dropped: salvaged.dropped + salvaged.kept.length - kept.length }
+}
+
 export type PersistedShopInspection = {
   /** The data to load, or null when it cannot be trusted (start from the seed). */
   data: PersistedShopData | null
@@ -351,6 +425,8 @@ export type PersistedShopInspection = {
  *   renamed. Cart lines that are bad or point at a missing product are
  *   dropped and repeats merged. VAT rate and settings fall back to defaults.
  *   None of these is reported in `dropped` except held sales.
+ * - Supplier invoices: dropped one by one, repeated numbers too (first kept),
+ *   and reported. Stock never rests on an invoice, only on its movements.
  *
  * Stock must equal the sum of each product's movements; data saved before
  * opening-stock movements existed is repaired with reconcileOpeningStock (a
@@ -394,10 +470,12 @@ export function inspectPersistedShop(
   }
 
   const heldSales = sanitizeHeldSales(value.heldSales)
+  const invoices = sanitizeInvoices(value.invoices)
   const dropped = [
     products.dropped > 0 ? plural(products.dropped, 'product record') : null,
     customers.dropped > 0 ? plural(customers.dropped, 'customer record') : null,
     heldSales.dropped > 0 ? plural(heldSales.dropped, 'held sale') : null,
+    invoices.dropped > 0 ? plural(invoices.dropped, 'supplier invoice') : null,
   ].filter((entry): entry is string => entry !== null)
 
   return {
@@ -407,6 +485,7 @@ export function inspectPersistedShop(
       sales,
       movements: reconcileOpeningStock({ products: products.kept, movements, sales, now }),
       payments,
+      invoices: invoices.kept,
       cart: sanitizeCart(value.cart, productIds),
       heldSales: heldSales.kept,
       taxRate: sanitizeTaxRate(value.taxRate),
@@ -480,6 +559,41 @@ export function migrateHeldCartsToHeldSales(
 }
 
 /**
+ * Version 2 to 3 (phase 4, spec 04 sale cancellation s.4.4): every sale
+ * without a `cancellation` key gets null, or -- if it was somehow stored as
+ * cancelled -- a placeholder dated at the sale, by "System", with
+ * LEGACY_CANCELLATION_REASON. `invoices` becomes [] when missing. Receipts
+ * saved before invoices existed stay as movements; their numbers stay
+ * reserved through isInvoiceNumberTaken. Anything malformed is left to the
+ * sanitizer.
+ */
+export function migrateToPhase4(
+  state: Record<string, unknown>,
+  now: Date = new Date(),
+): Record<string, unknown> {
+  const sales = Array.isArray(state.sales)
+    ? state.sales.map((sale: unknown) => {
+        if (!isRecord(sale) || 'cancellation' in sale) {
+          return sale
+        }
+
+        if (sale.status !== 'cancelled') {
+          return { ...sale, cancellation: null }
+        }
+
+        return {
+          ...sale,
+          cancellation: buildLegacyCancellation(
+            typeof sale.occurredAt === 'string' ? sale.occurredAt : now.toISOString(),
+          ),
+        }
+      })
+    : state.sales
+
+  return { ...state, sales, invoices: state.invoices ?? [] }
+}
+
+/**
  * `MIGRATIONS[n]` upgrades a version-n snapshot to version n + 1. Version 0 is
  * what zustand reports for a snapshot saved without a version: treated as the
  * first shape, which may lack the later additions (payments, held carts,
@@ -497,6 +611,7 @@ const MIGRATIONS: Record<
     settings: state.settings ?? DEFAULT_STORE_SETTINGS,
   }),
   1: (state, now) => migrateHeldCartsToHeldSales(state, now),
+  2: (state, now) => migrateToPhase4(state, now),
 }
 
 /**
@@ -705,4 +820,57 @@ export function createSafeShopStorage(
       }
     },
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cross-tab sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Where `storage` events arrive: the browser window, or a plain EventTarget in
+ * tests. The browser fires one in every other tab of the app when a tab
+ * writes to localStorage (never in the tab that wrote).
+ */
+export type StorageEventSource = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>
+
+/** The browser window, or undefined when there is none (tests without a DOM, server). */
+export function getBrowserWindow(): StorageEventSource | undefined {
+  return typeof window === 'undefined' ? undefined : window
+}
+
+/**
+ * Calls `onChange` whenever another tab writes the shop's key
+ * (SHOP_STORAGE_KEY), so this tab can reload the data before it acts on it.
+ * Events for other keys, and for a storage area other than `storageArea` when
+ * both are known (sessionStorage, say), are ignored. Returns the unsubscribe.
+ * No source: nothing to listen to, and the unsubscribe does nothing.
+ */
+export function subscribeToShopStorage(
+  source: StorageEventSource | undefined,
+  onChange: () => void,
+  storageArea?: () => unknown,
+): () => void {
+  if (!source) {
+    return () => {}
+  }
+
+  const listener = (event: Event) => {
+    const { key, storageArea: area } = event as Partial<StorageEvent>
+
+    if (key !== SHOP_STORAGE_KEY) {
+      return
+    }
+
+    const expected = storageArea?.()
+
+    if (area && expected && area !== expected) {
+      return
+    }
+
+    onChange()
+  }
+
+  source.addEventListener('storage', listener)
+
+  return () => source.removeEventListener('storage', listener)
 }

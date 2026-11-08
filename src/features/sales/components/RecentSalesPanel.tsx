@@ -70,6 +70,7 @@ function buildColumns(remaining: Map<string, Centavos>): SummaryColumn<Sale>[] {
                 settlement.tone === 'success' && 'text-emerald-600',
                 settlement.tone === 'warning' && 'text-amber-600',
                 settlement.tone === 'danger' && 'text-rose-600',
+                settlement.tone === 'neutral' && 'text-slate-500',
               )}
             >
               {settlement.label}

@@ -1,7 +1,10 @@
+import { Link } from 'react-router-dom'
+
 import { Pagination } from '@/components/common/Pagination'
 import { SelectField } from '@/components/common/SelectField'
 import { StatusPill } from '@/components/common/StatusPill'
 import { SummaryTable, type SummaryColumn } from '@/components/common/SummaryTable'
+import { ROUTES } from '@/app/routes'
 import { ProductRowActions } from '@/features/products/components/ProductRowActions'
 import { ProductThumbnail } from '@/features/products/components/ProductThumbnail'
 import { PAGE_SIZE_OPTIONS } from '@/features/products/hooks/useProductList'
@@ -18,7 +21,12 @@ const COLUMNS: SummaryColumn<Product>[] = [
     cell: (product) => (
       <span className="flex items-center gap-3">
         <ProductThumbnail name={product.name} imageUrl={product.imageUrl} />
-        <span className="font-medium">{product.name}</span>
+        <Link
+          to={ROUTES.productDetail(product.id)}
+          className="font-medium text-navy-900 underline-offset-2 hover:text-brand-600 hover:underline"
+        >
+          {product.name}
+        </Link>
       </span>
     ),
     // Long names wrap instead of pushing Actions out of the card at 1280px.

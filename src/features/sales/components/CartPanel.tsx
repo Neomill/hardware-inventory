@@ -1,3 +1,4 @@
+import type { Ref } from 'react'
 import { ArrowRight, Package, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/common/Button'
@@ -19,6 +20,10 @@ type CartPanelProps = {
   onRemove: (productId: string) => void
   onClear: () => void
   onCheckout: () => void
+  /** Id of the section, for controls elsewhere that point at the cart (aria-controls). */
+  id?: string
+  /** The heading takes focus when another control jumps to the cart. */
+  headingRef?: Ref<HTMLHeadingElement>
 }
 
 /**
@@ -34,13 +39,15 @@ export function CartPanel({
   onRemove,
   onClear,
   onCheckout,
+  id,
+  headingRef,
 }: CartPanelProps) {
   const hasLines = entries.length > 0 || unavailable.length > 0
 
   return (
-    <section className="card flex min-w-0 flex-col">
+    <section id={id} className="card flex min-w-0 scroll-mt-4 flex-col">
       <header className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-        <h2 className="text-base font-semibold text-navy-900">
+        <h2 ref={headingRef} tabIndex={-1} className="text-base font-semibold text-navy-900">
           Current Sale ({formatItemCount(totals.itemCount)})
         </h2>
 

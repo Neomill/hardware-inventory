@@ -30,6 +30,16 @@ describe('ROUTES builders', () => {
     )
   })
 
+  it('builds supplier invoice links under inventory', () => {
+    expect(ROUTES.invoices).toBe('/inventory/invoices')
+    expect(ROUTES.invoiceDetail('INV-10021')).toBe('/inventory/invoices/INV-10021')
+    expect(ROUTES.invoiceDetail('a/b c')).toBe('/inventory/invoices/a%2Fb%20c')
+    expect(
+      matchPath(ROUTES.patterns.invoiceDetail, ROUTES.invoiceDetail('INV-10021'))?.params,
+    ).toEqual({ invoiceNumber: 'INV-10021' })
+    expect(matchPath(ROUTES.patterns.invoiceDetail, ROUTES.invoices)).toBeNull()
+  })
+
   it('recognises stock filters', () => {
     expect(isProductStockFilter('restock')).toBe(true)
     expect(isProductStockFilter('low-stock')).toBe(false)

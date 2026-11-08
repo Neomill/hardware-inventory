@@ -36,6 +36,8 @@ export function App() {
           <Route path={ROUTES.inventory} element={<InventoryPage />} />
           <Route path={ROUTES.receiveStock} element={<InventoryPage />} />
           <Route path={ROUTES.stockMovements} element={<InventoryPage />} />
+          <Route path={ROUTES.invoices} element={<InventoryPage />} />
+          <Route path={ROUTES.patterns.invoiceDetail} element={<InventoryPage />} />
           <Route path={ROUTES.customers} element={<CustomerLedgerPage />} />
           <Route path={ROUTES.patterns.customerDetail} element={<CustomerLedgerPage />} />
           <Route path={ROUTES.reports} element={<ReportsPage />} />

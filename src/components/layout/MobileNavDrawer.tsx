@@ -21,7 +21,11 @@ export function MobileNavDrawer({ id, onClose, returnFocusRef }: MobileNavDrawer
   useModalFocus(layerRef, { onClose, returnFocusRef })
 
   return (
-    <div ref={layerRef} tabIndex={-1} className="fixed inset-0 z-40 focus:outline-none lg:hidden">
+    <div
+      ref={layerRef}
+      tabIndex={-1}
+      className="fixed inset-0 z-40 focus:outline-none lg:hidden print:hidden"
+    >
       {/* Out of the Tab order (Escape closes); still reachable by touch screen readers. */}
       <button
         type="button"

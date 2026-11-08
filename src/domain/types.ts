@@ -66,6 +66,46 @@ export type Sale = {
   customerName: string
   status: SaleStatus
   recordedBy: string
+  /** Null while the sale stands. Set once, when status becomes 'cancelled' (D8). */
+  cancellation: SaleCancellation | null
+}
+
+/** Who cancelled a sale, when and why (D8). */
+export type SaleCancellation = {
+  /** ISO 8601. */
+  cancelledAt: string
+  /** CURRENT_USER.name (D3). */
+  cancelledBy: string
+  /** Trimmed, 1 to CANCEL_REASON_MAX characters. */
+  reason: string
+}
+
+/** One product on a supplier invoice. Copied so the record survives a later rename. */
+export type SupplierInvoiceLine = {
+  productId: string
+  productName: string
+  sku: string
+  unit: string
+  /** Whole units, more than zero (D2). */
+  quantity: number
+}
+
+/** A delivery as written on the supplier's paper invoice (D10). Never edited once saved. */
+export type SupplierInvoice = {
+  /** "INV-10021" (E6). Unique; the record's key. */
+  invoiceNumber: string
+  supplier: string
+  /** "2026-11-01" (DayKey): the date printed on the invoice. */
+  invoiceDate: string
+  /** Typed from the paper, integer centavos, more than zero. */
+  total: Centavos
+  /** At least one, one per product. */
+  lines: SupplierInvoiceLine[]
+  note: string | null
+  /** CURRENT_USER.name (D3). */
+  receivedBy: string
+  /** ISO 8601, when it was saved. Also every line's movement time. */
+  recordedAt: string
 }
 
 export type StockMovement = {
@@ -77,7 +117,7 @@ export type StockMovement = {
   reference: string
   /** Plain-language line for the movement log: "Sold to Pedro Santos". */
   description: string
-  /** Required for an adjustment, null otherwise. */
+  /** Required for an adjustment and a sale reversal, null otherwise. */
   reason: string | null
   /** Free text the person receiving stock added, if any. */
   note?: string | null

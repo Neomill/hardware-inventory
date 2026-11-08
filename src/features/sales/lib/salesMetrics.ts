@@ -1,6 +1,7 @@
 import { SETTLEMENT_LABELS, remainingBySale, settlementStatus } from '@/domain/ledger'
 import type { SettlementStatus } from '@/domain/ledger'
 import type { Centavos } from '@/domain/money'
+import { CANCELLED_SALE_LABEL, isSaleCancelled } from '@/domain/saleCancellation'
 import type { CustomerPayment, PaymentMethod, Sale } from '@/domain/types'
 import { formatNumber } from '@/lib/format'
 
@@ -141,11 +142,11 @@ export function computeSalesMetrics(
 }
 
 export type SaleStatusLabel = {
-  status: SettlementStatus
+  status: SettlementStatus | 'cancelled'
   label: string
-  /** What is still unpaid on the sale now, after customer payments. */
+  /** What is still unpaid on the sale now, after customer payments. 0 once cancelled. */
   remaining: Centavos
-  tone: 'success' | 'warning' | 'danger'
+  tone: 'success' | 'warning' | 'danger' | 'neutral'
 }
 
 const SETTLEMENT_TONES: Record<SettlementStatus, SaleStatusLabel['tone']> = {
@@ -157,9 +158,15 @@ const SETTLEMENT_TONES: Record<SettlementStatus, SaleStatusLabel['tone']> = {
 /**
  * How a sale's settlement reads now: Paid, Partially Paid or Outstanding, from
  * what is still unpaid after customer payments (`remaining`, from
- * remainingBySale) -- so the Sales screen agrees with the Ledger.
+ * remainingBySale) -- so the Sales screen agrees with the Ledger. A cancelled
+ * sale reads "Cancelled" (neutral), never "Paid" (spec 04 sale cancellation
+ * s.5.5, s.7.3): the sale page and the Recent Sales list share this rule.
  */
 export function describeSettlement(sale: Sale, remaining: Centavos): SaleStatusLabel {
+  if (isSaleCancelled(sale)) {
+    return { status: 'cancelled', label: CANCELLED_SALE_LABEL, remaining: 0, tone: 'neutral' }
+  }
+
   const status = settlementStatus(sale, remaining)
 
   return {

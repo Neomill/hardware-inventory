@@ -1,6 +1,6 @@
 import { ClipboardList, Package, Tag, Wallet } from 'lucide-react'
 
-import { KpiCard } from '@/features/dashboard/components/KpiCard'
+import { StatCard } from '@/components/common/StatCard'
 import { LowStockCard } from '@/features/dashboard/components/LowStockCard'
 import { QuickActions } from '@/features/dashboard/components/QuickActions'
 import { RecentMovementsCard } from '@/features/dashboard/components/RecentMovementsCard'
@@ -20,7 +20,7 @@ export function DashboardPage() {
   return (
     <div className="flex min-w-0 flex-col gap-5">
       <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
+        <StatCard
           label="Today's Sales"
           value={formatCurrency(kpis.todaysSales)}
           icon={ClipboardList}
@@ -37,7 +37,7 @@ export function DashboardPage() {
           }
         />
 
-        <KpiCard
+        <StatCard
           label="Outstanding Credit"
           value={formatCurrency(kpis.outstandingCredit)}
           icon={Wallet}
@@ -57,15 +57,15 @@ export function DashboardPage() {
           }
         />
 
-        <KpiCard
-          label="Low Stock Items"
+        <StatCard
+          label="Needs restocking"
           value={formatNumber(kpis.lowStockCount)}
           icon={Package}
           tone="amber"
-          footer={<span className="text-muted">Items need restocking</span>}
+          footer={<span className="text-muted">Low or out of stock</span>}
         />
 
-        <KpiCard
+        <StatCard
           label="Total Products"
           value={formatNumber(kpis.totalActiveProducts)}
           icon={Tag}

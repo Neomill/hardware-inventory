@@ -15,6 +15,9 @@ const DRAWER_ID = 'mobile-navigation'
  * Application frame: fixed sidebar on tablet/desktop, slide-over drawer on
  * narrow screens. Only the content column scrolls, so the nav and the page
  * heading stay reachable during long sessions at the counter.
+ *
+ * In print the frame lets go of the viewport height and its scroll container,
+ * so a long page prints in full; the navigation and footer are `print:hidden`.
  */
 export function AppShell() {
   const [isMenuOpen, setMenuOpen] = useState(false)
@@ -35,8 +38,8 @@ export function AppShell() {
   }, [location.pathname, isDesktop])
 
   return (
-    <div className="flex h-full bg-surface">
-      <aside className="hidden shrink-0 lg:block">
+    <div className="flex h-full bg-surface print:block print:h-auto print:bg-white">
+      <aside className="hidden shrink-0 lg:block print:hidden">
         <Sidebar />
       </aside>
 
@@ -44,7 +47,7 @@ export function AppShell() {
         <MobileNavDrawer id={DRAWER_ID} onClose={closeMenu} returnFocusRef={menuButtonRef} />
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto print:block print:overflow-visible">
         <TopBar
           title={title}
           subtitle={subtitle}
@@ -55,11 +58,11 @@ export function AppShell() {
           isMenuOpen={showDrawer}
         />
 
-        <main className="flex-1 px-4 pb-6 sm:px-6 lg:px-8">
+        <main className="flex-1 px-4 pb-6 sm:px-6 lg:px-8 print:px-0 print:pb-0">
           <Outlet />
         </main>
 
-        <footer className="flex items-center justify-between border-t border-slate-200 px-4 py-4 text-xs text-muted sm:px-6 lg:px-8">
+        <footer className="flex items-center print:hidden justify-between border-t border-slate-200 px-4 py-4 text-xs text-muted sm:px-6 lg:px-8">
           <span>{APP_NAME}</span>
           <span>{APP_VERSION}</span>
         </footer>

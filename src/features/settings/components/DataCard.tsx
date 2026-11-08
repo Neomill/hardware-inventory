@@ -25,6 +25,7 @@ export function DataCard() {
   const sales = useShopStore((state) => state.sales)
   const movements = useShopStore((state) => state.movements)
   const payments = useShopStore((state) => state.payments)
+  const invoices = useShopStore((state) => state.invoices)
   const cart = useShopStore((state) => state.cart)
   const heldSales = useShopStore((state) => state.heldSales)
   const taxRate = useShopStore((state) => state.taxRate)
@@ -44,12 +45,13 @@ export function DataCard() {
         sales,
         movements,
         payments,
+        invoices,
         cart,
         heldSales,
         taxRate,
         settings,
       }),
-    [products, customers, sales, movements, payments, cart, heldSales, taxRate, settings],
+    [products, customers, sales, movements, payments, invoices, cart, heldSales, taxRate, settings],
   )
 
   const counts = [
@@ -58,6 +60,7 @@ export function DataCard() {
     { label: 'Sales', value: sales.length },
     { label: 'Stock movements', value: movements.length },
     { label: 'Customer payments', value: payments.length },
+    { label: 'Supplier invoices', value: invoices.length },
     { label: 'Held sales', value: heldSales.length },
   ]
 
