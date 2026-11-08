@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, PauseCircle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Alert } from '@/components/common/Alert'
@@ -11,11 +11,16 @@ import { AddToCartDialog } from '@/features/sales/components/AddToCartDialog'
 import { CartBar } from '@/features/sales/components/CartBar'
 import { CartNoticePanel } from '@/features/sales/components/CartNoticePanel'
 import { CartPanel } from '@/features/sales/components/CartPanel'
+import { CartSheet } from '@/features/sales/components/CartSheet'
 import { ClearCartDialog } from '@/features/sales/components/ClearCartDialog'
+import { HeldSalesButton } from '@/features/sales/components/HeldSalesButton'
+import { HeldSalesDialog } from '@/features/sales/components/HeldSalesDialog'
 import { HoldSaleDialog } from '@/features/sales/components/HoldSaleDialog'
 import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
 import { useCart } from '@/features/sales/hooks/useCart'
+import { useStickyMaxHeight } from '@/features/sales/hooks/useStickyMaxHeight'
 import { cartBarSummary } from '@/features/sales/lib/cartBar'
+import { POS_CART_BESIDE_GRID_QUERY, canProceedToCheckout } from '@/features/sales/lib/cartLayout'
 import {
   buildLiveCartNotice,
   holdAvailability,
@@ -24,6 +29,7 @@ import {
   type CartNotice,
   type SalesRootNavState,
 } from '@/features/sales/lib/heldSales'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useShopStore } from '@/stores/useShopStore'
 import { cn } from '@/lib/utils'
 
@@ -32,9 +38,13 @@ const ALL_CATEGORIES = 'all'
 export function PosPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const holdHintId = useId()
-  const cartId = useId()
+  const sheetId = useId()
+  const cartHeadingId = useId()
   const cartHeadingRef = useRef<HTMLHeadingElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const viewCartRef = useRef<HTMLButtonElement>(null)
+  const cartColumnRef = useRef<HTMLDivElement>(null)
+  const productColumnRef = useRef<HTMLDivElement>(null)
   const products = useShopStore((state) => state.products)
   const addToCart = useShopStore((state) => state.addToCart)
   const setCartQuantity = useShopStore((state) => state.setCartQuantity)
@@ -49,11 +59,14 @@ export function PosPage() {
   const [category, setCategory] = useState(ALL_CATEGORIES)
   const [selected, setSelected] = useState<Product | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [resumedMessage, setResumedMessage] = useState<string | null>(null)
   const [isHoldOpen, setHoldOpen] = useState(false)
+  const [isHeldOpen, setHeldOpen] = useState(false)
   const [isClearOpen, setClearOpen] = useState(false)
-  // Set when the cart was cleared: the Clear button is gone, so focus goes to
-  // the cart heading once the dialog has closed (a cancel returns it to Clear).
-  const focusCartAfterClearRef = useRef(false)
+  const [isSheetOpen, setSheetOpen] = useState(false)
+  // Set when the cart was cleared: the Clear button is gone, so focus moves on
+  // once the dialog has closed (a cancel returns it to Clear).
+  const focusAfterClearRef = useRef(false)
   // What changed in the cart: handed over by a resume, or found on opening
   // (spec 03 s.5.5, s.7.3). Lives only as long as this page.
   const [notices, setNotices] = useState<CartNotice[]>(() => {
@@ -61,6 +74,14 @@ export function PosPage() {
 
     return resumed ? [resumed] : []
   })
+
+  // One cart per layout, never both: a sticky column beside the grid at xl, a
+  // bottom sheet opened from the cart bar below it.
+  const isCartBesideGrid = useMediaQuery(POS_CART_BESIDE_GRID_QUERY)
+  // The sheet closes when nothing is left in it (cleared, last line removed)
+  // or when the screen grows wide enough for the column.
+  const isSheetShown = isSheetOpen && !isCartBesideGrid && cartLineCount > 0
+  const cartMaxHeight = useStickyMaxHeight(cartColumnRef, productColumnRef, isCartBesideGrid)
 
   // The resume notice is read once; clear it from history so a reload or Back
   // does not show it again.
@@ -93,12 +114,43 @@ export function PosPage() {
   }, [removeFromCart, setCartQuantity])
 
   // Runs after the dialog's own cleanup, which skips the removed Clear button.
+  // Beside the grid the cart stays, so focus goes to its heading; the sheet
+  // closes with the cart emptied, so focus goes to the search, ready for the
+  // next sale.
   useEffect(() => {
-    if (!isClearOpen && focusCartAfterClearRef.current) {
-      focusCartAfterClearRef.current = false
-      cartHeadingRef.current?.focus()
+    if (!isClearOpen && focusAfterClearRef.current) {
+      focusAfterClearRef.current = false
+      const target = isCartBesideGrid ? cartHeadingRef.current : searchRef.current
+      target?.focus()
     }
-  }, [isClearOpen])
+  }, [isClearOpen, isCartBesideGrid])
+
+  // Keep the open flag in step with what is shown, so the sheet does not pop
+  // back open later (a rotation back to portrait, the next item added).
+  useEffect(() => {
+    if (isSheetOpen && !isSheetShown) {
+      setSheetOpen(false)
+    }
+  }, [isSheetOpen, isSheetShown])
+
+  // When the sheet closed on its own, its trigger may have gone with the bar
+  // (empty cart): put focus on the search rather than leave it on <body>.
+  const wasSheetShownRef = useRef(false)
+  useEffect(() => {
+    if (isSheetShown) {
+      wasSheetShownRef.current = true
+
+      return
+    }
+
+    if (wasSheetShownRef.current) {
+      wasSheetShownRef.current = false
+
+      if (document.activeElement === null || document.activeElement === document.body) {
+        searchRef.current?.focus()
+      }
+    }
+  }, [isSheetShown])
 
   const holdState = holdAvailability(cartLineCount, heldCount)
 
@@ -134,6 +186,7 @@ export function PosPage() {
 
     const result = addToCart(selected.id, quantity)
     setMessage(result.ok ? null : result.message)
+    setResumedMessage(null)
     setSelected(null)
   }
 
@@ -145,7 +198,8 @@ export function PosPage() {
   function handleConfirmClear() {
     clearCart()
     setMessage(null)
-    focusCartAfterClearRef.current = true
+    setResumedMessage(null)
+    focusAfterClearRef.current = true
     setClearOpen(false)
   }
 
@@ -155,20 +209,14 @@ export function PosPage() {
     navigate(ROUTES.sales, { state })
   }
 
-  // Below xl the cart sits under the product grid: move focus to its heading
-  // (so keyboard and screen-reader users land in the cart) and bring it into view.
-  function handleViewCart() {
-    const heading = cartHeadingRef.current
-
-    if (!heading) {
-      return
-    }
-
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-    heading.focus({ preventScroll: true })
-    heading
-      .closest('section')
-      ?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  // Resumed from the Held Sales list opened on this page: the store has loaded
+  // the cart, so stay here and show what changed (replacing notices about the
+  // cart that was there before).
+  function handleResumed(cartNotice: CartNotice | null) {
+    setHeldOpen(false)
+    setMessage(null)
+    setNotices(cartNotice ? [cartNotice] : [])
+    setResumedMessage(cartNotice ? null : 'Held sale resumed.')
   }
 
   const cartItemCount =
@@ -180,9 +228,32 @@ export function PosPage() {
     ? (entries.find((entry) => entry.line.productId === selected.id)?.line.quantity ?? 0)
     : 0
 
+  const cart = (
+    <CartPanel
+      entries={entries}
+      unavailable={unavailable}
+      totals={totals}
+      taxRate={taxRate}
+      onQuantityChange={handleQuantityChange}
+      onRemove={removeFromCart}
+      onClear={() => setClearOpen(true)}
+      onCheckout={() => navigate(ROUTES.checkout)}
+      onHold={() => setHoldOpen(true)}
+      hold={holdState}
+      headingId={cartHeadingId}
+      headingRef={cartHeadingRef}
+      onClose={isCartBesideGrid ? undefined : () => setSheetOpen(false)}
+      className={isCartBesideGrid ? undefined : 'rounded-b-none border-b-0'}
+      style={
+        isCartBesideGrid && cartMaxHeight !== undefined ? { maxHeight: cartMaxHeight } : undefined
+      }
+    />
+  )
+
   return (
     <div className="flex min-w-0 flex-col gap-5">
       {message ? <Alert tone="error">{message}</Alert> : null}
+      {resumedMessage ? <Alert tone="success">{resumedMessage}</Alert> : null}
 
       {notices.map((notice, index) => (
         <CartNoticePanel
@@ -193,13 +264,22 @@ export function PosPage() {
       ))}
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            label="Search products"
-            placeholder="Search by product name or SKU..."
-          />
+        <div ref={productColumnRef} className="flex min-w-0 flex-col gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <SearchInput
+              ref={searchRef}
+              value={search}
+              onChange={setSearch}
+              label="Search products"
+              placeholder="Search by product name or SKU..."
+              className="min-w-0 flex-1"
+            />
+            <HeldSalesButton
+              count={heldCount}
+              onClick={() => setHeldOpen(true)}
+              className="shrink-0"
+            />
+          </div>
 
           <div className="flex flex-wrap gap-2">
             <button
@@ -237,44 +317,50 @@ export function PosPage() {
           <PosProductGrid products={visible} onSelect={setSelected} />
         </div>
 
-        <div className="min-w-0 xl:sticky xl:top-4 xl:self-start">
-          <CartPanel
-            entries={entries}
-            unavailable={unavailable}
-            totals={totals}
-            taxRate={taxRate}
-            onQuantityChange={handleQuantityChange}
-            onRemove={removeFromCart}
-            onClear={() => setClearOpen(true)}
-            onCheckout={() => navigate(ROUTES.checkout)}
-            id={cartId}
-            headingRef={cartHeadingRef}
-          />
-        </div>
+        {isCartBesideGrid ? (
+          <div ref={cartColumnRef} className="sticky top-4 flex min-w-0 flex-col self-start">
+            {cart}
+          </div>
+        ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Button icon={ArrowLeft} to={ROUTES.sales}>
+      <div className="flex">
+        <Button icon={ArrowLeft} to={ROUTES.sales} className="w-full sm:w-auto">
           Back to Sales
         </Button>
-        <div className="flex min-w-0 flex-col gap-1">
-          <Button
-            icon={PauseCircle}
-            onClick={() => setHoldOpen(true)}
-            disabled={!holdState.canHold}
-            aria-describedby={holdState.reason ? holdHintId : undefined}
-          >
-            Hold Sale
-          </Button>
-          {holdState.reason ? (
-            <p id={holdHintId} className="text-center text-xs text-muted">
-              {holdState.reason}
-            </p>
-          ) : null}
-        </div>
       </div>
 
-      <CartBar summary={barSummary} cartId={cartId} onViewCart={handleViewCart} />
+      {!isCartBesideGrid ? (
+        <CartBar
+          summary={barSummary}
+          sheetId={sheetId}
+          isCartOpen={isSheetShown}
+          onViewCart={() => setSheetOpen(true)}
+          onCheckout={() => navigate(ROUTES.checkout)}
+          canCheckout={canProceedToCheckout(entries.length, unavailable.length)}
+          viewCartRef={viewCartRef}
+        />
+      ) : null}
+
+      {isSheetShown ? (
+        <CartSheet
+          id={sheetId}
+          labelledBy={cartHeadingId}
+          onClose={() => setSheetOpen(false)}
+          initialFocusRef={cartHeadingRef}
+          returnFocusRef={viewCartRef}
+        >
+          {cart}
+        </CartSheet>
+      ) : null}
+
+      {isHeldOpen ? (
+        <HeldSalesDialog
+          context="pos"
+          onClose={() => setHeldOpen(false)}
+          onResumed={handleResumed}
+        />
+      ) : null}
 
       {isClearOpen ? (
         <ClearCartDialog

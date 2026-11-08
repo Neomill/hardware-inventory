@@ -23,8 +23,13 @@ import { formatCurrency } from '@/lib/format'
 
 type HeldSalesDialogProps = {
   onClose: () => void
-  /** Called after a resume or swap; the caller navigates to the POS page. */
+  /** Called after a resume or swap; the caller shows the POS page with the resumed cart. */
   onResumed: (notice: CartNotice | null) => void
+  /**
+   * Where the list was opened. On the POS page the empty list does not offer
+   * New Sale, since that is the page already open.
+   */
+  context?: 'sales' | 'pos'
 }
 
 type Confirming = { kind: 'discard'; id: string } | { kind: 'swap'; id: string } | null
@@ -34,7 +39,7 @@ type Confirming = { kind: 'discard'; id: string } | { kind: 'swap'; id: string }
  * s.7.2). With a sale in progress, each row's action holds the current cart and
  * resumes that one in a single step (swap).
  */
-export function HeldSalesDialog({ onClose, onResumed }: HeldSalesDialogProps) {
+export function HeldSalesDialog({ onClose, onResumed, context = 'sales' }: HeldSalesDialogProps) {
   const heldSales = useShopStore((state) => state.heldSales)
   const products = useShopStore((state) => state.products)
   const cart = useShopStore((state) => state.cart)
@@ -109,11 +114,15 @@ export function HeldSalesDialog({ onClose, onResumed }: HeldSalesDialogProps) {
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-6 text-center">
             <p className="max-w-sm text-sm text-muted">
-              No held sales. Use Hold Sale on the New Sale screen to set a sale aside.
+              {context === 'pos'
+                ? 'No held sales. Use Hold Sale in the cart to set a sale aside.'
+                : 'No held sales. Use Hold Sale on the New Sale screen to set a sale aside.'}
             </p>
-            <Button icon={Plus} variant="primary" to={ROUTES.newSale}>
-              New Sale
-            </Button>
+            {context === 'sales' ? (
+              <Button icon={Plus} variant="primary" to={ROUTES.newSale}>
+                New Sale
+              </Button>
+            ) : null}
           </div>
         ) : (
           <>

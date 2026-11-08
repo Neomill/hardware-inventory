@@ -1,13 +1,17 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import {
   addToCart,
   cartPanel,
+  cartSheet,
   cartTotal,
+  closeCart,
   definition,
   gotoRoute,
   openAddDialog,
+  openCart,
   posCard,
+  proceedToCheckout,
   productStock,
   toAmountInput,
   toCentavos,
@@ -25,7 +29,7 @@ test.describe('Cash sale', () => {
     await gotoRoute(page, '/sales/new')
     await addToCart(page, HAMMER, 2)
 
-    const cart = cartPanel(page)
+    const cart = await openCart(page)
     const total = toCentavos(await cartTotal(cart).innerText())
     await cart.getByRole('button', { name: 'Proceed to Checkout' }).click()
     await expect(page).toHaveURL(/#\/sales\/checkout$/)
@@ -74,8 +78,8 @@ test.describe('Cash sale', () => {
     await gotoRoute(page, '/sales/new')
     await addToCart(page, HAMMER, 1)
 
-    const total = toCentavos(await cartTotal(cartPanel(page)).innerText())
-    await cartPanel(page).getByRole('button', { name: 'Proceed to Checkout' }).click()
+    const total = toCentavos(await cartTotal(await openCart(page)).innerText())
+    await proceedToCheckout(page)
 
     // Cash is selected on arrival, so the most common case is one tap (exact amount, no change).
     const cash = page.getByLabel(/Cash received/)
@@ -126,10 +130,11 @@ test.describe('Stock limits at the counter (E7)', () => {
     await expect(dialog).toBeHidden()
 
     // Cart: the line cannot go above stock either.
-    const cart = cartPanel(page)
+    const cart = await openCart(page)
     const lineGroup = cart.getByRole('group', { name: `${product} quantity` })
     await expect(lineGroup.locator('output')).toHaveText(String(stock))
     await expect(lineGroup.getByRole('button', { name: /^Increase/ })).toBeDisabled()
+    await closeCart(page)
 
     // Adding the same product again offers nothing more.
     dialog = await openAddDialog(page, product)
@@ -144,7 +149,7 @@ test.describe('VAT is inclusive (D1, E2)', () => {
     await addToCart(page, HAMMER, 1)
     await addToCart(page, 'Masking Tape 2"', 3)
 
-    const cart = cartPanel(page)
+    const cart = await openCart(page)
     const lineAmounts = await cart
       .getByRole('listitem')
       .locator('span.shrink-0, span.tabular-nums')
@@ -181,31 +186,94 @@ test.describe('VAT is inclusive (D1, E2)', () => {
   })
 })
 
-test.describe('POS cart bar on narrow screens', () => {
+/** No sideways scroll on the page or in the app's scrolling column. */
+async function expectNoSidewaysScroll(page: Page): Promise<void> {
+  const overflow = await page.evaluate(() => {
+    const scroller = document.querySelector('main')?.parentElement
+    const pageOverflow = document.documentElement.scrollWidth - window.innerWidth
+    const columnOverflow = scroller ? scroller.scrollWidth - scroller.clientWidth : 0
+
+    return Math.max(pageOverflow, columnOverflow)
+  })
+  expect(overflow, 'horizontal overflow in px').toBeLessThanOrEqual(0)
+}
+
+test.describe('POS cart on narrow screens: bar and bottom sheet', () => {
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 768, height: 1024 },
   ]) {
-    test(`at ${viewport.width}px shows the cart total and jumps to the cart`, async ({ page }) => {
+    test(`at ${viewport.width}px the bar opens the cart in a sheet and checks out`, async ({
+      page,
+    }) => {
       test.skip(test.info().project.name !== 'desktop', 'Viewport is set by the test')
       await page.setViewportSize(viewport)
       await gotoRoute(page, '/sales/new')
 
       const bar = page.getByRole('region', { name: 'Cart summary' })
       await expect(bar).toHaveCount(0)
+      // The cart is no longer rendered under the product grid.
+      await expect(page.getByRole('heading', { name: /^Current Sale/ })).toHaveCount(0)
 
       await addToCart(page, HAMMER, 2)
       await expect(bar).toBeVisible()
       await expect(bar).toContainText('2 items')
+      await expect(bar.getByRole('button', { name: 'Checkout', exact: true })).toBeEnabled()
+      await expectNoSidewaysScroll(page)
+      const barTotal = toCentavos(await bar.getByText(/₱|PHP/).first().innerText())
 
-      // Same figure as the cart, both from store data.
-      await expect(bar).toContainText(await cartTotal(cartPanel(page)).innerText())
+      // View cart opens the sheet with focus on its title.
+      const viewCart = bar.getByRole('button', { name: /^View cart/ })
+      await viewCart.click()
+      const sheet = cartSheet(page)
+      await expect(sheet).toBeVisible()
+      await expect(sheet.getByRole('heading', { name: /^Current Sale \(2 items\)/ })).toBeFocused()
+      await expect(sheet.getByRole('button', { name: 'Proceed to Checkout' })).toBeInViewport()
+      await expect(sheet.getByRole('button', { name: 'Hold Sale' })).toBeInViewport()
+      // Same figure as the bar, both from store data.
+      expect(toCentavos(await cartTotal(sheet).innerText())).toBe(barTotal)
+      await expectNoSidewaysScroll(page)
 
-      await bar.getByRole('button', { name: /^View cart/ }).click()
-      await expect(page.getByRole('heading', { name: /^Current Sale/ })).toBeFocused()
-      await expect(page.getByRole('heading', { name: /^Current Sale/ })).toBeInViewport()
+      // Focus stays in the sheet.
+      for (let step = 0; step < 12; step += 1) {
+        await page.keyboard.press('Tab')
+        expect(
+          await sheet.evaluate((element) => element.contains(document.activeElement)),
+          `focus inside after Tab #${step + 1}`,
+        ).toBe(true)
+      }
+
+      // Quantity steppers work in the sheet.
+      await sheet
+        .getByRole('group', { name: `${HAMMER} quantity` })
+        .getByRole('button', { name: /^Increase/ })
+        .click()
+      await expect(sheet.getByRole('heading', { name: /^Current Sale \(3 items\)/ })).toBeVisible()
+
+      // Escape closes and returns focus to View cart; the bar has followed.
+      await page.keyboard.press('Escape')
+      await expect(sheet).toBeHidden()
+      await expect(viewCart).toBeFocused()
+      await expect(bar).toContainText('3 items')
+
+      // Checkout straight from the bar.
+      await bar.getByRole('button', { name: 'Checkout', exact: true }).click()
+      await expect(page).toHaveURL(/#\/sales\/checkout$/)
     })
   }
+
+  test('removing the last line closes the sheet and the bar', async ({ page }) => {
+    test.skip(test.info().project.name !== 'desktop', 'Viewport is set by the test')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await gotoRoute(page, '/sales/new')
+    await addToCart(page, HAMMER, 1)
+
+    const cart = await openCart(page)
+    await cart.getByRole('button', { name: `Remove ${HAMMER}` }).click()
+    await expect(cartSheet(page)).toBeHidden()
+    await expect(page.getByRole('region', { name: 'Cart summary' })).toHaveCount(0)
+    await expect(page.getByRole('searchbox', { name: 'Search products' })).toBeFocused()
+  })
 
   test('is not shown at desktop width, where the cart is beside the grid', async ({ page }) => {
     test.skip(test.info().project.name !== 'desktop', 'Desktop layout only')
@@ -213,6 +281,68 @@ test.describe('POS cart bar on narrow screens', () => {
     await gotoRoute(page, '/sales/new')
     await addToCart(page, HAMMER, 1)
 
-    await expect(page.getByRole('region', { name: 'Cart summary' })).toBeHidden()
+    await expect(page.getByRole('region', { name: 'Cart summary' })).toHaveCount(0)
+    await expect(cartPanel(page)).toBeVisible()
   })
+})
+
+test.describe('POS cart beside the grid (xl)', () => {
+  const PRODUCTS = [
+    HAMMER,
+    'Masking Tape 2"',
+    'Measuring Tape 5m',
+    'Adjustable Wrench 10"',
+    'PVC Pipe 1/2"',
+    'Sand Paper #120',
+    'Electrical Wire 2.0mm',
+  ]
+
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 1860, height: 880 },
+  ]) {
+    test(`at ${viewport.width}x${viewport.height} with many lines the header and checkout stay in view`, async ({
+      page,
+    }) => {
+      test.skip(test.info().project.name !== 'desktop', 'Viewport is set by the test')
+      await page.setViewportSize(viewport)
+      await gotoRoute(page, '/sales/new')
+
+      for (const product of PRODUCTS) {
+        await addToCart(page, product, 1)
+      }
+      await page.getByRole('searchbox', { name: 'Search products' }).fill('')
+
+      const cart = cartPanel(page)
+      const heading = cart.getByRole('heading', { name: /^Current Sale/ })
+      const checkout = cart.getByRole('button', { name: 'Proceed to Checkout' })
+      const hold = cart.getByRole('button', { name: 'Hold Sale' })
+      const lines = cart.getByRole('list', { name: 'Cart lines' })
+      await expect(lines.getByRole('listitem')).toHaveCount(PRODUCTS.length)
+
+      // Only the lines scroll: they overflow their own box.
+      await expect
+        .poll(() => lines.evaluate((list) => list.scrollHeight > list.clientHeight))
+        .toBe(true)
+
+      for (const position of ['top', 'middle', 'bottom'] as const) {
+        await page.evaluate((where) => {
+          const scroller = document.querySelector('main')?.parentElement
+
+          if (scroller) {
+            const end = scroller.scrollHeight
+            scroller.scrollTop = where === 'top' ? 0 : where === 'middle' ? end / 2 : end
+          }
+        }, position)
+
+        await expect(heading, `heading in view at ${position}`).toBeInViewport({ ratio: 1 })
+        await expect(checkout, `checkout in view at ${position}`).toBeInViewport({ ratio: 1 })
+        await expect(hold, `hold in view at ${position}`).toBeInViewport({ ratio: 1 })
+      }
+
+      await expectNoSidewaysScroll(page)
+      await checkout.click()
+      await expect(page).toHaveURL(/#\/sales\/checkout$/)
+    })
+  }
 })

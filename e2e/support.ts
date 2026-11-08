@@ -102,6 +102,44 @@ export function cartPanel(page: Page): Locator {
     .filter({ has: page.getByRole('heading', { name: /^Current Sale/ }) })
 }
 
+/** The cart as a bottom sheet (POS below the xl breakpoint). */
+export function cartSheet(page: Page): Locator {
+  return page.getByRole('dialog', { name: /^Current Sale/ })
+}
+
+/**
+ * The POS cart, ready to use at any width: beside the grid at xl, otherwise in
+ * the bottom sheet, opened from the cart bar if it is not open yet. Below xl an
+ * empty cart has no bar and no sheet, so this needs at least one line there.
+ */
+export async function openCart(page: Page): Promise<Locator> {
+  const bar = page.getByRole('region', { name: 'Cart summary' })
+
+  if (!(await cartSheet(page).isVisible()) && (await bar.isVisible())) {
+    await bar.getByRole('button', { name: /^View cart/ }).click()
+    await expect(cartSheet(page)).toBeVisible()
+  }
+
+  return cartPanel(page)
+}
+
+/** Closes the cart sheet if it is open (no-op at xl), so the page behind can be used. */
+export async function closeCart(page: Page): Promise<void> {
+  const sheet = cartSheet(page)
+
+  if (await sheet.isVisible()) {
+    await sheet.getByRole('button', { name: 'Close cart' }).click()
+    await expect(sheet).toBeHidden()
+  }
+}
+
+/** Proceed to Checkout from the POS cart at any width; lands on the checkout page. */
+export async function proceedToCheckout(page: Page): Promise<void> {
+  const cart = await openCart(page)
+  await cart.getByRole('button', { name: 'Proceed to Checkout' }).click()
+  await expect(page).toHaveURL(/#\/sales\/checkout$/)
+}
+
 /** The TOTAL figure in a CartTotals block inside `scope`. */
 export function cartTotal(scope: Locator): Locator {
   return scope.getByText(/^Total$/i).locator('xpath=following-sibling::span[1]')

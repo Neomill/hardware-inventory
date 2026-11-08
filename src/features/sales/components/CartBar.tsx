@@ -1,25 +1,39 @@
-import { ShoppingCart } from 'lucide-react'
+import type { Ref } from 'react'
+import { ArrowRight, ShoppingCart } from 'lucide-react'
 
 import { Button } from '@/components/common/Button'
 import type { CartBarSummary } from '@/features/sales/lib/cartBar'
 
 type CartBarProps = {
   summary: CartBarSummary | null
-  /** Id of the cart section the button jumps to. */
-  cartId: string
+  /** Id of the cart sheet the View cart button opens. */
+  sheetId: string
+  isCartOpen: boolean
   onViewCart: () => void
+  onCheckout: () => void
+  canCheckout: boolean
+  /** The sheet returns focus here when it closes. */
+  viewCartRef?: Ref<HTMLButtonElement>
 }
 
 /**
- * Sticky cart summary for screens where the cart sits below the product grid
- * (under the `xl` breakpoint). It keeps the item count and total in view and
- * jumps to the cart, where the cashier reviews lines, holds the sale or checks
- * out. Hidden on desktop, where the cart is beside the grid, and in print.
+ * Sticky cart summary for screens where the cart does not fit beside the
+ * product grid (under the `xl` breakpoint). It keeps the item count and total
+ * in view, opens the cart in a bottom sheet, and goes straight to checkout.
+ * Hidden on desktop, where the cart is beside the grid, and in print.
  *
  * It is `sticky`, not `fixed`: it keeps its own place at the end of the page,
  * so scrolling to the bottom always uncovers the last row of products.
  */
-export function CartBar({ summary, cartId, onViewCart }: CartBarProps) {
+export function CartBar({
+  summary,
+  sheetId,
+  isCartOpen,
+  onViewCart,
+  onCheckout,
+  canCheckout,
+  viewCartRef,
+}: CartBarProps) {
   if (!summary) {
     return null
   }
@@ -31,7 +45,7 @@ export function CartBar({ summary, cartId, onViewCart }: CartBarProps) {
       data-testid="pos-cart-bar"
       className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:hidden print:hidden"
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs font-medium text-muted">{summary.countLabel}</p>
           <p className="truncate text-lg font-bold tabular-nums text-navy-900">
@@ -42,16 +56,28 @@ export function CartBar({ summary, cartId, onViewCart }: CartBarProps) {
           ) : null}
         </div>
 
-        <Button
-          variant="primary"
-          icon={ShoppingCart}
-          onClick={onViewCart}
-          aria-label={summary.accessibleLabel}
-          aria-controls={cartId}
-          className="shrink-0"
-        >
-          View cart
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            ref={viewCartRef}
+            icon={ShoppingCart}
+            onClick={onViewCart}
+            aria-label={summary.accessibleLabel}
+            aria-controls={isCartOpen ? sheetId : undefined}
+            expanded={isCartOpen}
+            className="px-3"
+          >
+            View cart
+          </Button>
+          <Button
+            variant="primary"
+            icon={ArrowRight}
+            onClick={onCheckout}
+            disabled={!canCheckout}
+            className="px-3"
+          >
+            Checkout
+          </Button>
+        </div>
       </div>
     </div>
   )
