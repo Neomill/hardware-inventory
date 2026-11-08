@@ -2,7 +2,7 @@ import { PaymentDonut } from '@/components/common/PaymentDonut'
 import { PaymentSwatch } from '@/components/common/StatusPills'
 import { SectionCard } from '@/components/common/SectionCard'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
-import { reportsHref } from '@/features/reports/lib/reportRange'
+import { ROUTES } from '@/app/routes'
 import { PAYMENT_LABELS } from '@/domain/sale'
 import type { PaymentSlice } from '@/features/sales/lib/salesMetrics'
 import { formatCurrency } from '@/lib/format'
@@ -18,7 +18,10 @@ export function PaymentSummaryCard({ slices, total }: PaymentSummaryCardProps) {
       title="Payment Summary (Today)"
       className="min-w-0"
       action={
-        <ViewAllLink to={reportsHref({ section: 'payment-breakdown' })} label="View Details" />
+        <ViewAllLink
+          to={ROUTES.reportsFor({ section: 'payment-breakdown' })}
+          label="View Details"
+        />
       }
     >
       {total === 0 ? (

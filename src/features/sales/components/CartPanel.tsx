@@ -18,6 +18,7 @@ type CartPanelProps = {
   taxRate: number
   onQuantityChange: (productId: string, quantity: number) => void
   onRemove: (productId: string) => void
+  /** Asks to clear: the page confirms before the cart is emptied. */
   onClear: () => void
   onCheckout: () => void
   /** Id of the section, for controls elsewhere that point at the cart (aria-controls). */
@@ -55,6 +56,7 @@ export function CartPanel({
           <button
             type="button"
             onClick={onClear}
+            aria-haspopup="dialog"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-rose-600 transition-colors hover:text-rose-700"
           >
             <Trash2 className="h-4 w-4" aria-hidden />

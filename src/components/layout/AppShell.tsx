@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
+import { DataRecoveryNotice } from '@/components/layout/DataRecoveryNotice'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
@@ -57,6 +58,8 @@ export function AppShell() {
           menuControls={DRAWER_ID}
           isMenuOpen={showDrawer}
         />
+
+        <DataRecoveryNotice />
 
         <main className="flex-1 px-4 pb-6 sm:px-6 lg:px-8 print:px-0 print:pb-0">
           <Outlet />

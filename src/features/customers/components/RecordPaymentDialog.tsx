@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ChangeEvent } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Wallet } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -13,6 +13,7 @@ import { formatAmountInput, parseAmountInput } from '@/domain/money'
 import type { CustomerPayment } from '@/domain/types'
 import {
   buildPaymentFormSchema,
+  exceedsOutstanding,
   PAYMENT_NOTE_MAX_LENGTH,
   previewPayment,
   type PaymentFormValues,
@@ -48,6 +49,8 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
     handleSubmit,
     setValue,
     watch,
+    trigger,
+    clearErrors,
     formState: { errors, isSubmitted },
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(schema),
@@ -56,6 +59,25 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
   })
 
   const preview = previewPayment(watch('amount'), outstanding)
+
+  /**
+   * Before the first submit the form stays quiet (same as Add Customer), with one
+   * exception: an amount above the balance is flagged as soon as it is typed.
+   * After a submit, reValidateMode takes over and checks every keystroke.
+   */
+  function onAmountChange(event: ChangeEvent<HTMLInputElement>) {
+    setSubmitError(null)
+
+    if (isSubmitted) {
+      return
+    }
+
+    if (exceedsOutstanding(event.target.value, outstanding)) {
+      void trigger('amount')
+    } else {
+      clearErrors('amount')
+    }
+  }
 
   const submit = handleSubmit((values) => {
     const amount = parseAmountInput(values.amount)
@@ -81,6 +103,11 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
       shouldValidate: isSubmitted,
       shouldDirty: true,
     })
+
+    if (!isSubmitted) {
+      // The full balance is always valid, so drop any live overpayment message.
+      clearErrors('amount')
+    }
   }
 
   const title = 'Record Payment'
@@ -125,7 +152,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
                     placeholder="0.00"
                     wrapperClassName="flex-1"
                     className="h-16 text-right text-2xl font-bold tabular-nums"
-                    {...register('amount', { onChange: () => setSubmitError(null) })}
+                    {...register('amount', { onChange: onAmountChange })}
                   />
                   <Button onClick={payFullBalance} className="h-16 sm:w-44">
                     Pay full balance

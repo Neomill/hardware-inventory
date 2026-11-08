@@ -50,7 +50,7 @@ type LowStockCardProps = {
 export function LowStockCard({ items }: LowStockCardProps) {
   return (
     <SectionCard
-      title="Low Stock Items"
+      title="Needs Restocking"
       className="min-w-0"
       action={<ViewAllLink to={ROUTES.productsByStock('restock')} />}
     >

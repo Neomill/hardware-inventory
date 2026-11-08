@@ -11,6 +11,7 @@ import { AddToCartDialog } from '@/features/sales/components/AddToCartDialog'
 import { CartBar } from '@/features/sales/components/CartBar'
 import { CartNoticePanel } from '@/features/sales/components/CartNoticePanel'
 import { CartPanel } from '@/features/sales/components/CartPanel'
+import { ClearCartDialog } from '@/features/sales/components/ClearCartDialog'
 import { HoldSaleDialog } from '@/features/sales/components/HoldSaleDialog'
 import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
 import { useCart } from '@/features/sales/hooks/useCart'
@@ -49,6 +50,10 @@ export function PosPage() {
   const [selected, setSelected] = useState<Product | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [isHoldOpen, setHoldOpen] = useState(false)
+  const [isClearOpen, setClearOpen] = useState(false)
+  // Set when the cart was cleared: the Clear button is gone, so focus goes to
+  // the cart heading once the dialog has closed (a cancel returns it to Clear).
+  const focusCartAfterClearRef = useRef(false)
   // What changed in the cart: handed over by a resume, or found on opening
   // (spec 03 s.5.5, s.7.3). Lives only as long as this page.
   const [notices, setNotices] = useState<CartNotice[]>(() => {
@@ -86,6 +91,14 @@ export function PosPage() {
       setNotices((previous) => [...previous, notice])
     }
   }, [removeFromCart, setCartQuantity])
+
+  // Runs after the dialog's own cleanup, which skips the removed Clear button.
+  useEffect(() => {
+    if (!isClearOpen && focusCartAfterClearRef.current) {
+      focusCartAfterClearRef.current = false
+      cartHeadingRef.current?.focus()
+    }
+  }, [isClearOpen])
 
   const holdState = holdAvailability(cartLineCount, heldCount)
 
@@ -129,6 +142,13 @@ export function PosPage() {
     setMessage(result.ok ? null : result.message)
   }
 
+  function handleConfirmClear() {
+    clearCart()
+    setMessage(null)
+    focusCartAfterClearRef.current = true
+    setClearOpen(false)
+  }
+
   function handleHeld() {
     setHoldOpen(false)
     const state: SalesRootNavState = { notice: 'Sale held.' }
@@ -150,6 +170,9 @@ export function PosPage() {
       .closest('section')
       ?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
   }
+
+  const cartItemCount =
+    totals.itemCount + unavailable.reduce((count, line) => count + line.quantity, 0)
 
   const barSummary = cartBarSummary(totals, cartLineCount, unavailable.length)
 
@@ -222,7 +245,7 @@ export function PosPage() {
             taxRate={taxRate}
             onQuantityChange={handleQuantityChange}
             onRemove={removeFromCart}
-            onClear={clearCart}
+            onClear={() => setClearOpen(true)}
             onCheckout={() => navigate(ROUTES.checkout)}
             id={cartId}
             headingRef={cartHeadingRef}
@@ -252,6 +275,14 @@ export function PosPage() {
       </div>
 
       <CartBar summary={barSummary} cartId={cartId} onViewCart={handleViewCart} />
+
+      {isClearOpen ? (
+        <ClearCartDialog
+          itemCount={cartItemCount}
+          onClose={() => setClearOpen(false)}
+          onConfirm={handleConfirmClear}
+        />
+      ) : null}
 
       {isHoldOpen ? (
         <HoldSaleDialog onClose={() => setHoldOpen(false)} onHeld={handleHeld} />

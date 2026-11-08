@@ -8,8 +8,8 @@ import { SectionCard } from '@/components/common/SectionCard'
 import { StatCard } from '@/components/common/StatCard'
 import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
+import { fromDayKey } from '@/domain/dates'
 import { remainingBySale } from '@/domain/ledger'
-import { reportsHref } from '@/features/reports/lib/reportRange'
 import { HeldSalesDialog } from '@/features/sales/components/HeldSalesDialog'
 import { PaymentSummaryCard } from '@/features/sales/components/PaymentSummaryCard'
 import { RecentSalesPanel } from '@/features/sales/components/RecentSalesPanel'
@@ -20,6 +20,7 @@ import {
   type PosNavState,
 } from '@/features/sales/lib/heldSales'
 import { computeSalesMetrics } from '@/features/sales/lib/salesMetrics'
+import { useCalendarDay } from '@/hooks/useCalendarDay'
 import { useShopStore } from '@/stores/useShopStore'
 import { formatCurrency, formatNumber } from '@/lib/format'
 
@@ -40,7 +41,12 @@ export function SalesRootPage() {
     }
   }, [location.pathname, location.state, navigate])
 
-  const metrics = useMemo(() => computeSalesMetrics(sales, new Date(), payments), [sales, payments])
+  // Rolls over at midnight, so a Sales screen left open overnight shows the new day.
+  const day = useCalendarDay()
+  const metrics = useMemo(
+    () => computeSalesMetrics(sales, fromDayKey(day), payments),
+    [sales, payments, day],
+  )
   const remaining = useMemo(() => remainingBySale(sales, payments), [sales, payments])
 
   function handleResumed(cartNotice: CartNotice | null) {
@@ -94,7 +100,7 @@ export function SalesRootPage() {
           iconShape="circle"
           footer={<span className="text-muted">transactions</span>}
           action={{
-            to: reportsHref({ range: { preset: 'today' }, section: 'daily-sales' }),
+            to: ROUTES.reportsFor({ range: { preset: 'today' }, section: 'daily-sales' }),
             label: 'View Report',
           }}
         />
@@ -106,7 +112,7 @@ export function SalesRootPage() {
           iconShape="circle"
           footer={<span className="text-muted">total amount</span>}
           action={{
-            to: reportsHref({ range: { preset: 'today' }, section: 'daily-sales' }),
+            to: ROUTES.reportsFor({ range: { preset: 'today' }, section: 'daily-sales' }),
             label: 'View Report',
           }}
         />
@@ -151,7 +157,7 @@ export function SalesRootPage() {
           <SectionCard
             title="Top Selling Products (Today)"
             className="min-w-0"
-            action={<ViewAllLink to={reportsHref({ section: 'top-products' })} />}
+            action={<ViewAllLink to={ROUTES.reportsFor({ section: 'top-products' })} />}
           >
             {metrics.topProducts.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted">Nothing sold yet today.</p>

@@ -1,10 +1,9 @@
 import { Package, Plus } from 'lucide-react'
 
-import { StatusPill } from '@/components/common/StatusPill'
-import { STOCK_STATUS_TONES } from '@/components/common/statusTones'
+import { StockStatusPill } from '@/components/common/StatusPills'
 import { deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
-import { formatCurrency, formatNumber } from '@/lib/format'
+import { formatCurrency } from '@/lib/format'
 
 type PosProductGridProps = {
   products: Product[]
@@ -43,9 +42,7 @@ export function PosProductGrid({ products, onSelect }: PosProductGridProps) {
             </p>
 
             <div className="mt-2">
-              <StatusPill tone={STOCK_STATUS_TONES[status]}>
-                {formatNumber(product.stock)} {product.unit}
-              </StatusPill>
+              <StockStatusPill status={status} stock={product.stock} unit={product.unit} />
             </div>
 
             <button

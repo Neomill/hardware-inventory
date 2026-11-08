@@ -5,8 +5,7 @@ import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { Dialog } from '@/components/common/Dialog'
 import { QuantityStepper } from '@/components/common/QuantityStepper'
-import { StatusPill } from '@/components/common/StatusPill'
-import { STOCK_STATUS_TONES } from '@/components/common/statusTones'
+import { StockStatusPill } from '@/components/common/StatusPills'
 import { deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
 import { formatCurrency, formatNumber } from '@/lib/format'
@@ -57,9 +56,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
 
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
               <span className="text-sm text-navy-800">Stock available</span>
-              <StatusPill tone={STOCK_STATUS_TONES[status]}>
-                {formatNumber(product.stock)} {product.unit}
-              </StatusPill>
+              <StockStatusPill status={status} stock={product.stock} unit={product.unit} />
             </div>
           </div>
         </div>

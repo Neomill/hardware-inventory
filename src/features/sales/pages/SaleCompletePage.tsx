@@ -1,5 +1,5 @@
 import { CheckCircle2, Package, Printer, ShoppingCart } from 'lucide-react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
@@ -13,6 +13,7 @@ import { describeCounterMoney } from '@/domain/saleCancellation'
 import { CancelSaleSection } from '@/features/sales/components/CancelSaleSection'
 import { CancelledSaleBanner } from '@/features/sales/components/CancelledSaleBanner'
 import { SALE_CANCELLED_NOTICE, describeCancelledSale } from '@/features/sales/lib/cancelSale'
+import { readJustCompleted, receiptPaymentRows, saleRecordNote } from '@/features/sales/lib/receipt'
 import { describeSettlement, formatItemCount } from '@/features/sales/lib/salesMetrics'
 import { useShopStore } from '@/stores/useShopStore'
 import {
@@ -26,6 +27,7 @@ import {
 export function SaleCompletePage() {
   const { saleId } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const sale = useShopStore((state) => state.sales.find((candidate) => candidate.id === saleId))
   const settings = useShopStore((state) => state.settings)
   const sales = useShopStore((state) => state.sales)
@@ -42,7 +44,15 @@ export function SaleCompletePage() {
     }
   }, [cancelNotice])
 
-  const justCompleted = (location.state as { completed?: boolean } | null)?.completed === true
+  // "Sale Completed" only when arriving from checkout. Read once, then cleared
+  // from history so a reload or Back to this entry shows the neutral receipt.
+  const [justCompleted] = useState(() => readJustCompleted(location.state))
+
+  useEffect(() => {
+    if (location.state !== null && location.state !== undefined) {
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.pathname, location.state, navigate])
 
   if (!sale) {
     return (
@@ -191,21 +201,19 @@ export function SaleCompletePage() {
           />
 
           <div className="mt-2 space-y-1.5 border-t border-dashed border-slate-300 pt-2">
-            <Row
-              label={`Paid by ${PAYMENT_LABELS[sale.paymentMethod]}`}
-              value={formatCurrency(sale.amountPaid)}
-            />
-            {sale.paymentMethod === 'cash' ? (
-              <Row label="Change" value={formatCurrency(sale.changeGiven)} />
-            ) : (
-              <>
-                {/* Frozen at the counter; later payments are separate records. */}
-                <Row label="Balance at time of sale" value={formatCurrency(sale.balanceDue)} />
-                {!cancelled && settlement.remaining !== sale.balanceDue ? (
-                  <Row label="Balance now" value={formatCurrency(settlement.remaining)} />
-                ) : null}
-              </>
-            )}
+            {receiptPaymentRows(sale).map((row) => (
+              <Row
+                key={row.label}
+                label={row.label}
+                value={'amount' in row ? formatCurrency(row.amount) : row.text}
+              />
+            ))}
+            {/* Later payments are separate records; the frozen balance above stays as it was. */}
+            {sale.paymentMethod !== 'cash' &&
+            !cancelled &&
+            settlement.remaining !== sale.balanceDue ? (
+              <Row label="Balance now" value={formatCurrency(settlement.remaining)} />
+            ) : null}
             <Row label="Status now" value={settlement.label} muted />
           </div>
         </dl>
@@ -221,11 +229,7 @@ export function SaleCompletePage() {
           history but no longer counts in sales, reports or the customer ledger.
         </Alert>
       ) : (
-        <Alert tone="info">
-          Stock was reduced for {sale.lines.length} product
-          {sale.lines.length === 1 ? '' : 's'} and this sale is recorded in the sales history
-          {sale.balanceDue > 0 ? ', with the unpaid balance on the customer ledger' : ''}.
-        </Alert>
+        <Alert tone="info">{saleRecordNote(sale, justCompleted)}</Alert>
       )}
 
       {/* Equal weight: printing a receipt is as normal as starting the next sale. */}

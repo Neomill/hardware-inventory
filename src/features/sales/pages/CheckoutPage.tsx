@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Banknote, Check, CheckCircle2, CreditCard, HandCoins, Trash2, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -6,14 +6,17 @@ import { useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { Dialog } from '@/components/common/Dialog'
+import { FormField } from '@/components/common/FormField'
 import { QuantityStepper } from '@/components/common/QuantityStepper'
 import { SelectField } from '@/components/common/SelectField'
+import { TextInput } from '@/components/common/TextInput'
 import { ROUTES } from '@/app/routes'
 import { computeBalanceDue, computeChange } from '@/domain/sale'
 import type { PaymentMethod } from '@/domain/types'
 import { CartTotals } from '@/features/sales/components/CartTotals'
 import { useCart } from '@/features/sales/hooks/useCart'
 import { defaultAmountText, evaluateCheckout } from '@/features/sales/lib/checkout'
+import type { SaleCompletedNavState } from '@/features/sales/lib/receipt'
 import { formatItemCount } from '@/features/sales/lib/salesMetrics'
 import { useShopStore } from '@/stores/useShopStore'
 import { cn } from '@/lib/utils'
@@ -63,8 +66,6 @@ export function CheckoutPage() {
 
   const { entries, unavailable, totals, taxRate, isEmpty } = useCart()
 
-  const amountId = useId()
-  const amountErrorId = useId()
   const [method, setMethod] = useState<PaymentMethod>('cash')
   const [customerId, setCustomerId] = useState<string>(WALK_IN)
   // Null until the cashier types: the field then shows the method's default, so
@@ -131,7 +132,8 @@ export function CheckoutPage() {
       return
     }
 
-    navigate(ROUTES.saleDetail(result.sale.id), { state: { completed: true } })
+    const state: SaleCompletedNavState = { completed: true }
+    navigate(ROUTES.saleDetail(result.sale.id), { state })
   }
 
   return (
@@ -259,20 +261,14 @@ export function CheckoutPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={amountId} className="text-sm font-semibold text-navy-900">
-                  {method === 'cash' ? 'Cash received' : 'Amount paid now'}
-                </label>
-                <span className="relative flex items-center">
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute left-4 text-lg text-muted"
-                  >
-                    &#8369;
-                  </span>
-                  <input
-                    id={amountId}
-                    type="text"
+              <FormField
+                label={method === 'cash' ? 'Cash received' : 'Amount paid now'}
+                error={checkout.amountError ?? undefined}
+              >
+                {(field) => (
+                  <TextInput
+                    {...field}
+                    prefix="₱"
                     inputMode="decimal"
                     autoComplete="off"
                     value={amountText}
@@ -281,20 +277,10 @@ export function CheckoutPage() {
                       setError(null)
                     }}
                     placeholder="0.00"
-                    aria-invalid={checkout.amountError ? true : undefined}
-                    aria-describedby={checkout.amountError ? amountErrorId : undefined}
-                    className={cn(
-                      'h-16 w-full min-w-0 rounded-xl border bg-white pl-10 pr-4 text-right text-2xl font-bold tabular-nums text-navy-900',
-                      checkout.amountError ? 'border-rose-400' : 'border-slate-200',
-                    )}
+                    className="h-16 pl-10 text-right text-2xl font-bold tabular-nums"
                   />
-                </span>
-                {checkout.amountError ? (
-                  <p id={amountErrorId} className="text-sm font-medium text-rose-700">
-                    {checkout.amountError}
-                  </p>
-                ) : null}
-              </div>
+                )}
+              </FormField>
 
               {method === 'cash' ? (
                 <div className="rounded-xl bg-emerald-50 px-4 py-4">

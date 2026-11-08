@@ -2,13 +2,11 @@ import { useState } from 'react'
 import { Check } from 'lucide-react'
 
 import { SearchInput } from '@/components/common/SearchInput'
-import { StatusPill } from '@/components/common/StatusPill'
+import { StockStatusPill } from '@/components/common/StatusPills'
 import { searchProducts } from '@/features/inventory/lib/inventoryQuery'
-import { STOCK_STATUS_TONES } from '@/components/common/statusTones'
 import { deriveStockStatus } from '@/domain/stock'
 import type { Product } from '@/domain/types'
 import { cn } from '@/lib/utils'
-import { formatNumber } from '@/lib/format'
 
 const RESULT_LIMIT = 8
 
@@ -24,13 +22,14 @@ type ProductPickerProps = {
   inputRef?: (element: HTMLInputElement | null) => void
 }
 
+/** Stock on hand ("12 pcs"), coloured and iconed by its stock status. */
 function StockPill({ product }: { product: Product }) {
-  const status = deriveStockStatus(product.stock, product.reorderLevel)
-
   return (
-    <StatusPill tone={STOCK_STATUS_TONES[status]}>
-      {formatNumber(product.stock)} {product.unit}
-    </StatusPill>
+    <StockStatusPill
+      status={deriveStockStatus(product.stock, product.reorderLevel)}
+      stock={product.stock}
+      unit={product.unit}
+    />
   )
 }
 

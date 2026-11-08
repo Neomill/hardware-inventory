@@ -1,4 +1,3 @@
-import { ROUTES } from '@/app/routes'
 import {
   dayRange,
   fromDayKey,
@@ -195,26 +194,4 @@ export type TopProductsMetric = 'quantity' | 'revenue'
 
 export function parseTopMetricParam(params: URLSearchParams): TopProductsMetric {
   return params.get('top') === 'revenue' ? 'revenue' : 'quantity'
-}
-
-/**
- * Deep link into Reports. The app uses a HashRouter, so a URL #anchor cannot
- * address a section; `section` is a query parameter the page scrolls to.
- */
-export function reportsHref(
-  options: { range?: ReportRangeSelection; section?: ReportSectionId } = {},
-): string {
-  let params = new URLSearchParams()
-
-  if (options.range) {
-    params = writeRangeParams(params, options.range)
-  }
-
-  if (options.section) {
-    params.set('section', options.section)
-  }
-
-  const query = params.toString()
-
-  return query ? `${ROUTES.reports}?${query}` : ROUTES.reports
 }

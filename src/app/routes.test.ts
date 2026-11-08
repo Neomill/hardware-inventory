@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { matchPath } from 'react-router-dom'
 
 import { isProductStockFilter, ROUTES } from '@/app/routes'
-import { reportsHref } from '@/features/reports/lib/reportRange'
 
 describe('ROUTES builders', () => {
   it('builds product stock filter links', () => {
@@ -70,21 +69,10 @@ describe('ROUTES.reportsFor', () => {
     ).toBe('/reports?range=custom&from=2026-10-01&to=2026-10-04&top=revenue&section=top-products')
   })
 
-  it('matches reportsHref for every option it supports', () => {
-    const cases = [
-      {},
-      { section: 'payment-breakdown' as const },
-      { range: { preset: 'yesterday' as const } },
-      { range: { preset: '30d' as const }, section: 'daily-sales' as const },
-      { range: { preset: 'custom' as const, from: '2026-09-01', to: '2026-09-30' } },
-      {
-        range: { preset: 'custom' as const, from: '2026-09-01' },
-        section: 'outstanding-credit' as const,
-      },
-    ]
-
-    for (const options of cases) {
-      expect(ROUTES.reportsFor(options)).toBe(reportsHref(options))
-    }
+  it('builds plain and preset deep links', () => {
+    expect(ROUTES.reportsFor()).toBe('/reports')
+    expect(ROUTES.reportsFor({ range: { preset: 'today' }, section: 'top-products' })).toBe(
+      '/reports?range=today&section=top-products',
+    )
   })
 })
