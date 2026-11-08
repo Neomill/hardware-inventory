@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BarChart3, PauseCircle, Plus, Receipt, Users, Wallet } from 'lucide-react'
+import { BarChart3, Plus, Receipt, Users, Wallet } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Alert } from '@/components/common/Alert'
@@ -10,11 +10,11 @@ import { ViewAllLink } from '@/components/common/ViewAllLink'
 import { ROUTES } from '@/app/routes'
 import { fromDayKey } from '@/domain/dates'
 import { remainingBySale } from '@/domain/ledger'
+import { HeldSalesButton } from '@/features/sales/components/HeldSalesButton'
 import { HeldSalesDialog } from '@/features/sales/components/HeldSalesDialog'
 import { PaymentSummaryCard } from '@/features/sales/components/PaymentSummaryCard'
 import { RecentSalesPanel } from '@/features/sales/components/RecentSalesPanel'
 import {
-  heldSalesButtonName,
   readSalesRootNotice,
   type CartNotice,
   type PosNavState,
@@ -67,26 +67,14 @@ export function SalesRootPage() {
           New Sale
         </Button>
 
-        {/* Always shown and enabled, so its place never moves; at zero it opens the empty list. */}
-        <Button
-          icon={PauseCircle}
+        <HeldSalesButton
+          count={heldCount}
           onClick={() => {
             setNotice(null)
             setHeldOpen(true)
           }}
-          aria-label={heldSalesButtonName(heldCount)}
-          className="relative h-14"
-        >
-          Held Sales
-          {heldCount > 0 ? (
-            <span
-              aria-hidden
-              className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-500 px-1.5 text-xs font-bold text-white"
-            >
-              {heldCount}
-            </span>
-          ) : null}
-        </Button>
+          className="h-14"
+        />
       </div>
 
       {notice ? <Alert tone="success">{notice}</Alert> : null}

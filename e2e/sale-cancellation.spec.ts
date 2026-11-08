@@ -2,9 +2,9 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 
 import {
   addToCart,
-  cartPanel,
   customerBalance,
   gotoRoute,
+  proceedToCheckout,
   productStock,
   statValue,
   toAmountInput,
@@ -31,7 +31,7 @@ async function sellHammers(
 ): Promise<RecordedSale> {
   await gotoRoute(page, '/sales/new')
   await addToCart(page, HAMMER, quantity)
-  await cartPanel(page).getByRole('button', { name: 'Proceed to Checkout' }).click()
+  await proceedToCheckout(page)
 
   if (method === 'credit') {
     await page.getByRole('button', { name: /^Credit/ }).click()

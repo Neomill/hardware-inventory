@@ -355,8 +355,9 @@ export function CheckoutPage() {
               </Button>
               <Button
                 icon={Trash2}
+                variant="destructive"
                 onClick={handleCancelSale}
-                className="flex-1 border-rose-300 text-rose-700 hover:bg-rose-50"
+                className="flex-1"
               >
                 Cancel sale
               </Button>

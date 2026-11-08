@@ -2,10 +2,11 @@ import { expect, test, type Page } from '@playwright/test'
 
 import {
   addToCart,
-  cartPanel,
   cartTotal,
   definition,
   gotoRoute,
+  openCart,
+  proceedToCheckout,
   posCard,
   toAmountInput,
   toCentavos,
@@ -61,8 +62,8 @@ async function sellForCash(page: Page, productName: string, quantity: number): P
   await gotoRoute(page, '/sales/new')
   await addToCart(page, productName, quantity)
 
-  const total = toCentavos(await cartTotal(cartPanel(page)).innerText())
-  await cartPanel(page).getByRole('button', { name: 'Proceed to Checkout' }).click()
+  const total = toCentavos(await cartTotal(await openCart(page)).innerText())
+  await proceedToCheckout(page)
   await page.getByLabel(/Cash received/).fill(toAmountInput(total))
   await page.getByRole('button', { name: 'Confirm Sale' }).click()
   await expect(page.getByRole('heading', { name: 'Sale Completed' })).toBeVisible()
@@ -201,7 +202,7 @@ test('B4: a new product survives a reload and is sellable at the POS', async ({ 
   await expect(tile.getByRole('button', { name: /add/i })).toBeEnabled()
 
   await addToCart(page, 'Pruning Shears', 1)
-  await expect(cartPanel(page)).toContainText('Pruning Shears')
+  await expect(await openCart(page)).toContainText('Pruning Shears')
 })
 
 test('B5: editing the price leaves earlier sales at their price', async ({ page }) => {

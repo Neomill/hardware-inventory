@@ -2,9 +2,10 @@ import { expect, test, type Page } from '@playwright/test'
 
 import {
   addToCart,
-  cartPanel,
   cartTotal,
   gotoRoute,
+  openCart,
+  proceedToCheckout,
   toAmountInput,
   toCentavos,
   toCount,
@@ -42,11 +43,10 @@ test('store name and VAT persist, appear on the receipt, and Reset restores the 
   // A new sale uses the new name on its receipt and records the new rate.
   await gotoRoute(page, '/sales/new')
   await addToCart(page, 'Claw Hammer 16oz', 1)
-  const total = toCentavos(await cartTotal(cartPanel(page)).innerText())
-  await expect(
-    cartPanel(page).getByText(`Includes VAT (${NEW_VAT}%)`, { exact: false }),
-  ).toBeVisible()
-  await cartPanel(page).getByRole('button', { name: 'Proceed to Checkout' }).click()
+  const cart = await openCart(page)
+  const total = toCentavos(await cartTotal(cart).innerText())
+  await expect(cart.getByText(`Includes VAT (${NEW_VAT}%)`, { exact: false })).toBeVisible()
+  await proceedToCheckout(page)
   await page.getByLabel(/Cash received/).fill(toAmountInput(total))
   await page.getByRole('button', { name: 'Confirm Sale' }).click()
 

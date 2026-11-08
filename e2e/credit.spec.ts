@@ -2,11 +2,11 @@ import { expect, test, type Page } from '@playwright/test'
 
 import {
   addToCart,
-  cartPanel,
   customerBalance,
   dashboardOutstanding,
   definition,
   gotoRoute,
+  proceedToCheckout,
   reportsOutstanding,
   toAmountInput,
   toCentavos,
@@ -34,7 +34,7 @@ test('credit sale needs a customer and moves the ledger, dashboard and reports t
 
   await gotoRoute(page, '/sales/new')
   await addToCart(page, 'Measuring Tape 5m', 2)
-  await cartPanel(page).getByRole('button', { name: 'Proceed to Checkout' }).click()
+  await proceedToCheckout(page)
 
   await page.getByRole('button', { name: /^Credit/ }).click()
   const confirm = page.getByRole('button', { name: 'Confirm Sale' })
