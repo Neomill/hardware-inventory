@@ -63,7 +63,7 @@ export function ProductPicker({
           aria-label={`Change product. Selected: ${selected.name}`}
           aria-describedby={describedBy}
           onClick={() => setChanging(true)}
-          className="h-11 shrink-0 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-navy-800 transition-colors hover:bg-slate-50"
+          className="h-12 shrink-0 rounded-xl border border-slate-200 bg-white px-4 text-base font-semibold text-navy-800 transition-colors hover:bg-slate-50"
         >
           Change
         </button>

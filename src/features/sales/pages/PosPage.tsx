@@ -287,7 +287,7 @@ export function PosPage() {
               onClick={() => setCategory(ALL_CATEGORIES)}
               aria-pressed={category === ALL_CATEGORIES}
               className={cn(
-                'h-11 rounded-xl px-4 text-sm font-semibold transition-colors',
+                'h-12 rounded-xl px-4 text-base font-semibold transition-colors',
                 category === ALL_CATEGORIES
                   ? 'bg-navy-900 text-white'
                   : 'border border-slate-200 bg-white text-navy-700 hover:bg-navy-50',
@@ -303,7 +303,7 @@ export function PosPage() {
                 onClick={() => setCategory(name)}
                 aria-pressed={category === name}
                 className={cn(
-                  'h-11 rounded-xl px-4 text-sm font-semibold transition-colors',
+                  'h-12 rounded-xl px-4 text-base font-semibold transition-colors',
                   category === name
                     ? 'bg-navy-900 text-white'
                     : 'border border-slate-200 bg-white text-navy-700 hover:bg-navy-50',

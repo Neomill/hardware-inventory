@@ -94,7 +94,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
                   key={step}
                   type="button"
                   onClick={() => setClamped(step)}
-                  className="h-11 min-w-16 rounded-xl border border-slate-200 px-3 text-base font-semibold text-navy-800 transition-colors hover:bg-navy-50"
+                  className="h-12 min-w-16 rounded-xl border border-slate-200 px-3 text-base font-semibold text-navy-800 transition-colors hover:bg-navy-50"
                 >
                   {step}
                 </button>

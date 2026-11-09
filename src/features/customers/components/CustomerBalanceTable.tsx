@@ -88,17 +88,18 @@ export function CustomerBalanceTable({
               type="button"
               onClick={() => onRecordPayment(row.customerId)}
               aria-label={`Record payment from ${row.customerName}`}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-navy-900 transition-colors hover:bg-slate-50"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-navy-900 transition-colors hover:bg-slate-50"
             >
-              <Wallet className="h-4 w-4" aria-hidden />
+              <Wallet className="h-5 w-5" aria-hidden />
               Record Payment
             </button>
           ) : null}
           <Link
             to={ROUTES.customerDetail(row.customerId)}
             aria-label={`View ledger for ${row.customerName}`}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-navy-700 transition-colors hover:bg-navy-50"
+            className="inline-flex h-12 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-navy-700 transition-colors hover:bg-navy-50"
           >
+            View
             <ChevronRight className="h-5 w-5" aria-hidden />
           </Link>
         </div>

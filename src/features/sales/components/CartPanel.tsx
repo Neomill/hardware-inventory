@@ -96,9 +96,9 @@ export function CartPanel({
               type="button"
               onClick={onClear}
               aria-haspopup="dialog"
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg px-2 text-base font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
+              className="inline-flex h-12 items-center gap-2 rounded-lg px-3 text-base font-semibold text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-700"
             >
-              <Trash2 className="h-4 w-4" aria-hidden />
+              <Trash2 className="h-5 w-5" aria-hidden />
               Clear
             </button>
           ) : null}
@@ -108,7 +108,7 @@ export function CartPanel({
               type="button"
               onClick={onClose}
               aria-label="Close cart"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-navy-700 transition-colors hover:bg-slate-100"
+              className="flex h-12 w-12 items-center justify-center rounded-lg text-navy-700 transition-colors hover:bg-slate-100"
             >
               <X className="h-5 w-5" aria-hidden />
             </button>
@@ -161,9 +161,10 @@ export function CartPanel({
                   type="button"
                   onClick={() => onRemove(line.productId)}
                   aria-label={`Remove ${line.productName}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-rose-600 transition-colors hover:bg-rose-50"
+                  className="inline-flex h-12 items-center gap-2 rounded-lg px-3 text-base font-semibold text-rose-700 transition-colors hover:bg-rose-50"
                 >
-                  <Trash2 className="h-4 w-4" aria-hidden />
+                  <Trash2 className="h-5 w-5" aria-hidden />
+                  Remove
                 </button>
               </div>
             </li>
@@ -186,9 +187,10 @@ export function CartPanel({
                 type="button"
                 onClick={() => onRemove(line.productId)}
                 aria-label={`Remove unavailable item ${line.productId}`}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-rose-600 transition-colors hover:bg-rose-100"
+                className="inline-flex h-12 shrink-0 items-center gap-2 rounded-lg px-3 text-base font-semibold text-rose-700 transition-colors hover:bg-rose-100"
               >
-                <Trash2 className="h-4 w-4" aria-hidden />
+                <Trash2 className="h-5 w-5" aria-hidden />
+                Remove
               </button>
             </li>
           ))}

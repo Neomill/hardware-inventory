@@ -181,7 +181,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
               key={reason}
               type="button"
               onClick={() => setValue('reason', reason, { shouldValidate: isSubmitted })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-medium text-navy-800 transition-colors hover:bg-navy-50"
+              className="h-12 rounded-xl border border-slate-200 px-3 text-base font-medium text-navy-800 transition-colors hover:bg-navy-50"
             >
               {reason}
             </button>
