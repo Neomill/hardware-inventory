@@ -46,7 +46,7 @@ export function EditProductDialog({ product, onClose, onSaved }: EditProductDial
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<EditProductValues>({
     resolver: zodResolver(schema),
     defaultValues: editValuesFor(product),
@@ -152,7 +152,7 @@ export function EditProductDialog({ product, onClose, onSaved }: EditProductDial
 
         <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" icon={Save}>
+          <Button type="submit" variant="primary" icon={Save} pending={isSubmitting}>
             Save Changes
           </Button>
         </div>

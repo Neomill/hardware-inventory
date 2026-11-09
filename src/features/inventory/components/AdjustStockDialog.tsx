@@ -46,7 +46,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isSubmitted },
+    formState: { errors, isSubmitted, isSubmitting },
   } = useForm<AdjustStockValues>({
     resolver: zodResolver(schema),
     defaultValues: EMPTY_ADJUST_VALUES,
@@ -223,6 +223,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
             variant="primary"
             icon={SlidersVertical}
             disabled={belowZero !== undefined}
+            pending={isSubmitting}
             className="flex-1 sm:h-14"
           >
             {after !== null

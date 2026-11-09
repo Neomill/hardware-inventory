@@ -51,7 +51,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
     watch,
     trigger,
     clearErrors,
-    formState: { errors, isSubmitted },
+    formState: { errors, isSubmitted, isSubmitting },
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { amount: '', note: '' },
@@ -202,6 +202,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
             variant="primary"
             icon={Wallet}
             disabled={outstanding <= 0}
+            pending={isSubmitting}
             className="sm:w-56"
           >
             {preview.amount === null

@@ -68,7 +68,7 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
     handleSubmit,
     watch,
     clearErrors,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<InvoiceFormValues>({
     resolver: zodResolver(schema),
     defaultValues: emptyInvoiceValues(
@@ -301,7 +301,13 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
         <Button to={ROUTES.inventory} className="sm:h-14 sm:px-8">
           Cancel
         </Button>
-        <Button type="submit" variant="primary" icon={PackagePlus} className="sm:h-14 sm:px-10">
+        <Button
+          type="submit"
+          variant="primary"
+          icon={PackagePlus}
+          pending={isSubmitting}
+          className="sm:h-14 sm:px-10"
+        >
           Receive Stock
         </Button>
       </div>

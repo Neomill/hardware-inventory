@@ -115,10 +115,15 @@ export function CheckoutPage() {
     clearCart()
   }
 
+  // Set on the first tap, so a fast double tap cannot record the sale twice.
+  const confirmingRef = useRef(false)
+
   function handleConfirm() {
-    if (checkout.amountPaid === null || !canConfirm) {
+    if (checkout.amountPaid === null || !canConfirm || confirmingRef.current) {
       return
     }
+
+    confirmingRef.current = true
 
     const result = recordSale({
       paymentMethod: method,
@@ -127,6 +132,7 @@ export function CheckoutPage() {
     })
 
     if (!result.ok) {
+      confirmingRef.current = false
       setError(result.message)
 
       return
