@@ -200,6 +200,25 @@ Also:
   Hammer 16oz. Undo". "Stock of Cement 40kg is now 18 bags."
 - **The labels are English only** (owner decision, section 5). Use plain everyday English.
 
+*Status: built 2026-11-09.* The full word list is in
+[03-plain-language-labels.md](03-plain-language-labels.md), and `docs/business/07-glossary.md`
+points to it. Only visible text changed: code names, routes and storage keys keep their names, and
+saved records keep the text they were saved with.
+
+Changes from the first table above, found while applying it:
+
+- "On Hand" became **"Stock"**, not "In Stock", because "In Stock" is already a status label.
+- The row button is **"Correct Stock"**, not "Correct", so it is never read as the adjective.
+- "Hold Sale" became **"Pause Sale"**, to match "Paused Sales".
+- These were added:
+  - A sale's "Outstanding" status became **"Unpaid"**.
+  - "Open Charges" became **"Unpaid Sales"**.
+  - "Credit Extended" became **"Sold on Credit"**.
+  - "Open POS" became **"Start a new sale"**.
+
+Still to do: check the words with the owner and cashier in the first test session, and replace any
+that do not match how they talk.
+
 ### Phase 4: Safety and confidence
 
 1. **Undo instead of extra confirmations, for small actions.** When a cart line is removed, show
