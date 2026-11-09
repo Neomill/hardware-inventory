@@ -366,3 +366,26 @@ test.describe('POS cart beside the grid (xl)', () => {
     })
   }
 })
+
+test.describe('First-time help on Sell', () => {
+  test('the tip stays until Got it, then stays gone after a reload', async ({ page }) => {
+    await gotoRoute(page, '/sales/new')
+    const tip = page.getByRole('complementary', { name: 'Tip' })
+    await expect(tip).toContainText('Add 1')
+
+    await tip.getByRole('link', { name: 'More help' }).click()
+    await expect(page.getByRole('heading', { level: 1, name: 'How Do I…?' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Sell for cash' })).toBeVisible()
+
+    await gotoRoute(page, '/sales/new')
+    await page
+      .getByRole('complementary', { name: 'Tip' })
+      .getByRole('button', { name: 'Got it' })
+      .click()
+    await expect(page.getByRole('complementary', { name: 'Tip' })).toHaveCount(0)
+
+    await page.reload()
+    await expect(page.getByRole('searchbox', { name: 'Search products' })).toBeVisible()
+    await expect(page.getByRole('complementary', { name: 'Tip' })).toHaveCount(0)
+  })
+})

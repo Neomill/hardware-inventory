@@ -17,6 +17,7 @@ import { HeldSalesButton } from '@/features/sales/components/HeldSalesButton'
 import { HeldSalesDialog } from '@/features/sales/components/HeldSalesDialog'
 import { HoldSaleDialog } from '@/features/sales/components/HoldSaleDialog'
 import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
+import { SellTip } from '@/features/sales/components/SellTip'
 import { UndoBar } from '@/features/sales/components/UndoBar'
 import { useCart } from '@/features/sales/hooks/useCart'
 import { useStickyMaxHeight } from '@/features/sales/hooks/useStickyMaxHeight'
@@ -322,6 +323,7 @@ export function PosPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-5">
+      <SellTip />
       {message ? <Alert tone="error">{message}</Alert> : null}
       {resumedMessage ? <Alert tone="success">{resumedMessage}</Alert> : null}
       {infoMessage ? <Alert tone="info">{infoMessage}</Alert> : null}
