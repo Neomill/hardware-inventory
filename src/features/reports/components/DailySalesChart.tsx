@@ -159,7 +159,7 @@ export function DailySalesChart({ days, scale, rangeLabel }: DailySalesChartProp
                   y={y(tick)}
                   dy="0.32em"
                   textAnchor="end"
-                  className="fill-slate-500 text-xs tabular-nums"
+                  className="fill-slate-500 text-sm tabular-nums"
                 >
                   {formatCompactCurrency(tick)}
                 </text>
@@ -173,7 +173,7 @@ export function DailySalesChart({ days, scale, rangeLabel }: DailySalesChartProp
                   x={MARGIN.left + band * index + band / 2}
                   y={HEIGHT - MARGIN.bottom + 20}
                   textAnchor="middle"
-                  className="fill-slate-500 text-xs"
+                  className="fill-slate-500 text-sm"
                 >
                   {formatShortDay(day.date)}
                 </text>

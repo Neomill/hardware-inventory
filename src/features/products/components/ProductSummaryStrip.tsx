@@ -58,7 +58,7 @@ export function ProductSummaryStrip({ summary }: ProductSummaryStripProps) {
           <div className="min-w-0">
             <p className="card-title">{stat.label}</p>
             <p className="mt-0.5 truncate text-xl font-bold text-navy-900">{stat.value}</p>
-            <p className="mt-0.5 truncate text-xs text-muted">{stat.caption}</p>
+            <p className="mt-0.5 truncate text-sm text-muted">{stat.caption}</p>
           </div>
         </div>
       ))}

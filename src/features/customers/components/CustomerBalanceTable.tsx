@@ -34,7 +34,7 @@ export function CustomerBalanceTable({
           >
             {row.customerName}
           </Link>
-          <span className="text-xs tabular-nums text-muted">{row.phone ?? 'No phone'}</span>
+          <span className="text-sm tabular-nums text-muted">{row.phone ?? 'No phone'}</span>
         </span>
       ),
     },
@@ -57,7 +57,7 @@ export function CustomerBalanceTable({
           <span className="flex flex-col">
             {formatNumber(row.openChargeCount)}
             {row.oldestOpenChargeAt ? (
-              <span className="text-xs text-muted">
+              <span className="text-sm text-muted">
                 oldest {describeAge(row.oldestOpenChargeAt, now).toLowerCase()}
               </span>
             ) : null}

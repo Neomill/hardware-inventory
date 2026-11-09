@@ -36,7 +36,7 @@ const BALANCE_COLUMNS: SummaryColumn<CustomerBalance>[] = [
     cell: (row) => (
       <div>
         <CustomerLink id={row.customerId} name={row.customerName} />
-        {row.phone ? <p className="text-xs text-muted">{row.phone}</p> : null}
+        {row.phone ? <p className="text-sm text-muted">{row.phone}</p> : null}
       </div>
     ),
   },
@@ -84,7 +84,7 @@ const PAYMENT_COLUMNS: SummaryColumn<CustomerPayment>[] = [
     id: 'reference',
     header: 'Reference',
     cell: (payment) => payment.id,
-    cellClassName: 'font-mono text-xs',
+    cellClassName: 'font-mono text-sm',
   },
   {
     id: 'customer',

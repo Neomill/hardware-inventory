@@ -147,8 +147,10 @@ export function CheckoutPage() {
           {entries.map(({ line, product }) => (
             <li key={line.productId} className="flex flex-wrap items-center gap-3 py-3">
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-navy-900">{line.productName}</span>
-                <span className="block text-xs text-muted">
+                <span className="block text-base font-medium text-navy-900">
+                  {line.productName}
+                </span>
+                <span className="block text-sm text-muted">
                   {formatCurrency(line.unitPrice)} / {line.unit}
                 </span>
               </span>
@@ -161,7 +163,7 @@ export function CheckoutPage() {
                 label={`${line.productName} quantity`}
               />
 
-              <span className="shrink-0 whitespace-nowrap text-right text-sm font-bold tabular-nums text-navy-900 sm:min-w-24">
+              <span className="shrink-0 whitespace-nowrap text-right text-base font-bold tabular-nums text-navy-900 sm:min-w-24">
                 {formatCurrency(line.lineTotal)}
               </span>
             </li>
@@ -235,12 +237,10 @@ export function CheckoutPage() {
                     />
                   ) : null}
                   <Icon className="h-7 w-7 text-navy-800" aria-hidden />
-                  <span className="text-sm font-semibold text-navy-900">{option.label}</span>
-                  <span className="text-xs text-muted">{option.hint}</span>
+                  <span className="text-base font-semibold text-navy-900">{option.label}</span>
+                  <span className="text-sm text-muted">{option.hint}</span>
                   {isSelected ? (
-                    <span className="text-xs font-bold uppercase tracking-wide text-navy-900">
-                      Selected
-                    </span>
+                    <span className="text-sm font-bold text-navy-900">Selected</span>
                   ) : null}
                 </button>
               )
@@ -286,7 +286,7 @@ export function CheckoutPage() {
                 <div className="rounded-xl bg-emerald-50 px-4 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-x-3">
                     <span className="text-base font-bold text-emerald-800">Change</span>
-                    <span className="text-2xl font-bold text-emerald-700">
+                    <span className="text-3xl font-bold tabular-nums text-emerald-700">
                       {formatCurrency(change)}
                     </span>
                   </div>
@@ -298,7 +298,7 @@ export function CheckoutPage() {
                 <div className="rounded-xl bg-brand-50 px-4 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-x-3">
                     <span className="text-base font-bold text-brand-700">Remaining balance</span>
-                    <span className="text-2xl font-bold text-brand-700">
+                    <span className="text-3xl font-bold tabular-nums text-brand-700">
                       {formatCurrency(balanceDue)}
                     </span>
                   </div>

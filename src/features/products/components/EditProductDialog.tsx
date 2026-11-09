@@ -79,11 +79,11 @@ export function EditProductDialog({ product, onClose, onSaved }: EditProductDial
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
         <dl className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm">
           <div>
-            <dt className="text-xs text-muted">SKU (cannot change)</dt>
+            <dt className="text-sm text-muted">SKU (cannot change)</dt>
             <dd className="font-semibold text-navy-900">{product.sku}</dd>
           </div>
           <div>
-            <dt className="text-xs text-muted">Unit (cannot change)</dt>
+            <dt className="text-sm text-muted">Unit (cannot change)</dt>
             <dd className="font-semibold text-navy-900">{product.unit}</dd>
           </div>
         </dl>

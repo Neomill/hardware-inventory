@@ -24,7 +24,7 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
       cell: (product) => (
         <span className="flex flex-col">
           <span className="font-medium">{product.name}</span>
-          <span className="text-xs text-muted">
+          <span className="text-sm text-muted">
             {product.sku}
             {product.isActive ? null : ' · Inactive'}
           </span>

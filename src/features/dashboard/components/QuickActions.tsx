@@ -19,7 +19,7 @@ type QuickAction = {
 
 const VARIANT_STYLES: Record<ActionVariant, string> = {
   navy: 'bg-navy-800 text-white hover:bg-navy-700',
-  brand: 'bg-brand-500 text-white hover:bg-brand-600',
+  brand: 'bg-brand-700 text-white hover:bg-brand-800',
   outline: 'border border-slate-200 bg-white text-navy-900 hover:bg-slate-50',
 }
 
@@ -85,7 +85,7 @@ export function QuickActions() {
               <Icon className="h-6 w-6 shrink-0" aria-hidden />
               <span className="min-w-0">
                 <span className="block truncate font-semibold">{action.title}</span>
-                <span className={cn('block truncate text-xs', SUBTITLE_STYLES[action.variant])}>
+                <span className={cn('block truncate text-sm', SUBTITLE_STYLES[action.variant])}>
                   {action.subtitle}
                 </span>
               </span>

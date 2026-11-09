@@ -75,7 +75,7 @@ export function LedgerSummaryStrip({ summary, now }: LedgerSummaryStripProps) {
             <p className="mt-0.5 truncate text-xl font-bold tabular-nums text-navy-900">
               {stat.value}
             </p>
-            <p className="mt-0.5 truncate text-xs text-muted">{stat.caption}</p>
+            <p className="mt-0.5 truncate text-sm text-muted">{stat.caption}</p>
           </div>
         </div>
       ))}

@@ -27,7 +27,7 @@ export function HeldSalesButton({ count, onClick, className }: HeldSalesButtonPr
       {count > 0 ? (
         <span
           aria-hidden
-          className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-500 px-1.5 text-xs font-bold text-white"
+          className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-700 px-1.5 text-sm font-bold text-white"
         >
           {count}
         </span>

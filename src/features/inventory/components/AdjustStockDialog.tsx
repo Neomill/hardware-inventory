@@ -106,10 +106,10 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
         <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3">
           <div className="min-w-0">
             <p className="truncate font-semibold text-navy-900">{product.name}</p>
-            <p className="text-xs text-muted">{product.sku}</p>
+            <p className="text-sm text-muted">{product.sku}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted">On hand</p>
+            <p className="text-sm text-muted">On hand</p>
             <p className="text-lg font-bold tabular-nums text-navy-900">
               {formatNumber(product.stock)} {product.unit}
             </p>

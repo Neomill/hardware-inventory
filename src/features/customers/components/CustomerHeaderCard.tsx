@@ -45,7 +45,7 @@ export function CustomerHeaderCard({
               <span className="text-muted">No phone on file</span>
             )}
           </p>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-sm text-muted">
             Charged {formatCurrency(totalCharged)} &middot; Paid {formatCurrency(totalPaid)}
           </p>
         </div>

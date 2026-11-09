@@ -46,7 +46,7 @@ export function InvoiceLinesEditor({
           <li key={field.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start">
             <div className="min-w-0 flex-1 sm:pt-2">
               <p className="truncate font-semibold text-navy-900">{name}</p>
-              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-muted">
                 {product?.sku ?? 'Removed product'}
                 {product ? (
                   <>
@@ -83,7 +83,7 @@ export function InvoiceLinesEditor({
                   <span className="w-14 truncate text-sm text-muted">{product?.unit}</span>
                 </div>
                 {error ? (
-                  <p id={errorId} className="max-w-[10rem] text-xs font-medium text-rose-700">
+                  <p id={errorId} className="max-w-[10rem] text-sm font-medium text-rose-700">
                     {error}
                   </p>
                 ) : null}

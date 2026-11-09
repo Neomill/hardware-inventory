@@ -52,7 +52,7 @@ export function InventorySummaryStrip({ summary }: InventorySummaryStripProps) {
             <p className="mt-0.5 text-xl font-bold tabular-nums text-navy-900">
               {formatNumber(stat.value)}
             </p>
-            <p className="mt-0.5 truncate text-xs text-muted">{stat.caption}</p>
+            <p className="mt-0.5 truncate text-sm text-muted">{stat.caption}</p>
           </div>
         </div>
       ))}

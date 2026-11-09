@@ -85,7 +85,7 @@ export function CartPanel({
           ref={headingRef}
           id={headingId}
           tabIndex={-1}
-          className="text-base font-semibold text-navy-900"
+          className="text-lg font-semibold text-navy-900"
         >
           Current Sale ({formatItemCount(totals.itemCount)})
         </h2>
@@ -96,7 +96,7 @@ export function CartPanel({
               type="button"
               onClick={onClear}
               aria-haspopup="dialog"
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
+              className="inline-flex h-10 items-center gap-1.5 rounded-lg px-2 text-base font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
               Clear
@@ -118,10 +118,10 @@ export function CartPanel({
 
       {!hasLines ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-5 py-14 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
             <Package className="h-7 w-7" aria-hidden />
           </span>
-          <p className="text-sm text-muted">
+          <p className="text-base text-muted">
             Tap <strong className="text-navy-900">Add</strong> on a product to start this sale.
           </p>
         </div>
@@ -135,15 +135,15 @@ export function CartPanel({
             <li key={line.productId} className="flex flex-col gap-2 px-5 py-3">
               <div className="flex items-start justify-between gap-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-navy-900">
+                  <span className="block text-base font-medium text-navy-900">
                     {line.productName}
                   </span>
-                  <span className="block text-xs text-muted">
+                  <span className="block text-sm text-muted">
                     {formatCurrency(line.unitPrice)} / {line.unit}
                   </span>
                 </span>
 
-                <span className="shrink-0 text-sm font-bold tabular-nums text-navy-900">
+                <span className="shrink-0 text-base font-bold tabular-nums text-navy-900">
                   {formatCurrency(line.lineTotal)}
                 </span>
               </div>
@@ -174,9 +174,9 @@ export function CartPanel({
               key={line.productId}
               className="flex items-start justify-between gap-3 bg-rose-50/60 px-5 py-3"
             >
-              <span className="min-w-0 flex-1 text-sm">
+              <span className="min-w-0 flex-1 text-base">
                 <span className="block font-medium text-navy-900">Unavailable item</span>
-                <span className="block text-xs text-rose-700">
+                <span className="block text-sm text-rose-700">
                   {formatNumber(line.quantity)} of a product that is no longer in the product list.
                   Remove it to continue.
                 </span>
@@ -217,7 +217,7 @@ export function CartPanel({
           Hold Sale
         </Button>
         {hold.reason ? (
-          <p id={holdHintId} className="-mt-1 text-center text-xs text-muted">
+          <p id={holdHintId} className="-mt-1 text-center text-sm text-muted">
             {hold.reason}
           </p>
         ) : null}

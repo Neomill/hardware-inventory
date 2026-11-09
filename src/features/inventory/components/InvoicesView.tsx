@@ -74,7 +74,7 @@ function InvoiceCards({ invoices }: { invoices: SupplierInvoice[] }) {
               {formatCurrency(invoice.total)}
             </p>
           </div>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
             <div className="flex gap-1">
               <dt className="text-muted">Date</dt>
               <dd className="text-navy-900">{formatInvoiceDate(invoice.invoiceDate)}</dd>

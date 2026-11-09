@@ -63,17 +63,17 @@ export function InvoiceConfirmation({
             <li key={line.productId} className="flex items-center justify-between gap-4 px-4 py-3">
               <span className="min-w-0">
                 <span className="block truncate font-medium text-navy-900">{line.productName}</span>
-                <span className="block text-xs text-muted">{line.sku}</span>
+                <span className="block text-sm text-muted">{line.sku}</span>
               </span>
               <dl className="flex shrink-0 gap-4 text-right">
                 <div>
-                  <dt className="text-xs text-muted">Received</dt>
+                  <dt className="text-sm text-muted">Received</dt>
                   <dd className="font-semibold tabular-nums text-emerald-700">
                     {formatQuantityDelta(line.quantity)} {line.unit}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted">On hand now</dt>
+                  <dt className="text-sm text-muted">On hand now</dt>
                   <dd className="font-semibold tabular-nums text-navy-900">
                     {onHand === undefined ? '—' : `${formatNumber(onHand)} ${line.unit}`}
                   </dd>

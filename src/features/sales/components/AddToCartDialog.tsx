@@ -44,7 +44,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
     <Dialog title="Add to Cart" onClose={onClose} initialFocusRef={quantityFocusRef}>
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-4 sm:flex-row">
-          <span className="flex h-32 w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-300 sm:w-40">
+          <span className="flex h-32 w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 sm:w-40">
             <ShoppingCart className="h-12 w-12" aria-hidden />
           </span>
 
@@ -55,7 +55,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
             </p>
 
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-              <span className="text-sm text-navy-800">Stock available</span>
+              <span className="text-base text-navy-800">Stock available</span>
               <StockStatusPill status={status} stock={product.stock} unit={product.unit} />
             </div>
           </div>
@@ -69,7 +69,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
           <>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div ref={attachQuantityControl}>
-                <p className="mb-2 text-sm font-semibold text-navy-900">Quantity</p>
+                <p className="mb-2 text-base font-semibold text-navy-900">Quantity</p>
                 <QuantityStepper
                   value={quantity}
                   onChange={setClamped}
@@ -80,7 +80,7 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-semibold text-navy-900">Unit</p>
+                <p className="mb-2 text-base font-semibold text-navy-900">Unit</p>
                 {/* One selling unit per product (decision D2), so nothing to choose. */}
                 <p className="flex h-14 items-center rounded-xl border border-slate-200 bg-slate-50 px-5 text-base font-medium text-navy-900">
                   {product.unit}
@@ -94,14 +94,14 @@ export function AddToCartDialog({ product, inCart, onClose, onConfirm }: AddToCa
                   key={step}
                   type="button"
                   onClick={() => setClamped(step)}
-                  className="h-11 min-w-16 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-navy-800 transition-colors hover:bg-navy-50"
+                  className="h-11 min-w-16 rounded-xl border border-slate-200 px-3 text-base font-semibold text-navy-800 transition-colors hover:bg-navy-50"
                 >
                   {step}
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-sm">
+            <div className="flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-base">
               <span className="font-semibold text-blue-900">
                 Subtotal ({formatNumber(quantity)} {product.unit})
               </span>

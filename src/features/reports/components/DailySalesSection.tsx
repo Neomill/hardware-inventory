@@ -191,8 +191,7 @@ function CollectedSplit({ collected, credit }: { collected: number; credit: numb
   )
 }
 
-const HEADER_CELL =
-  'whitespace-nowrap pb-3 pr-4 text-xs font-semibold uppercase tracking-wide text-muted'
+const HEADER_CELL = 'whitespace-nowrap pb-3 pr-4 text-sm font-semibold text-navy-800'
 const NUMBER_CELL = 'whitespace-nowrap py-3 pr-4 text-right tabular-nums'
 
 function DailyTable({ days, summary }: { days: DailySales[]; summary: SalesSummary }) {

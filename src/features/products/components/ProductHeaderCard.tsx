@@ -56,7 +56,7 @@ export function ProductHeaderCard({ product, onEdit }: ProductHeaderCardProps) {
       <dl className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-5 sm:grid-cols-3 lg:grid-cols-5">
         {facts.map(([term, value]) => (
           <div key={term} className="min-w-0">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">{term}</dt>
+            <dt className="text-sm font-semibold text-navy-800">{term}</dt>
             <dd className="mt-1 break-words font-semibold text-navy-900">{value}</dd>
           </div>
         ))}

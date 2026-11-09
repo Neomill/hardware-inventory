@@ -17,7 +17,7 @@ export function CartTotals({ totals, taxRate }: CartTotalsProps) {
 
   return (
     <div className="rounded-xl bg-slate-50 px-4 py-4 tabular-nums">
-      <dl className="space-y-2 text-sm">
+      <dl className="space-y-2 text-base">
         <div className="flex items-center justify-between gap-3">
           <dt className="text-navy-800">Subtotal ({formatItemCount(totals.itemCount)})</dt>
           <dd className="font-semibold text-navy-900">{formatCurrency(totals.subtotal)}</dd>
@@ -30,11 +30,11 @@ export function CartTotals({ totals, taxRate }: CartTotalsProps) {
       </dl>
 
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 border-t border-slate-200 pt-3">
-        <span className="text-base font-bold uppercase tracking-wide text-navy-900">Total</span>
-        <span className="text-2xl font-bold text-navy-900">{formatCurrency(totals.total)}</span>
+        <span className="text-lg font-bold text-navy-900">Total</span>
+        <span className="text-3xl font-bold text-navy-900">{formatCurrency(totals.total)}</span>
       </div>
 
-      <p className="mt-1 text-right text-xs text-muted">
+      <p className="mt-1 text-right text-sm text-muted">
         Includes VAT ({vatLabel}) of {formatCurrency(totals.vat.vat)}
       </p>
     </div>

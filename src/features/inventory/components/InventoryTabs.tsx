@@ -44,7 +44,7 @@ export function InventoryTabs() {
           end={!tab.matchNested}
           className={({ isActive }) =>
             cn(
-              'flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-xs font-semibold transition-colors sm:flex-row sm:gap-2 sm:px-4 sm:text-sm',
+              'flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-sm font-semibold transition-colors sm:flex-row sm:gap-2 sm:px-4 sm:text-sm',
               isActive ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
             )
           }

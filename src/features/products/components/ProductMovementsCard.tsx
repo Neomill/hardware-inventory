@@ -56,9 +56,9 @@ function buildColumns(unit: string): SummaryColumn<MovementRow>[] {
         <span className="flex max-w-xs flex-col whitespace-normal">
           <span>{movement.description}</span>
           {movement.reason ? (
-            <span className="text-xs text-muted">Reason: {movement.reason}</span>
+            <span className="text-sm text-muted">Reason: {movement.reason}</span>
           ) : null}
-          {movement.note ? <span className="text-xs text-muted">Note: {movement.note}</span> : null}
+          {movement.note ? <span className="text-sm text-muted">Note: {movement.note}</span> : null}
         </span>
       ),
     },

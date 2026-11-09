@@ -76,7 +76,7 @@ function buildColumns(remaining: Map<string, Centavos>): SummaryColumn<Sale>[] {
               {settlement.label}
             </span>
             {settlement.remaining > 0 ? (
-              <span className="block text-xs text-muted">
+              <span className="block text-sm text-muted">
                 {formatCurrency(settlement.remaining)} left
               </span>
             ) : null}
@@ -91,7 +91,7 @@ function buildColumns(remaining: Map<string, Centavos>): SummaryColumn<Sale>[] {
         <Link
           to={ROUTES.saleDetail(sale.id)}
           aria-label={`View details of sale ${sale.saleNumber}`}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 transition-colors hover:bg-navy-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-navy-700 transition-colors hover:bg-navy-50"
         >
           <Eye className="h-4 w-4" aria-hidden />
           View Details

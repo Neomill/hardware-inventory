@@ -57,7 +57,7 @@ export function TopProductsSection({
           >
             {row.productName}
           </Link>
-          <p className="text-xs text-muted">{row.sku}</p>
+          <p className="text-sm text-muted">{row.sku}</p>
         </div>
       ),
       cellClassName: 'whitespace-normal',
@@ -119,7 +119,7 @@ export function TopProductsSection({
           emptyMessage="Nothing was sold in this period."
         />
         {rows.length > 0 ? (
-          <p className="mt-3 text-xs text-muted">
+          <p className="mt-3 text-sm text-muted">
             Shares are of the {rows.length} products listed.
           </p>
         ) : null}

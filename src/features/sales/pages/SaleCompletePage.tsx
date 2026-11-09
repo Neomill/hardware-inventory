@@ -90,7 +90,7 @@ export function SaleCompletePage() {
         <div className="flex flex-col items-center gap-2 rounded-card border border-emerald-200 bg-emerald-50 px-6 py-6 text-center">
           <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
           <h2 className="text-2xl font-bold text-emerald-700">Sale Completed</h2>
-          <p className="text-sm text-emerald-900">
+          <p className="text-base text-emerald-900">
             Stock has been updated and the sale is saved to history.
           </p>
         </div>
@@ -133,27 +133,24 @@ export function SaleCompletePage() {
           <table className="mt-4 w-full min-w-[28rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200">
-                <th
-                  scope="col"
-                  className="pb-2 text-xs font-semibold uppercase tracking-wide text-muted"
-                >
+                <th scope="col" className="pb-2 text-sm font-semibold text-navy-800 print:text-xs">
                   Item
                 </th>
                 <th
                   scope="col"
-                  className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted"
+                  className="pb-2 text-right text-sm font-semibold text-navy-800 print:text-xs"
                 >
                   Qty
                 </th>
                 <th
                   scope="col"
-                  className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted"
+                  className="pb-2 text-right text-sm font-semibold text-navy-800 print:text-xs"
                 >
                   Unit Price
                 </th>
                 <th
                   scope="col"
-                  className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-muted"
+                  className="pb-2 text-right text-sm font-semibold text-navy-800 print:text-xs"
                 >
                   Amount
                 </th>
@@ -165,7 +162,7 @@ export function SaleCompletePage() {
                 <tr key={line.productId} className="border-b border-slate-100">
                   <td className="py-2.5 pr-4 text-navy-900">
                     <span className="block font-medium">{line.productName}</span>
-                    <span className="block text-xs text-muted">{line.sku}</span>
+                    <span className="block text-sm text-muted print:text-xs">{line.sku}</span>
                   </td>
                   <td className="py-2.5 text-right text-navy-900">
                     {formatNumber(line.quantity)} {line.unit}
@@ -218,7 +215,7 @@ export function SaleCompletePage() {
           </div>
         </dl>
 
-        <p className="mt-6 border-t border-dashed border-slate-300 pt-4 text-center text-xs text-muted">
+        <p className="mt-6 border-t border-dashed border-slate-300 pt-4 text-center text-sm text-muted print:text-xs">
           Thank you. Please keep this receipt for any return or warranty claim.
         </p>
       </section>

@@ -47,12 +47,12 @@ export function CartBar({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-muted">{summary.countLabel}</p>
-          <p className="truncate text-lg font-bold tabular-nums text-navy-900">
+          <p className="text-sm font-medium text-muted">{summary.countLabel}</p>
+          <p className="truncate text-xl font-bold tabular-nums text-navy-900">
             {summary.totalLabel}
           </p>
           {summary.warning ? (
-            <p className="text-xs font-medium text-rose-700">{summary.warning}</p>
+            <p className="text-sm font-medium text-rose-700">{summary.warning}</p>
           ) : null}
         </div>
 

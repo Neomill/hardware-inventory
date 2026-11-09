@@ -33,7 +33,7 @@ export function OpenChargesCard({ charges, now }: OpenChargesCardProps) {
       cell: (charge) => (
         <span>
           {formatLedgerDate(charge.occurredAt)}
-          <span className="ml-2 text-xs text-muted">{describeAge(charge.occurredAt, now)}</span>
+          <span className="ml-2 text-sm text-muted">{describeAge(charge.occurredAt, now)}</span>
         </span>
       ),
     },
@@ -65,7 +65,7 @@ export function OpenChargesCard({ charges, now }: OpenChargesCardProps) {
   return (
     <SectionCard
       title="Open Charges"
-      action={<span className="text-xs text-muted">Payments clear the oldest first</span>}
+      action={<span className="text-sm text-muted">Payments clear the oldest first</span>}
     >
       <SummaryTable
         columns={columns}

@@ -145,9 +145,7 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
       </header>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="float-left w-full text-sm font-bold uppercase tracking-wide text-muted">
-          Invoice
-        </legend>
+        <legend className="float-left w-full text-base font-bold text-navy-800">Invoice</legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
@@ -209,9 +207,7 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
       </fieldset>
 
       <fieldset className="flex flex-col gap-4 border-t border-slate-100 pt-5">
-        <legend className="float-left w-full text-sm font-bold uppercase tracking-wide text-muted">
-          Products
-        </legend>
+        <legend className="float-left w-full text-base font-bold text-navy-800">Products</legend>
 
         <FormField
           label="Product"

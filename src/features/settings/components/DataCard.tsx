@@ -97,7 +97,7 @@ export function DataCard() {
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {counts.map((count) => (
           <div key={count.label} className="rounded-xl border border-slate-200 px-4 py-3">
-            <dt className="text-xs text-muted">{count.label}</dt>
+            <dt className="text-sm text-muted">{count.label}</dt>
             <dd className="mt-1 text-xl font-bold tabular-nums text-navy-900">
               {formatNumber(count.value)}
             </dd>
