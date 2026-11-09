@@ -252,7 +252,7 @@ describe('validateCustomerPayment', () => {
 
   it('refuses any payment when nothing is owed', () => {
     expect(validateCustomerPayment({ amount: 100, outstanding: 0 }).message).toContain(
-      'no outstanding balance',
+      'owes nothing',
     )
   })
 })

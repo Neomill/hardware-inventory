@@ -31,7 +31,7 @@ export function LedgerSummaryStrip({ summary, now }: LedgerSummaryStripProps) {
 
   const stats: SummaryStat[] = [
     {
-      label: 'Outstanding Credit',
+      label: 'Credit Still Owed',
       value: formatCurrency(summary.totalOutstanding),
       caption: 'Owed to the store',
       icon: HandCoins,
@@ -45,7 +45,7 @@ export function LedgerSummaryStrip({ summary, now }: LedgerSummaryStripProps) {
       tone: 'blue',
     },
     {
-      label: 'Oldest Open Charge',
+      label: 'Oldest Unpaid Sale',
       value: oldest ? describeAge(oldest.occurredAt, now) : 'None',
       caption: oldest ? (
         <>
@@ -75,7 +75,7 @@ export function LedgerSummaryStrip({ summary, now }: LedgerSummaryStripProps) {
             <p className="mt-0.5 truncate text-xl font-bold tabular-nums text-navy-900">
               {stat.value}
             </p>
-            <p className="mt-0.5 truncate text-xs text-muted">{stat.caption}</p>
+            <p className="mt-0.5 truncate text-sm text-muted">{stat.caption}</p>
           </div>
         </div>
       ))}

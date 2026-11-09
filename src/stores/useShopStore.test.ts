@@ -174,7 +174,7 @@ describe('held sales', () => {
   it('refuses an empty cart and a label over 40 characters', () => {
     expect(useShopStore.getState().holdCart()).toEqual({
       ok: false,
-      message: 'There is nothing to hold yet.',
+      message: 'There is nothing to pause yet.',
     })
 
     useShopStore.getState().addToCart(PVC, 1)
@@ -198,7 +198,7 @@ describe('held sales', () => {
 
     expect(result).toEqual({
       ok: false,
-      message: 'You already have 10 held sales. Resume or discard one first.',
+      message: 'You already have 10 paused sales. Resume or discard one first.',
     })
     expect(useShopStore.getState().heldSales).toHaveLength(10)
     expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 1 }])
@@ -270,7 +270,7 @@ describe('held sales', () => {
 
     expect(useShopStore.getState().resumeHeldSale(held.id)).toEqual({
       ok: false,
-      message: 'None of the items in this held sale can be sold now.',
+      message: 'None of the items in this paused sale can be sold now.',
     })
     expect(useShopStore.getState().heldSales).toEqual([held])
     expect(useShopStore.getState().cart).toEqual([])
@@ -283,11 +283,11 @@ describe('held sales', () => {
 
     expect(useShopStore.getState().resumeHeldSale(held.id)).toEqual({
       ok: false,
-      message: 'Finish or hold the current sale first.',
+      message: 'Finish or pause the current sale first.',
     })
     expect(useShopStore.getState().resumeHeldSale('HOLD-nope')).toEqual({
       ok: false,
-      message: 'That held sale is no longer here.',
+      message: 'That paused sale is no longer here.',
     })
     expect(useShopStore.getState().cart).toEqual([{ productId: CEMENT, quantity: 1 }])
     expect(useShopStore.getState().heldSales).toEqual([held])
@@ -362,7 +362,7 @@ describe('held sales', () => {
     expect(state.sales).toBe(sales)
     expect(useShopStore.getState().discardHeldSale('nope')).toEqual({
       ok: false,
-      message: 'That held sale is no longer here.',
+      message: 'That paused sale is no longer here.',
     })
   })
 
@@ -402,7 +402,7 @@ describe('recordSale', () => {
     expect(result.sale.total).toBe(28000)
     expect(result.sale.changeGiven).toBe(22000)
     expect(result.sale.balanceDue).toBe(0)
-    expect(result.sale.customerName).toBe('Walk-in Customer')
+    expect(result.sale.customerName).toBe('No-name customer')
     expect(result.sale.saleNumber).toMatch(/^#\d{8}-\d{4}$/)
 
     expect(stockOf(PVC)).toBe(before - 10)
@@ -1004,6 +1004,47 @@ describe('cart edge cases', () => {
 
     useShopStore.getState().clearCart()
     expect(useShopStore.getState().cart).toEqual([])
+  })
+
+  it('puts a removed line back where it was', () => {
+    useShopStore.getState().addToCart(PVC, 2)
+    useShopStore.getState().addToCart('CEM-001', 1)
+    useShopStore.getState().removeFromCart(PVC)
+
+    const result = useShopStore.getState().restoreCartLine({ productId: PVC, quantity: 2 }, 0)
+
+    expect(result).toEqual({ ok: true, message: null })
+    expect(useShopStore.getState().cart).toEqual([
+      { productId: PVC, quantity: 2 },
+      { productId: 'CEM-001', quantity: 1 },
+    ])
+  })
+
+  it('caps a restored line at the stock there is now, and says so', () => {
+    const stock = stockOf(PVC)
+    useShopStore.setState({ cart: [] })
+
+    const result = useShopStore
+      .getState()
+      .restoreCartLine({ productId: PVC, quantity: stock + 5 }, 3)
+
+    expect(result.ok).toBe(true)
+    expect(result.message).toContain('left in stock')
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: stock }])
+  })
+
+  it('does not restore a line that is already back, or a product that is gone', () => {
+    useShopStore.getState().addToCart(PVC, 1)
+
+    expect(useShopStore.getState().restoreCartLine({ productId: PVC, quantity: 4 }, 0)).toEqual({
+      ok: true,
+      message: null,
+    })
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 1 }])
+
+    const gone = useShopStore.getState().restoreCartLine({ productId: 'NOPE-001', quantity: 1 }, 0)
+    expect(gone.ok).toBe(false)
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 1 }])
   })
 
   it('refuses a sale whose cart names a product that is gone', () => {

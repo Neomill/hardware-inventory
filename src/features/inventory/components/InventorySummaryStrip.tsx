@@ -20,7 +20,7 @@ type InventorySummaryStripProps = {
 export function InventorySummaryStrip({ summary }: InventorySummaryStripProps) {
   const stats: SummaryStat[] = [
     {
-      label: 'SKUs',
+      label: 'Products',
       value: summary.skuCount,
       caption: 'Active products',
       icon: Tag,
@@ -29,7 +29,7 @@ export function InventorySummaryStrip({ summary }: InventorySummaryStripProps) {
     {
       label: 'Low Stock',
       value: summary.lowStockCount,
-      caption: 'At or below reorder level',
+      caption: 'At or below the low-stock alert',
       icon: AlertTriangle,
       tone: 'amber',
     },
@@ -52,7 +52,7 @@ export function InventorySummaryStrip({ summary }: InventorySummaryStripProps) {
             <p className="mt-0.5 text-xl font-bold tabular-nums text-navy-900">
               {formatNumber(stat.value)}
             </p>
-            <p className="mt-0.5 truncate text-xs text-muted">{stat.caption}</p>
+            <p className="mt-0.5 truncate text-sm text-muted">{stat.caption}</p>
           </div>
         </div>
       ))}

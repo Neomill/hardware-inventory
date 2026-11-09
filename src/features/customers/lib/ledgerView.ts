@@ -4,7 +4,7 @@ import type { Centavos } from '@/domain/money'
 import type { CustomerPayment } from '@/domain/types'
 
 /**
- * Presentation helpers for the Customer Ledger screens. The balances
+ * Presentation helpers for the Customer Credit screens. The balances
  * themselves come from src/domain/ledger.ts; nothing here re-derives money.
  */
 

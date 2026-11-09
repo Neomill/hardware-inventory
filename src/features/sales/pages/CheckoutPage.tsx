@@ -15,7 +15,12 @@ import { computeBalanceDue, computeChange } from '@/domain/sale'
 import type { PaymentMethod } from '@/domain/types'
 import { CartTotals } from '@/features/sales/components/CartTotals'
 import { useCart } from '@/features/sales/hooks/useCart'
-import { defaultAmountText, evaluateCheckout } from '@/features/sales/lib/checkout'
+import { formatAmountInput } from '@/domain/money'
+import {
+  defaultAmountText,
+  evaluateCheckout,
+  quickCashAmounts,
+} from '@/features/sales/lib/checkout'
 import type { SaleCompletedNavState } from '@/features/sales/lib/receipt'
 import { formatItemCount } from '@/features/sales/lib/salesMetrics'
 import { useShopStore } from '@/stores/useShopStore'
@@ -45,7 +50,7 @@ const METHODS: MethodOption[] = [
     value: 'partial',
     label: 'Partial Payment',
     icon: HandCoins,
-    hint: 'Pays part now, rest on the ledger.',
+    hint: 'Pays part now, rest on credit.',
     selected: 'border-brand-500 bg-brand-50',
   },
   {
@@ -115,10 +120,15 @@ export function CheckoutPage() {
     clearCart()
   }
 
+  // Set on the first tap, so a fast double tap cannot record the sale twice.
+  const confirmingRef = useRef(false)
+
   function handleConfirm() {
-    if (checkout.amountPaid === null || !canConfirm) {
+    if (checkout.amountPaid === null || !canConfirm || confirmingRef.current) {
       return
     }
+
+    confirmingRef.current = true
 
     const result = recordSale({
       paymentMethod: method,
@@ -127,6 +137,7 @@ export function CheckoutPage() {
     })
 
     if (!result.ok) {
+      confirmingRef.current = false
       setError(result.message)
 
       return
@@ -147,8 +158,10 @@ export function CheckoutPage() {
           {entries.map(({ line, product }) => (
             <li key={line.productId} className="flex flex-wrap items-center gap-3 py-3">
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-navy-900">{line.productName}</span>
-                <span className="block text-xs text-muted">
+                <span className="block text-base font-medium text-navy-900">
+                  {line.productName}
+                </span>
+                <span className="block text-sm text-muted">
                   {formatCurrency(line.unitPrice)} / {line.unit}
                 </span>
               </span>
@@ -161,7 +174,7 @@ export function CheckoutPage() {
                 label={`${line.productName} quantity`}
               />
 
-              <span className="shrink-0 whitespace-nowrap text-right text-sm font-bold tabular-nums text-navy-900 sm:min-w-24">
+              <span className="shrink-0 whitespace-nowrap text-right text-base font-bold tabular-nums text-navy-900 sm:min-w-24">
                 {formatCurrency(line.lineTotal)}
               </span>
             </li>
@@ -197,7 +210,7 @@ export function CheckoutPage() {
               setError(null)
             }}
             options={[
-              { value: WALK_IN, label: 'Walk-in Customer' },
+              { value: WALK_IN, label: 'No-name customer' },
               ...customers.map((customer) => ({ value: customer.id, label: customer.name })),
             ]}
           />
@@ -235,12 +248,10 @@ export function CheckoutPage() {
                     />
                   ) : null}
                   <Icon className="h-7 w-7 text-navy-800" aria-hidden />
-                  <span className="text-sm font-semibold text-navy-900">{option.label}</span>
-                  <span className="text-xs text-muted">{option.hint}</span>
+                  <span className="text-base font-semibold text-navy-900">{option.label}</span>
+                  <span className="text-sm text-muted">{option.hint}</span>
                   {isSelected ? (
-                    <span className="text-xs font-bold uppercase tracking-wide text-navy-900">
-                      Selected
-                    </span>
+                    <span className="text-sm font-bold text-navy-900">Selected</span>
                   ) : null}
                 </button>
               )
@@ -256,7 +267,7 @@ export function CheckoutPage() {
                 </span>
               </div>
               <p className="mt-2 text-sm text-violet-900">
-                No payment received. This is recorded on the customer&apos;s ledger.
+                No payment received. This is recorded under Customer Credit.
               </p>
             </div>
           ) : (
@@ -283,10 +294,34 @@ export function CheckoutPage() {
               </FormField>
 
               {method === 'cash' ? (
+                <div role="group" aria-label="Quick cash" className="flex flex-wrap gap-2">
+                  {quickCashAmounts(totals.total).map((amount, index) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => {
+                        setTyped(formatAmountInput(amount))
+                        setError(null)
+                      }}
+                      aria-pressed={checkout.amountPaid === amount}
+                      className={cn(
+                        'h-12 rounded-xl border px-4 text-base font-semibold tabular-nums transition-colors',
+                        checkout.amountPaid === amount
+                          ? 'border-navy-900 bg-navy-900 text-white'
+                          : 'border-slate-200 bg-white text-navy-800 hover:bg-navy-50',
+                      )}
+                    >
+                      {index === 0 ? `Exact ${formatCurrency(amount)}` : formatCurrency(amount)}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {method === 'cash' ? (
                 <div className="rounded-xl bg-emerald-50 px-4 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-x-3">
                     <span className="text-base font-bold text-emerald-800">Change</span>
-                    <span className="text-2xl font-bold text-emerald-700">
+                    <span className="text-3xl font-bold tabular-nums text-emerald-700">
                       {formatCurrency(change)}
                     </span>
                   </div>
@@ -298,12 +333,12 @@ export function CheckoutPage() {
                 <div className="rounded-xl bg-brand-50 px-4 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-x-3">
                     <span className="text-base font-bold text-brand-700">Remaining balance</span>
-                    <span className="text-2xl font-bold text-brand-700">
+                    <span className="text-3xl font-bold tabular-nums text-brand-700">
                       {formatCurrency(balanceDue)}
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-brand-700">
-                    Total due {formatCurrency(totals.total)}. The balance goes on the ledger.
+                    Total due {formatCurrency(totals.total)}. The balance goes to Customer Credit.
                   </p>
                 </div>
               )}
@@ -326,7 +361,8 @@ export function CheckoutPage() {
               disabled={!canConfirm}
               className="h-14 flex-1 text-base"
             >
-              Confirm Sale
+              {/* Says exactly what happens and for how much (senior UX plan, Phase 4). */}
+              Confirm Sale — {formatCurrency(totals.total)}
             </Button>
           </div>
 
@@ -347,7 +383,7 @@ export function CheckoutPage() {
             <p className="text-sm text-navy-800">
               The {formatItemCount(totals.itemCount)} in the cart will be removed. Nothing is
               recorded and stock is not affected. To keep them for later, go back to the sale and
-              use Hold Sale instead.
+              use Pause Sale instead.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button onClick={() => setCancelOpen(false)} className="flex-1">

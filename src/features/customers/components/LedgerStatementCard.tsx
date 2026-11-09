@@ -22,7 +22,7 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
       cell: (entry) => (
         <span className="flex flex-col">
           {formatLedgerDate(entry.occurredAt)}
-          <span className="text-xs text-muted">{formatTime(new Date(entry.occurredAt))}</span>
+          <span className="text-sm text-muted">{formatTime(new Date(entry.occurredAt))}</span>
         </span>
       ),
     },
@@ -53,7 +53,7 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
           ) : (
             <span className="font-semibold text-navy-700">{entry.reference}</span>
           )}
-          <span title={entry.description} className="max-w-[14rem] truncate text-xs text-muted">
+          <span className="min-w-[12rem] max-w-[18rem] whitespace-normal text-sm text-muted">
             {entry.description}
           </span>
         </span>
@@ -80,8 +80,8 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
 
   return (
     <SectionCard
-      title="Ledger Statement"
-      action={<span className="text-xs text-muted">Oldest first</span>}
+      title="Credit History"
+      action={<span className="text-sm text-muted">Oldest first</span>}
     >
       <SummaryTable
         columns={columns}

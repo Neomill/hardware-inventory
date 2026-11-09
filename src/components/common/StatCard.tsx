@@ -44,7 +44,7 @@ export function StatCard({ label, value, icon, tone, footer, action, iconShape }
       {action ? (
         <Link
           to={action.to}
-          className="-mx-5 -mb-5 mt-1 flex items-center justify-between gap-2 border-t border-slate-100 px-5 py-3 text-sm font-semibold text-navy-700 transition-colors hover:bg-navy-50"
+          className="-mx-5 -mb-5 mt-1 flex items-center justify-between gap-2 border-t border-slate-100 px-5 py-3 text-base font-semibold text-navy-700 transition-colors hover:bg-navy-50"
         >
           {action.label}
           <ChevronRight className="h-4 w-4" aria-hidden />

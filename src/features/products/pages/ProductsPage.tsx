@@ -18,7 +18,7 @@ function wantsSearchFocus(state: unknown): boolean {
   return (state as ProductsLocationState)?.focusSearch === true
 }
 
-const EXPORT_HEADER = ['Product', 'SKU', 'Category', 'Unit', 'Price', 'Stock', 'Status']
+const EXPORT_HEADER = ['Product', 'Product Code', 'Category', 'Unit', 'Price', 'Stock', 'Status']
 
 export function ProductsPage() {
   // Live catalogue: a sale at the counter shows up here immediately.

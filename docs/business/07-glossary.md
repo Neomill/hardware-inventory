@@ -6,9 +6,10 @@ Official Receipt.
 
 ---
 
-Ledger
+Customer Credit
 
-Record of customer debts.
+Record of what each customer owes and has paid. Called the "ledger" in
+the code; the screen says Customer Credit.
 
 ---
 
@@ -30,9 +31,10 @@ Business providing products.
 
 ---
 
-SKU
+Product Code
 
-Unique product identifier.
+Unique product identifier, such as `CEM-001`. Called the SKU in the
+code; the screen says Product Code.
 
 ---
 
@@ -54,21 +56,23 @@ invoice in this system.
 
 ---
 
-Stock Movement
+Stock History
 
-Any recorded change to a product's stock: a Stock In, a sale, a
-cancellation reversal, or a manual adjustment.
+Every recorded change to a product's stock: a Stock In, a sale, a
+cancelled sale's stock coming back, or a correction. Each change is a
+"stock movement" in the code.
 
 Stock is the sum of a product's movements. It is never edited directly.
 
 ---
 
-Reorder At
+Low-Stock Alert At
 
-The stock level at or below which a product needs restocking.
+The stock level at or below which a product shows as Low Stock and
+needs restocking. Called `reorderLevel` in the code.
 
-Shown as "Reorder At" in the interface rather than "reorder level" or
-"reorder point", which read as inventory jargon.
+Shown as "Low-Stock Alert At" (2026-11-09). It replaced "Reorder At",
+which still read as inventory jargon to the owner and cashier.
 
 ---
 
@@ -88,12 +92,16 @@ screens, so the same thing is never called two names.
 | Interface label   | Not                               | Why                                                        |
 | ----------------- | --------------------------------- | ---------------------------------------------------------- |
 | Sale No.          | Invoice                           | These are not invoices; a supplier invoice is a real thing  |
-| Recent Stock Movements | Recent Inventory Transactions | Matches the store's own words, Stock In and Stock Out       |
-| Reorder At        | Reorder Level                     | Plain language over inventory jargon                        |
+| Recent Stock History | Recent Stock Movements, Recent Inventory Transactions | Everyday words (revised 2026-11-09) |
+| Low-Stock Alert At | Reorder At, Reorder Level        | Says what it does (revised 2026-11-09)                     |
 | Recorded By       | User                              | States the audit meaning instead of a generic system word   |
 | Current Stock     | On Hand, Available                | Widely used and immediately clear                           |
-| Outstanding Credit | Receivables, AR                  | The store's framing; never accounting vocabulary            |
+| Credit Still Owed | Outstanding Credit, Receivables, AR | Plain words over accounting ones (revised 2026-11-09)   |
 
 The application should never feel like accounting software (Developer
 Handbook section 5). Where a plain word and an industry word both work,
 the plain word wins.
+
+The full list of plain-language labels from 2026-11-09 (Customer Credit,
+Still Owed, Stock History, Correct Stock, Pause Sale, Sell, Product Code
+and others) is in `docs/product/03-plain-language-labels.md`.

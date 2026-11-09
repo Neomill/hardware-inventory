@@ -74,7 +74,7 @@ export function Dialog({ title, onClose, children, initialFocusRef, describedBy 
             type="button"
             onClick={onClose}
             aria-label={`Close ${title}`}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-navy-700 transition-colors hover:bg-slate-100"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-navy-700 transition-colors hover:bg-slate-100"
           >
             <X className="h-6 w-6" aria-hidden />
           </button>

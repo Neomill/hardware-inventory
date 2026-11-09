@@ -76,7 +76,7 @@ function buildColumns(remaining: Map<string, Centavos>): SummaryColumn<Sale>[] {
               {settlement.label}
             </span>
             {settlement.remaining > 0 ? (
-              <span className="block text-xs text-muted">
+              <span className="block text-sm text-muted">
                 {formatCurrency(settlement.remaining)} left
               </span>
             ) : null}
@@ -91,7 +91,7 @@ function buildColumns(remaining: Map<string, Centavos>): SummaryColumn<Sale>[] {
         <Link
           to={ROUTES.saleDetail(sale.id)}
           aria-label={`View details of sale ${sale.saleNumber}`}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 transition-colors hover:bg-navy-50"
+          className="inline-flex h-12 items-center gap-2 rounded-lg border border-slate-200 px-3 text-base font-semibold text-navy-700 transition-colors hover:bg-navy-50"
         >
           <Eye className="h-4 w-4" aria-hidden />
           View Details
@@ -144,7 +144,7 @@ export function RecentSalesPanel({ sales, remaining }: RecentSalesPanelProps) {
                 onClick={() => setMethod(filter.value)}
                 aria-pressed={method === filter.value}
                 className={cn(
-                  'h-10 rounded-lg px-4 text-sm font-semibold transition-colors',
+                  'h-12 rounded-lg px-4 text-base font-semibold transition-colors',
                   method === filter.value
                     ? 'bg-navy-900 text-white'
                     : 'border border-slate-200 text-navy-700 hover:bg-navy-50',
@@ -178,7 +178,7 @@ export function RecentSalesPanel({ sales, remaining }: RecentSalesPanelProps) {
 
       <Link
         to={ROUTES.reports}
-        className="mx-5 mb-5 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-navy-700 transition-colors hover:bg-navy-50"
+        className="mx-5 mb-5 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-base font-semibold text-navy-700 transition-colors hover:bg-navy-50"
       >
         View sales reports
         <ChevronRight className="h-4 w-4" aria-hidden />

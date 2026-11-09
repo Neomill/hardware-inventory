@@ -240,7 +240,7 @@ describe('RecentSalesPanel', () => {
 
     expect(text).toContain('Cancelled')
     expect(text).not.toContain('Paid')
-    expect(text).not.toContain('Outstanding')
+    expect(text).not.toContain('Unpaid')
     expect(text).not.toContain('left')
   })
 })

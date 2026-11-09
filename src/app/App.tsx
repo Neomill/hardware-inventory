@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { ROUTES } from '@/app/routes'
 import { CustomerLedgerPage } from '@/features/customers/pages/CustomerLedgerPage'
+import { HelpPage } from '@/features/help/pages/HelpPage'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { InventoryPage } from '@/features/inventory/pages/InventoryPage'
 import { NewProductPage } from '@/features/products/pages/NewProductPage'
@@ -42,6 +43,7 @@ export function App() {
           <Route path={ROUTES.patterns.customerDetail} element={<CustomerLedgerPage />} />
           <Route path={ROUTES.reports} element={<ReportsPage />} />
           <Route path={ROUTES.settings} element={<SettingsPage />} />
+          <Route path={ROUTES.help} element={<HelpPage />} />
           <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
         </Route>
       </Routes>

@@ -18,7 +18,8 @@ export default {
           900: '#0A2140',
           950: '#061731',
         },
-        // Accent used for the active nav item and the primary CTA
+        // Accent. White text sits on brand-700 or darker (about 5.4:1); brand-500 is
+        // for icons, rings and borders only, because white on it is about 3:1.
         brand: {
           50: '#FFF4EC',
           100: '#FFE3D2',
@@ -28,10 +29,12 @@ export default {
           500: '#F26B21',
           600: '#DE5811',
           700: '#B8450E',
+          800: '#963A0D',
         },
         surface: '#F4F6F8',
         ink: '#0E2A4D',
-        muted: '#64748B',
+        // slate-600: about 7.5:1 on white, so secondary text stays readable (senior UX plan R2)
+        muted: '#475569',
       },
       fontFamily: {
         sans: [

@@ -12,8 +12,8 @@ async function onHand(page: Page, productName: string): Promise<number> {
   await expect(row).toHaveCount(1)
 
   const headers = await page.getByRole('columnheader').allInnerTexts()
-  const column = headers.findIndex((header) => /^on hand$/i.test(header.trim()))
-  expect(column, 'Inventory table has an On Hand column').toBeGreaterThanOrEqual(0)
+  const column = headers.findIndex((header) => /^stock$/i.test(header.trim()))
+  expect(column, 'Inventory table has a Stock column').toBeGreaterThanOrEqual(0)
 
   return toCount(await row.getByRole('cell').nth(column).innerText())
 }
@@ -156,10 +156,7 @@ test('B4: Receive stock from a product row opens the invoice with that product',
 }) => {
   await gotoRoute(page, '/products')
   await page.getByRole('searchbox', { name: 'Search products' }).fill(CEMENT)
-  // Let the list settle first: the row menu closes on scroll, and the list
-  // shrinking can fire one right after the click.
   await expect(page.getByText('1-1 of 1')).toBeVisible()
-  await page.getByRole('button', { name: `More actions for ${CEMENT}` }).click()
   await page.getByRole('link', { name: `Receive stock for ${CEMENT}` }).click()
 
   await expect(page.getByRole('heading', { name: 'Receive Stock' })).toBeVisible()
@@ -172,15 +169,15 @@ test('an adjustment that would take stock below zero is blocked', async ({ page 
   const before = await onHand(page, TAPE)
 
   const row = page.getByRole('row').filter({ has: page.getByText(TAPE, { exact: true }) })
-  await row.getByRole('button', { name: 'Adjust' }).click()
+  await row.getByRole('button', { name: 'Correct Stock' }).click()
 
-  const dialog = page.getByRole('dialog', { name: 'Adjust Stock' })
+  const dialog = page.getByRole('dialog', { name: 'Correct Stock' })
   await dialog.getByRole('radio', { name: 'Remove stock' }).click()
   await dialog.getByLabel(/^Quantity/).fill(String(before + 1))
   await dialog.getByRole('textbox', { name: 'Reason' }).fill('Physical count')
 
   await expect(dialog.getByText(/cannot go below zero/i)).toBeVisible()
-  const save = dialog.getByRole('button', { name: 'Save Adjustment' })
+  const save = dialog.getByRole('button', { name: 'Save Correction' })
   await expect(save).toBeDisabled()
 
   // Pressing Enter in the field must not sneak it through either.

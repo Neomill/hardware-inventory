@@ -68,7 +68,7 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
     handleSubmit,
     watch,
     clearErrors,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<InvoiceFormValues>({
     resolver: zodResolver(schema),
     defaultValues: emptyInvoiceValues(
@@ -145,9 +145,7 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
       </header>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="float-left w-full text-sm font-bold uppercase tracking-wide text-muted">
-          Invoice
-        </legend>
+        <legend className="float-left w-full text-base font-bold text-navy-800">Invoice</legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
@@ -209,9 +207,7 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
       </fieldset>
 
       <fieldset className="flex flex-col gap-4 border-t border-slate-100 pt-5">
-        <legend className="float-left w-full text-sm font-bold uppercase tracking-wide text-muted">
-          Products
-        </legend>
+        <legend className="float-left w-full text-base font-bold text-navy-800">Products</legend>
 
         <FormField
           label="Product"
@@ -305,7 +301,13 @@ export function InvoiceForm({ initialProductId, onReceived }: InvoiceFormProps) 
         <Button to={ROUTES.inventory} className="sm:h-14 sm:px-8">
           Cancel
         </Button>
-        <Button type="submit" variant="primary" icon={PackagePlus} className="sm:h-14 sm:px-10">
+        <Button
+          type="submit"
+          variant="primary"
+          icon={PackagePlus}
+          pending={isSubmitting}
+          className="sm:h-14 sm:px-10"
+        >
           Receive Stock
         </Button>
       </div>

@@ -114,6 +114,9 @@ export const ROUTES = {
 
   settings: '/settings',
 
+  /** "How do I…?" steps for the everyday jobs, printable as a cheat sheet. */
+  help: '/help',
+
   /** Route patterns for <Route path>; links use the builders above. */
   patterns: {
     productDetail: '/products/:productId',

@@ -57,8 +57,8 @@ export function StockMovementsView({ initialProductId }: StockMovementsViewProps
   const totals: { label: string; value: string }[] = [
     { label: 'Received', value: `+${formatNumber(log.totals.received)}` },
     { label: 'Sold', value: `-${formatNumber(log.totals.sold)}` },
-    { label: 'Reversed', value: `+${formatNumber(log.totals.reversed)}` },
-    { label: 'Adjusted', value: formatQuantityDelta(log.totals.adjusted) },
+    { label: 'Cancelled Sales', value: `+${formatNumber(log.totals.reversed)}` },
+    { label: 'Corrected', value: formatQuantityDelta(log.totals.adjusted) },
   ]
 
   return (
@@ -94,7 +94,7 @@ export function StockMovementsView({ initialProductId }: StockMovementsViewProps
       <section className="card flex flex-col">
         <header className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
           <div>
-            <h2 className="card-title">Stock Movements</h2>
+            <h2 className="card-title">Stock History</h2>
             {/* Units only add up within one product, so totals show only then. */}
             {log.filters.productId !== ALL && log.matchCount > 0 ? (
               <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
@@ -120,8 +120,8 @@ export function StockMovementsView({ initialProductId }: StockMovementsViewProps
             invoiceNumbers={invoiceNumbers}
             emptyMessage={
               log.isFiltered
-                ? 'No stock movements match these filters.'
-                : 'No stock movements in the last 30 days.'
+                ? 'No stock changes match these filters.'
+                : 'No stock changes in the last 30 days.'
             }
           />
         </div>

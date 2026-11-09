@@ -113,7 +113,7 @@ export function ReportsPage() {
               type="button"
               onClick={() => handleJump(item.id)}
               aria-current={section === item.id ? 'location' : undefined}
-              className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-navy-700 transition-colors hover:bg-navy-50 aria-[current=location]:border-navy-300 aria-[current=location]:bg-navy-50"
+              className="h-12 rounded-lg border border-slate-200 px-3 text-base font-semibold text-navy-700 transition-colors hover:bg-navy-50 aria-[current=location]:border-navy-300 aria-[current=location]:bg-navy-50"
             >
               {item.label}
             </button>

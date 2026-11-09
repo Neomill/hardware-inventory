@@ -43,7 +43,7 @@ async function fillAddProduct(page: Page, product: NewProduct): Promise<void> {
 
   await page.getByLabel('Unit', { exact: true }).selectOption({ label: product.unit })
   await page.getByLabel('Price', { exact: true }).fill(product.price)
-  await page.getByLabel('Reorder At').fill(product.reorderAt)
+  await page.getByLabel('Low-stock alert at').fill(product.reorderAt)
   await page.getByLabel(/^Opening stock/).fill(product.openingStock)
 }
 
@@ -90,7 +90,7 @@ test('B1: adds a product in a new category with opening stock', async ({ page })
     openingStock: '12',
   })
 
-  await expect(page.getByText(/SKU: GAR-001, assigned when you save\./)).toBeVisible()
+  await expect(page.getByText(/Product code: GAR-001, assigned when you save\./)).toBeVisible()
   await expect(page.getByLabel('Opening stock (pcs)')).toBeVisible()
 
   await page.getByRole('button', { name: 'Add Product' }).click()
@@ -101,7 +101,7 @@ test('B1: adds a product in a new category with opening stock', async ({ page })
   expect(toCount(await currentStock(page).innerText())).toBe(12)
   await expect(card(page, 'Stock')).toContainText('In Stock')
 
-  const movements = card(page, 'Stock Movements').getByRole('row').filter({ hasText: 'OPENING' })
+  const movements = card(page, 'Stock History').getByRole('row').filter({ hasText: 'OPENING' })
   await expect(movements).toHaveCount(1)
   await expect(movements).toContainText('Opening stock')
   await expect(movements).toContainText('+12')
@@ -117,7 +117,7 @@ test('B1: adds a product in a new category with opening stock', async ({ page })
     reorderAt: '2',
     openingStock: '0',
   })
-  await expect(page.getByText(/SKU: GAR-002/)).toBeVisible()
+  await expect(page.getByText(/Product code: GAR-002/)).toBeVisible()
   await page.getByLabel(/^Opening stock/).press('Enter')
   await expect(page).toHaveURL(/#\/products\/GAR-002$/)
   await expect(card(page, 'Stock')).toContainText('Out of Stock')
@@ -171,7 +171,7 @@ test('B3: a product name opens its details, which follow a sale', async ({ page 
   await expect(saleRow).toHaveCount(1)
   await expect(saleRow.getByRole('link', { name: saleNumber })).toBeVisible()
   await expect(
-    card(page, 'Stock Movements').getByRole('row').filter({ hasText: saleNumber }),
+    card(page, 'Stock History').getByRole('row').filter({ hasText: saleNumber }),
   ).toContainText('-2')
 })
 
@@ -192,7 +192,7 @@ test('B4: a new product survives a reload and is sellable at the POS', async ({ 
   await expect(page.getByRole('heading', { name: 'Pruning Shears' })).toBeVisible()
   expect(toCount(await currentStock(page).innerText())).toBe(8)
   await expect(
-    card(page, 'Stock Movements').getByRole('row').filter({ hasText: 'OPENING' }),
+    card(page, 'Stock History').getByRole('row').filter({ hasText: 'OPENING' }),
   ).toHaveCount(1)
 
   await gotoRoute(page, '/sales/new')
@@ -222,9 +222,9 @@ test('B5: editing the price leaves earlier sales at their price', async ({ page 
   await expect(dialog).toBeVisible()
 
   // SKU and unit are shown, not editable; there is no stock field at all.
-  await expect(dialog.getByText('SKU (cannot change)')).toBeVisible()
+  await expect(dialog.getByText('Product code (cannot change)')).toBeVisible()
   await expect(dialog.getByText('Unit (cannot change)')).toBeVisible()
-  await expect(dialog.getByRole('textbox', { name: /SKU|Unit|Stock/ })).toHaveCount(0)
+  await expect(dialog.getByRole('textbox', { name: /Product code|Unit|Stock/ })).toHaveCount(0)
 
   await dialog.getByRole('textbox', { name: 'Price' }).fill(toAmountInput(newPrice))
   await dialog.getByRole('button', { name: 'Save Changes' }).click()

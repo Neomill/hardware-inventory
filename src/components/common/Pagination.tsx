@@ -11,8 +11,9 @@ type PaginationProps = {
   label?: string
 }
 
+/** Every control is a 48px tap target; Previous and Next say so in words. */
 const STEP_STYLES =
-  'flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-navy-700 transition-colors hover:bg-navy-50 disabled:cursor-not-allowed disabled:opacity-40'
+  'flex h-12 items-center justify-center gap-1 rounded-lg border px-3 text-base font-semibold border-slate-200 text-navy-700 transition-colors hover:bg-navy-50 disabled:cursor-not-allowed disabled:opacity-40'
 
 /**
  * Previous / next plus page numbers. Page 1 and the last page are always
@@ -24,7 +25,7 @@ export function Pagination({ page, pageCount, onChange, label = 'Pagination' }: 
   }
 
   return (
-    <nav aria-label={label} className="flex flex-wrap items-center gap-1.5">
+    <nav aria-label={label} className="flex flex-wrap items-center gap-2">
       <button
         type="button"
         onClick={() => onChange(page - 1)}
@@ -32,12 +33,13 @@ export function Pagination({ page, pageCount, onChange, label = 'Pagination' }: 
         aria-label="Previous page"
         className={STEP_STYLES}
       >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
+        <ChevronLeft className="h-5 w-5" aria-hidden />
+        Previous
       </button>
 
       {pageItems(page, pageCount).map((value, index) =>
         value === null ? (
-          <span key={`gap-${index}`} className="px-1 text-sm text-muted" aria-hidden>
+          <span key={`gap-${index}`} className="px-1 text-base text-muted" aria-hidden>
             &hellip;
           </span>
         ) : (
@@ -48,7 +50,7 @@ export function Pagination({ page, pageCount, onChange, label = 'Pagination' }: 
             aria-label={`Page ${value}`}
             aria-current={value === page ? 'page' : undefined}
             className={cn(
-              'h-9 min-w-9 rounded-lg px-2 text-sm font-semibold transition-colors',
+              'h-12 min-w-12 rounded-lg px-2 text-base font-semibold transition-colors',
               value === page
                 ? 'bg-navy-900 text-white'
                 : 'border border-slate-200 text-navy-700 hover:bg-navy-50',
@@ -66,7 +68,8 @@ export function Pagination({ page, pageCount, onChange, label = 'Pagination' }: 
         aria-label="Next page"
         className={STEP_STYLES}
       >
-        <ChevronRight className="h-4 w-4" aria-hidden />
+        Next
+        <ChevronRight className="h-5 w-5" aria-hidden />
       </button>
     </nav>
   )

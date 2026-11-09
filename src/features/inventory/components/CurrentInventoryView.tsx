@@ -38,9 +38,10 @@ export function CurrentInventoryView() {
   function handleAdjusted(product: Product, movement: StockMovement) {
     const newStock = product.stock + movement.quantityDelta
 
+    // Result first, in one plain sentence; the change and reason follow.
     setNotice(
-      `${product.name}: ${formatQuantityDelta(movement.quantityDelta)} ${product.unit} (${movement.reason}). ` +
-        `Now ${formatNumber(newStock)} ${product.unit} on hand.`,
+      `Saved. ${product.name} now has ${formatNumber(newStock)} ${product.unit} in stock ` +
+        `(${formatQuantityDelta(movement.quantityDelta)} ${product.unit}, ${movement.reason}).`,
     )
     setAdjustingId(null)
   }
@@ -53,7 +54,7 @@ export function CurrentInventoryView() {
             value={list.filters.search}
             onChange={(value) => list.updateFilter('search', value)}
             label="Search inventory"
-            placeholder="Search by product name or SKU..."
+            placeholder="Search by product name or code..."
             className="flex-1"
           />
           <Button icon={PackagePlus} variant="primary" to={ROUTES.receiveStock}>

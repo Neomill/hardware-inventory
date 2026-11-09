@@ -1,5 +1,5 @@
-import type { ReactNode, RefObject } from 'react'
-import { CalendarDays, ChevronRight, Clock, Menu } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { CalendarDays, ChevronRight, Clock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { ROUTES } from '@/app/routes'
@@ -13,44 +13,17 @@ type TopBarProps = {
   subtitle?: string
   /** Every section except the Dashboard shows a trail back to it. */
   showBreadcrumb: boolean
-  onOpenMenu: () => void
-  /** Lets the shell return focus here when the mobile drawer closes. */
-  menuButtonRef?: RefObject<HTMLButtonElement>
-  /** Id of the drawer the menu button opens. */
-  menuControls?: string
-  isMenuOpen?: boolean
 }
 
-export function TopBar({
-  title,
-  subtitle,
-  showBreadcrumb,
-  onOpenMenu,
-  menuButtonRef,
-  menuControls,
-  isMenuOpen,
-}: TopBarProps) {
+export function TopBar({ title, subtitle, showBreadcrumb }: TopBarProps) {
   const now = useCurrentTime()
 
   return (
     <header className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-6 lg:px-8 print:px-0 print:pt-0">
-      <button
-        ref={menuButtonRef}
-        type="button"
-        onClick={onOpenMenu}
-        aria-haspopup="dialog"
-        aria-expanded={isMenuOpen}
-        aria-controls={isMenuOpen ? menuControls : undefined}
-        className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-navy-800 lg:hidden print:hidden"
-        aria-label="Open navigation menu"
-      >
-        <Menu className="h-5 w-5" aria-hidden />
-      </button>
-
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">{title}</h1>
 
-        {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 text-base text-muted">{subtitle}</p> : null}
 
         {showBreadcrumb && !subtitle ? (
           <nav
@@ -70,7 +43,8 @@ export function TopBar({
       </div>
 
       {/* The page title prints; the clock and the menu button do not. */}
-      <div className="flex items-center gap-3 print:hidden">
+      {/* Wraps so the chips fit a phone at the larger text sizes. */}
+      <div className="flex flex-wrap items-center gap-3 print:hidden">
         <InfoChip icon={<CalendarDays className="h-5 w-5 text-navy-700" aria-hidden />}>
           {formatDateLabel(now)}
         </InfoChip>

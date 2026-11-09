@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Minus, Plus, SlidersVertical } from 'lucide-react'
+import { ArrowRight, Minus, Plus, SlidersVertical } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import { Alert } from '@/components/common/Alert'
@@ -22,7 +22,7 @@ import { formatNumber } from '@/lib/format'
 import { useShopStore } from '@/stores/useShopStore'
 
 /** Common corrections, one tap each. Any other reason can be typed. */
-const QUICK_REASONS = ['Damaged', 'Physical count', 'Lost or missing', 'Returned to supplier']
+const QUICK_REASONS = ['Damaged', 'Counted on shelf', 'Lost or missing', 'Returned to supplier']
 
 const DIRECTIONS: { value: AdjustmentDirection; label: string; icon: typeof Plus }[] = [
   { value: 'remove', label: 'Remove stock', icon: Minus },
@@ -46,7 +46,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isSubmitted },
+    formState: { errors, isSubmitted, isSubmitting },
   } = useForm<AdjustStockValues>({
     resolver: zodResolver(schema),
     defaultValues: EMPTY_ADJUST_VALUES,
@@ -59,8 +59,11 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
   // Shown as soon as it is typed, not only on submit: the rule is the point.
   const belowZero =
     projected !== null && projected < 0
-      ? `Only ${formatNumber(product.stock)} ${product.unit} on hand. Stock cannot go below zero.`
+      ? `Only ${formatNumber(product.stock)} ${product.unit} in stock. Stock cannot go below zero.`
       : undefined
+  // The new stock, once a valid change is typed: shown large and named on the
+  // save button, so the result is clear before anything is saved (Phase 4).
+  const after = projected !== null && projected >= 0 && delta !== 0 ? projected : null
 
   function chooseDirection(value: AdjustmentDirection) {
     setValue('direction', value, { shouldValidate: isSubmitted })
@@ -101,15 +104,15 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
   }
 
   return (
-    <Dialog title="Adjust Stock" onClose={onClose} initialFocusRef={quantityRef}>
+    <Dialog title="Correct Stock" onClose={onClose} initialFocusRef={quantityRef}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3">
           <div className="min-w-0">
             <p className="truncate font-semibold text-navy-900">{product.name}</p>
-            <p className="text-xs text-muted">{product.sku}</p>
+            <p className="text-sm text-muted">{product.sku}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted">On hand</p>
+            <p className="text-sm text-muted">In stock</p>
             <p className="text-lg font-bold tabular-nums text-navy-900">
               {formatNumber(product.stock)} {product.unit}
             </p>
@@ -165,6 +168,27 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
           )}
         </FormField>
 
+        {after !== null ? (
+          <div
+            aria-live="polite"
+            className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-center tabular-nums"
+          >
+            <div>
+              <p className="text-sm text-muted">Now</p>
+              <p className="text-2xl font-bold text-navy-900">
+                {formatNumber(product.stock)} {product.unit}
+              </p>
+            </div>
+            <ArrowRight className="h-6 w-6 text-navy-700" aria-hidden />
+            <div>
+              <p className="text-sm text-muted">After saving</p>
+              <p className="text-2xl font-bold text-navy-900">
+                {formatNumber(after)} {product.unit}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <FormField label="Reason" error={errors.reason?.message}>
           {(field) => (
             <TextInput
@@ -181,7 +205,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
               key={reason}
               type="button"
               onClick={() => setValue('reason', reason, { shouldValidate: isSubmitted })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-medium text-navy-800 transition-colors hover:bg-navy-50"
+              className="h-12 rounded-xl border border-slate-200 px-3 text-base font-medium text-navy-800 transition-colors hover:bg-navy-50"
             >
               {reason}
             </button>
@@ -199,9 +223,12 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
             variant="primary"
             icon={SlidersVertical}
             disabled={belowZero !== undefined}
+            pending={isSubmitting}
             className="flex-1 sm:h-14"
           >
-            Save Adjustment
+            {after !== null
+              ? `Set Stock to ${formatNumber(after)} ${product.unit}`
+              : 'Save Correction'}
           </Button>
         </div>
       </form>

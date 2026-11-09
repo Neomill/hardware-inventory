@@ -72,7 +72,7 @@ export function DailySalesSection({ summary, days, scale, range }: DailySalesSec
       footer: 'cash and down payments',
     },
     {
-      label: 'Credit Extended',
+      label: 'Sold on Credit',
       value: formatCurrency(summary.creditExtended),
       icon: Wallet,
       tone: 'orange',
@@ -129,7 +129,7 @@ function CollectedSplit({ collected, credit }: { collected: number; credit: numb
   return (
     <div className="card flex flex-col gap-3 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="card-title">Collected vs Credit Extended</span>
+        <span className="card-title">Collected vs Sold on Credit</span>
         <span className="text-muted">of {formatCurrency(total)} sold</span>
       </div>
 
@@ -180,7 +180,7 @@ function CollectedSplit({ collected, credit }: { collected: number; credit: numb
                 'repeating-linear-gradient(45deg, #EA580C 0 3px, rgba(255,255,255,0.55) 3px 4px)',
             }}
           />
-          <dt className="text-navy-900">Credit extended</dt>
+          <dt className="text-navy-900">Sold on credit</dt>
           <dd className="ml-auto font-semibold tabular-nums text-navy-900 sm:ml-2">
             {formatCurrency(credit)}{' '}
             <span className="font-normal text-muted">({100 - collectedPercent}%)</span>
@@ -191,8 +191,7 @@ function CollectedSplit({ collected, credit }: { collected: number; credit: numb
   )
 }
 
-const HEADER_CELL =
-  'whitespace-nowrap pb-3 pr-4 text-xs font-semibold uppercase tracking-wide text-muted'
+const HEADER_CELL = 'whitespace-nowrap pb-3 pr-4 text-sm font-semibold text-navy-800'
 const NUMBER_CELL = 'whitespace-nowrap py-3 pr-4 text-right tabular-nums'
 
 function DailyTable({ days, summary }: { days: DailySales[]; summary: SalesSummary }) {

@@ -474,7 +474,7 @@ export function inspectPersistedShop(
   const dropped = [
     products.dropped > 0 ? plural(products.dropped, 'product record') : null,
     customers.dropped > 0 ? plural(customers.dropped, 'customer record') : null,
-    heldSales.dropped > 0 ? plural(heldSales.dropped, 'held sale') : null,
+    heldSales.dropped > 0 ? plural(heldSales.dropped, 'paused sale') : null,
     invoices.dropped > 0 ? plural(invoices.dropped, 'supplier invoice') : null,
   ].filter((entry): entry is string => entry !== null)
 

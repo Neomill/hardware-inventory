@@ -68,7 +68,7 @@ describe('buildCancelPreview', () => {
 
     expect(preview.title).toBe(`Cancel sale ${sale.saleNumber}?`)
     expect(preview.total).toBe(formatCurrency(sale.total))
-    expect(preview.customer).toBe('Walk-in Customer')
+    expect(preview.customer).toBe('No-name customer')
     expect(preview.items).toBe('5 items')
     expect(preview.consequences).toEqual([
       '5 items go back into stock.',

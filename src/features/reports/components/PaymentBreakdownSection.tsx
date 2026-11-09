@@ -41,7 +41,7 @@ export function PaymentBreakdownSection({ rows, total, range }: PaymentBreakdown
               <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
                 <caption className="sr-only">Sales by payment method</caption>
                 <thead>
-                  <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  <tr className="text-sm font-semibold text-navy-800">
                     <th scope="col" className="pb-3 pr-4">
                       Method
                     </th>
@@ -92,7 +92,7 @@ export function PaymentBreakdownSection({ rows, total, range }: PaymentBreakdown
       </SectionCard>
 
       {total > 0 ? (
-        <p className="text-xs text-muted">
+        <p className="text-sm text-muted">
           Partial and credit amounts are full sale totals. What was actually paid at the counter is
           under Collected in the Daily Sales Report.
         </p>

@@ -34,7 +34,7 @@ describe('NewProductPage', () => {
       'Category',
       'Unit',
       'Price',
-      'Reorder At',
+      'Low-stock alert at',
       'Opening stock',
       'Available for sale',
     ].map((label) => html.indexOf(label))
@@ -46,7 +46,7 @@ describe('NewProductPage', () => {
     expect(html).toContain('Add Product')
     expect(html).toContain('Cancel')
     // No SKU field to type in; the preview is blank until a category is chosen.
-    expect(html).not.toContain('SKU:')
+    expect(html).not.toContain('Product code:')
   })
 })
 
@@ -67,7 +67,7 @@ describe('ProductDetailPage', () => {
     expect(html).toContain(escapeHtml(formatCurrency(product.price)))
     expect(html).toContain(formatNumber(product.stock))
     expect(html).toContain('Current Stock')
-    expect(html).toContain('Stock Movements')
+    expect(html).toContain('Stock History')
     expect(html).toContain('Recent Sales')
     expect(html).toContain('Edit Product')
     expect(html).toContain('Receive Stock')

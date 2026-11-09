@@ -19,6 +19,9 @@ export function DashboardPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-5">
+      {/* The jobs first, the figures after (senior UX plan, Phase 5). */}
+      <QuickActions />
+
       <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Today's Sales"
@@ -38,7 +41,7 @@ export function DashboardPage() {
         />
 
         <StatCard
-          label="Outstanding Credit"
+          label="Credit Still Owed"
           value={formatCurrency(kpis.outstandingCredit)}
           icon={Wallet}
           tone="orange"
@@ -73,8 +76,6 @@ export function DashboardPage() {
           footer={<span className="text-muted">Active products</span>}
         />
       </section>
-
-      <QuickActions />
 
       <div className="grid grid-cols-1 gap-5 2xl:grid-cols-2">
         <RecentSalesCard sales={recentSales} />

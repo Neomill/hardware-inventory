@@ -51,10 +51,10 @@ export function ProductPicker({
       <div className="flex items-center justify-between gap-4 rounded-xl border border-navy-200 bg-navy-50 px-4 py-3">
         <div className="min-w-0">
           <p className="truncate font-semibold text-navy-900">{selected.name}</p>
-          <p className="mt-0.5 flex items-center gap-2 text-xs text-muted">
+          <p className="mt-0.5 flex items-center gap-2 text-sm text-muted">
             {selected.sku}
             <span aria-hidden>&middot;</span>
-            On hand <StockPill product={selected} />
+            In stock <StockPill product={selected} />
           </p>
         </div>
         <button
@@ -63,7 +63,7 @@ export function ProductPicker({
           aria-label={`Change product. Selected: ${selected.name}`}
           aria-describedby={describedBy}
           onClick={() => setChanging(true)}
-          className="h-11 shrink-0 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-navy-800 transition-colors hover:bg-slate-50"
+          className="h-12 shrink-0 rounded-xl border border-slate-200 bg-white px-4 text-base font-semibold text-navy-800 transition-colors hover:bg-slate-50"
         >
           Change
         </button>
@@ -81,7 +81,7 @@ export function ProductPicker({
         value={search}
         onChange={setSearch}
         label="Search for the delivered product"
-        placeholder="Search by product name or SKU..."
+        placeholder="Search by product name or code..."
         aria-describedby={describedBy}
         invalid={invalid}
       />
@@ -113,7 +113,7 @@ export function ProductPicker({
                   <span className="block truncate text-sm font-medium text-navy-900">
                     {product.name}
                   </span>
-                  <span className="block text-xs text-muted">{product.sku}</span>
+                  <span className="block text-sm text-muted">{product.sku}</span>
                 </span>
                 <StockPill product={product} />
                 {selected?.id === product.id ? (
@@ -126,8 +126,8 @@ export function ProductPicker({
       </ul>
 
       {products.length > RESULT_LIMIT && results.length === RESULT_LIMIT ? (
-        <p className="text-xs text-muted">
-          Showing the first {RESULT_LIMIT}. Type more of the name or SKU to narrow it down.
+        <p className="text-sm text-muted">
+          Showing the first {RESULT_LIMIT}. Type more of the name or code to narrow it down.
         </p>
       ) : null}
     </div>

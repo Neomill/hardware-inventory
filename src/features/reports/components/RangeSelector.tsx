@@ -69,7 +69,7 @@ type DayInputProps = {
 function DayInput({ id, label, value, max, onChange }: DayInputProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-medium text-muted">
+      <label htmlFor={id} className="text-sm font-medium text-muted">
         {label}
       </label>
       <div className="relative">

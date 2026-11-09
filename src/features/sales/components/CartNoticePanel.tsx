@@ -33,9 +33,10 @@ export function CartNoticePanel({ notice, onDismiss }: CartNoticePanelProps) {
         type="button"
         onClick={onDismiss}
         aria-label="Dismiss cart changes"
-        className="-m-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-amber-100"
+        className="-my-1 flex h-12 shrink-0 items-center gap-1 rounded-lg px-3 text-base font-semibold transition-colors hover:bg-amber-100"
       >
-        <X className="h-4 w-4" aria-hidden />
+        <X className="h-5 w-5" aria-hidden />
+        Dismiss
       </button>
     </div>
   )

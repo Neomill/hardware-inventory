@@ -32,7 +32,7 @@ export function SalesRootPage() {
   const heldCount = useShopStore((state) => state.heldSales.length)
 
   const [isHeldOpen, setHeldOpen] = useState(false)
-  // "Sale held." arrives through router state from the POS page.
+  // "Sale paused." arrives through router state from the POS page.
   const [notice, setNotice] = useState<string | null>(() => readSalesRootNotice(location.state))
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export function SalesRootPage() {
         {/* Still unpaid now on today's sales, after customer payments: the same
             allocation as the Ledger, so the two never disagree. */}
         <StatCard
-          label="Outstanding from today's sales"
+          label="Still owed from today's sales"
           value={formatCurrency(metrics.outstanding)}
           icon={Receipt}
           tone="orange"
@@ -118,7 +118,7 @@ export function SalesRootPage() {
               {metrics.outstandingCount === 1 ? 'sale' : 'sales'}
             </span>
           }
-          action={{ to: ROUTES.customers, label: 'View Ledger' }}
+          action={{ to: ROUTES.customers, label: 'View Customer Credit' }}
         />
         <StatCard
           label="Customers Served"
@@ -126,7 +126,7 @@ export function SalesRootPage() {
           icon={Users}
           tone="indigo"
           iconShape="circle"
-          footer={<span className="text-muted">today, each walk-in sale counted once</span>}
+          footer={<span className="text-muted">today, each no-name sale counted once</span>}
           action={{ to: ROUTES.customers, label: 'View Customers' }}
         />
       </section>
@@ -154,7 +154,7 @@ export function SalesRootPage() {
                 {metrics.topProducts.map((product, index) => (
                   <li key={product.productId} className="flex items-center gap-3 text-sm">
                     <span className="w-4 shrink-0 text-muted">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate text-navy-900" title={product.name}>
+                    <span className="min-w-0 flex-1 text-navy-900 [overflow-wrap:anywhere]">
                       {product.name}
                     </span>
                     <span className="shrink-0 whitespace-nowrap text-muted">

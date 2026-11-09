@@ -32,7 +32,7 @@ export function ResetDataDialog({
         <p className="text-sm text-navy-900">
           Everything recorded on this device is replaced with the original demo data: products and
           stock, customers and balances, all {formatNumber(saleCount)} sales, payments and settings.
-          {hasSaleInProgress ? ' The sale in progress and any held sales are cleared too.' : null}
+          {hasSaleInProgress ? ' The sale in progress and any paused sales are cleared too.' : null}
         </p>
 
         <Alert tone="error">This cannot be undone. Export your data first to keep a copy.</Alert>

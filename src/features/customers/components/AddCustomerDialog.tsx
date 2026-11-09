@@ -29,7 +29,7 @@ export function AddCustomerDialog({ onClose, onAdded }: AddCustomerDialogProps) 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<NewCustomerFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', phone: '' },
@@ -87,7 +87,13 @@ export function AddCustomerDialog({ onClose, onAdded }: AddCustomerDialogProps) 
           <Button onClick={onClose} className="sm:w-36">
             Cancel
           </Button>
-          <Button type="submit" variant="primary" icon={UserPlus} className="sm:w-48">
+          <Button
+            type="submit"
+            variant="primary"
+            icon={UserPlus}
+            pending={isSubmitting}
+            className="sm:w-48"
+          >
             Add Customer
           </Button>
         </div>

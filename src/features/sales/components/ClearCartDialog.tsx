@@ -31,7 +31,7 @@ export function ClearCartDialog({ itemCount, onClose, onConfirm }: ClearCartDial
       <div className="flex flex-col gap-4">
         <p id={messageId} className="text-sm text-navy-800">
           The {formatItemCount(itemCount)} in the cart will be removed. Nothing is recorded and
-          stock is not affected. To keep them for later, use Hold Sale instead.
+          stock is not affected. To keep them for later, use Pause Sale instead.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button ref={keepRef} onClick={onClose} className="flex-1">

@@ -175,10 +175,10 @@ describe('describeSettlement', () => {
     customerId: 'C-1',
   })
 
-  it('reads Outstanding with nothing paid', () => {
+  it('reads Unpaid with nothing paid', () => {
     expect(describeSettlement(credit, 50000)).toMatchObject({
       status: 'outstanding',
-      label: 'Outstanding',
+      label: 'Unpaid',
       tone: 'danger',
       remaining: 50000,
     })

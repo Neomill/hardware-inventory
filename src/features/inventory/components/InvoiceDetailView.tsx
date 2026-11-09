@@ -29,7 +29,7 @@ const LINE_COLUMNS: SummaryColumn<SupplierInvoiceLine>[] = [
     header: 'Product',
     cell: (line) => <LineProductLink line={line} />,
   },
-  { id: 'sku', header: 'SKU', cell: (line) => line.sku, cellClassName: 'text-muted' },
+  { id: 'sku', header: 'Product Code', cell: (line) => line.sku, cellClassName: 'text-muted' },
   {
     id: 'quantity',
     header: 'Quantity',
@@ -122,7 +122,7 @@ export function InvoiceDetailView({ invoiceNumber }: InvoiceDetailViewProps) {
             <li key={line.productId} className="flex items-start justify-between gap-3 py-3">
               <div className="min-w-0">
                 <LineProductLink line={line} />
-                <p className="text-xs text-muted">{line.sku}</p>
+                <p className="text-sm text-muted">{line.sku}</p>
               </div>
               <p className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-navy-900">
                 {formatNumber(line.quantity)} {line.unit}

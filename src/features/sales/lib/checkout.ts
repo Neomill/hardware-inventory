@@ -4,7 +4,7 @@ import type { PaymentMethod } from '@/domain/types'
 
 export const AMOUNT_FORMAT_MESSAGE = 'Enter an amount such as 500 or 1,250.50'
 export const WALK_IN_BALANCE_MESSAGE =
-  'Choose a customer. A balance cannot be recorded for a walk-in customer.'
+  'Choose a customer. A balance cannot be recorded for a no-name customer.'
 
 /**
  * What the amount field holds: nothing yet, something that is not an amount
@@ -31,6 +31,24 @@ export function readAmountInput(raw: string): AmountInput {
  */
 export function defaultAmountText(method: PaymentMethod, total: Centavos): string {
   return method === 'cash' ? formatAmountInput(total) : ''
+}
+
+/** Peso bills the quick-cash buttons round up to, in centavos. */
+const ROUND_UP_TO: readonly Centavos[] = [100_00, 500_00, 1000_00]
+
+/**
+ * Amounts for the quick-cash buttons: the exact total, then the total rounded
+ * up to the next ₱100, ₱500 and ₱1,000, without repeats. Tapping one beats
+ * typing the bill the customer hands over (senior UX plan, Phase 5).
+ */
+export function quickCashAmounts(total: Centavos): Centavos[] {
+  if (!Number.isInteger(total) || total <= 0) {
+    return []
+  }
+
+  const amounts = [total, ...ROUND_UP_TO.map((bill) => Math.ceil(total / bill) * bill)]
+
+  return [...new Set(amounts)].sort((a, b) => a - b)
 }
 
 export type CheckoutState = {

@@ -35,7 +35,7 @@ describe('buildPaymentFormSchema', () => {
   })
 
   it('refuses any payment from a settled customer', () => {
-    expect(amountError(0, '10')).toBe('This customer has no outstanding balance.')
+    expect(amountError(0, '10')).toBe('This customer owes nothing.')
   })
 
   it('limits the note length', () => {

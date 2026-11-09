@@ -25,7 +25,7 @@ describe('InventoryPage', () => {
     const html = renderAt('/inventory')
 
     expect(html).toContain('Current Inventory')
-    expect(html).toContain('SKUs')
+    expect(html).toContain('Products')
     expect(html).toContain('Out of Stock')
     // Out of stock rows lead the list.
     expect(html).toContain('Door Knob (Stainless)')
@@ -35,7 +35,7 @@ describe('InventoryPage', () => {
     const html = renderAt('/inventory')
 
     expect(html).toContain('Receive Stock')
-    expect(html).toContain('Stock Movements')
+    expect(html).toContain('Stock History')
     expect(html).toContain(`href="${ROUTES.invoices}"`)
   })
 
@@ -126,7 +126,7 @@ describe('InventoryPage', () => {
   it('shows the movement log with its filters', () => {
     const html = renderAt('/inventory/movements')
 
-    expect(html).toContain('Stock Movements')
+    expect(html).toContain('Stock History')
     expect(html).toContain('Last 30 days')
     expect(html).toContain('All Types')
   })

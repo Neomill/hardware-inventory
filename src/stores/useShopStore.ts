@@ -179,6 +179,11 @@ type ShopState = {
   addToCart: (productId: string, quantity: number) => ActionResult
   setCartQuantity: (productId: string, quantity: number) => ActionResult
   removeFromCart: (productId: string) => void
+  /**
+   * Undo for a removed line: puts it back where it was. The quantity is
+   * capped at the stock there is now; `message` says so when it was cut.
+   */
+  restoreCartLine: (line: CartLine, index: number) => ActionResult
   clearCart: () => void
   holdCart: (input?: HoldCartInput) => HoldCartResult
   resumeHeldSale: (heldSaleId: string) => ResumeHeldSaleResult
@@ -351,6 +356,48 @@ export function createShopStore({
           set({ cart: get().cart.filter((line) => line.productId !== productId) })
         },
 
+        restoreCartLine(line, index) {
+          const { products, cart } = get()
+          const product = products.find((candidate) => candidate.id === line.productId)
+
+          if (!product || !product.isActive) {
+            return {
+              ok: false,
+              message: 'That product is no longer for sale, so it cannot be put back.',
+            }
+          }
+
+          if (product.stock <= 0) {
+            return {
+              ok: false,
+              message: `${product.name} is out of stock now, so it cannot be put back.`,
+            }
+          }
+
+          if (cart.some((existing) => existing.productId === line.productId)) {
+            return { ok: true, message: null }
+          }
+
+          const quantity = Math.min(line.quantity, product.stock)
+          const at = Math.max(0, Math.min(index, cart.length))
+
+          set({
+            cart: [
+              ...cart.slice(0, at),
+              { productId: line.productId, quantity },
+              ...cart.slice(at),
+            ],
+          })
+
+          return {
+            ok: true,
+            message:
+              quantity < line.quantity
+                ? `Only ${product.stock} ${product.unit} of ${product.name} left in stock, so ${quantity} was put back.`
+                : null,
+          }
+        },
+
         clearCart() {
           set({ cart: [] })
         },
@@ -364,7 +411,7 @@ export function createShopStore({
           })
 
           if (!validation.ok) {
-            return { ok: false, message: validation.message ?? 'This sale cannot be held.' }
+            return { ok: false, message: validation.message ?? 'This sale cannot be paused.' }
           }
 
           const heldSale = buildHeldSale({
@@ -391,7 +438,7 @@ export function createShopStore({
           }
 
           if (cart.length > 0) {
-            return { ok: false, message: 'Finish or hold the current sale first.' }
+            return { ok: false, message: 'Finish or pause the current sale first.' }
           }
 
           const reconciled = reconcileCartWithStock(held.lines, products)
@@ -418,7 +465,7 @@ export function createShopStore({
 
           set({ heldSales: heldSales.filter((candidate) => candidate.id !== heldSaleId) })
 
-          return { ok: true, message: 'Held sale discarded.' }
+          return { ok: true, message: 'Paused sale discarded.' }
         },
 
         swapWithHeldSale(heldSaleId, input = {}) {
@@ -441,7 +488,7 @@ export function createShopStore({
           })
 
           if (!validation.ok) {
-            return { ok: false, message: validation.message ?? 'This sale cannot be held.' }
+            return { ok: false, message: validation.message ?? 'This sale cannot be paused.' }
           }
 
           const reconciled = reconcileCartWithStock(held.lines, products)
@@ -537,7 +584,7 @@ export function createShopStore({
             changeGiven: computeChange(totals.total, paymentMethod === 'cash' ? amountPaid : 0),
             balanceDue: computeBalanceDue(paymentMethod, totals.total, amountPaid),
             customerId: customer?.id ?? null,
-            customerName: customer?.name ?? 'Walk-in Customer',
+            customerName: customer?.name ?? 'No-name customer',
             status: 'completed',
             recordedBy: CURRENT_USER.name,
             cancellation: null,
@@ -736,7 +783,7 @@ export function createShopStore({
           if (!validation.ok) {
             return {
               ok: false,
-              message: validation.message ?? 'This adjustment cannot be recorded.',
+              message: validation.message ?? 'This correction cannot be recorded.',
             }
           }
 
@@ -753,7 +800,7 @@ export function createShopStore({
             type: 'adjustment',
             quantityDelta,
             reference,
-            description: `Adjusted: ${statedReason}`,
+            description: `Corrected: ${statedReason}`,
             reason: statedReason,
             note: null,
             recordedBy: CURRENT_USER.name,

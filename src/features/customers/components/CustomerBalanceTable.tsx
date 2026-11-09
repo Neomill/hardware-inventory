@@ -34,13 +34,13 @@ export function CustomerBalanceTable({
           >
             {row.customerName}
           </Link>
-          <span className="text-xs tabular-nums text-muted">{row.phone ?? 'No phone'}</span>
+          <span className="text-sm tabular-nums text-muted">{row.phone ?? 'No phone'}</span>
         </span>
       ),
     },
     {
       id: 'outstanding',
-      header: 'Outstanding',
+      header: 'Still Owed',
       cell: (row) =>
         row.outstanding > 0 ? (
           <span className="font-bold text-brand-700">{formatCurrency(row.outstanding)}</span>
@@ -51,13 +51,13 @@ export function CustomerBalanceTable({
     },
     {
       id: 'open',
-      header: 'Open Charges',
+      header: 'Unpaid Sales',
       cell: (row) =>
         row.openChargeCount > 0 ? (
           <span className="flex flex-col">
             {formatNumber(row.openChargeCount)}
             {row.oldestOpenChargeAt ? (
-              <span className="text-xs text-muted">
+              <span className="text-sm text-muted">
                 oldest {describeAge(row.oldestOpenChargeAt, now).toLowerCase()}
               </span>
             ) : null}
@@ -88,17 +88,18 @@ export function CustomerBalanceTable({
               type="button"
               onClick={() => onRecordPayment(row.customerId)}
               aria-label={`Record payment from ${row.customerName}`}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-navy-900 transition-colors hover:bg-slate-50"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-navy-900 transition-colors hover:bg-slate-50"
             >
-              <Wallet className="h-4 w-4" aria-hidden />
+              <Wallet className="h-5 w-5" aria-hidden />
               Record Payment
             </button>
           ) : null}
           <Link
             to={ROUTES.customerDetail(row.customerId)}
-            aria-label={`View ledger for ${row.customerName}`}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-navy-700 transition-colors hover:bg-navy-50"
+            aria-label={`View customer credit for ${row.customerName}`}
+            className="inline-flex h-12 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-navy-700 transition-colors hover:bg-navy-50"
           >
+            View
             <ChevronRight className="h-5 w-5" aria-hidden />
           </Link>
         </div>

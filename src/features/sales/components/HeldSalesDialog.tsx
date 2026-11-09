@@ -107,7 +107,7 @@ export function HeldSalesDialog({ onClose, onResumed, context = 'sales' }: HeldS
   }
 
   return (
-    <Dialog title="Held Sales" onClose={onClose}>
+    <Dialog title="Paused Sales" onClose={onClose}>
       <div className="flex flex-col gap-4">
         {error ? <Alert tone="error">{error}</Alert> : null}
 
@@ -115,8 +115,8 @@ export function HeldSalesDialog({ onClose, onResumed, context = 'sales' }: HeldS
           <div className="flex flex-col items-center gap-4 py-6 text-center">
             <p className="max-w-sm text-sm text-muted">
               {context === 'pos'
-                ? 'No held sales. Use Hold Sale in the cart to set a sale aside.'
-                : 'No held sales. Use Hold Sale on the New Sale screen to set a sale aside.'}
+                ? 'No paused sales. Use Pause Sale in the cart to set a sale aside.'
+                : 'No paused sales. Use Pause Sale on the New Sale screen to set a sale aside.'}
             </p>
             {context === 'sales' ? (
               <Button icon={Plus} variant="primary" to={ROUTES.newSale}>
@@ -128,8 +128,8 @@ export function HeldSalesDialog({ onClose, onResumed, context = 'sales' }: HeldS
           <>
             {hasSaleInProgress ? (
               <Alert tone="info">
-                You have a sale in progress ({formatItemCount(cartItemCount)}). Resuming a held sale
-                holds the current one first.
+                You have a sale in progress ({formatItemCount(cartItemCount)}). Resuming a paused
+                sale pauses the current one first.
               </Alert>
             ) : null}
 
@@ -199,7 +199,7 @@ function HeldSaleItem({
     }
   }, [confirming])
 
-  const name = `${row.title}, held ${row.heldAtText}`
+  const name = `${row.title}, paused ${row.heldAtText}`
   const changes = [...row.stockChanges, ...row.priceChanges]
   const swapLabelError = heldLabelError(swapLabel)
 
@@ -217,7 +217,7 @@ function HeldSaleItem({
             <span className="min-w-0 [overflow-wrap:anywhere]">{row.title}</span>
           </h3>
           <p className="mt-0.5 text-sm text-muted">
-            Held {row.heldAtText}
+            Paused {row.heldAtText}
             {row.fromDay ? (
               <StatusPill tone="warning" className="ml-2">
                 {row.fromDay}
@@ -248,7 +248,7 @@ function HeldSaleItem({
       {changes.length > 0 ? (
         <details className="mt-2 text-sm">
           <summary className="cursor-pointer font-semibold text-navy-700">
-            What changed since it was held
+            What changed since it was paused
           </summary>
           <ul className="mt-1 list-disc space-y-0.5 pl-5 text-navy-800">
             {changes.map((change) => (
@@ -265,7 +265,7 @@ function HeldSaleItem({
       {confirming === 'discard' ? (
         <div className="mt-3 flex flex-col gap-3 rounded-lg bg-rose-50 p-3">
           <p className="text-sm text-rose-900">
-            Discard this held sale? Its {formatItemCount(row.itemCount)} will be removed from the
+            Discard this paused sale? Its {formatItemCount(row.itemCount)} will be removed from the
             list. Stock is not affected.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -288,7 +288,7 @@ function HeldSaleItem({
           className="mt-3 flex flex-col gap-3 rounded-lg bg-slate-50 p-3"
         >
           <p className="text-sm text-navy-900">
-            The sale in progress will be held, then this one resumed.
+            The sale in progress will be paused, then this one resumed.
           </p>
           <FormField
             label="Label for the sale in progress"
@@ -318,7 +318,7 @@ function HeldSaleItem({
               disabled={swapLabelError !== null}
               className="flex-1"
             >
-              Hold current and resume
+              Pause current and resume
             </Button>
           </div>
         </form>
@@ -329,10 +329,10 @@ function HeldSaleItem({
             icon={PlayCircle}
             onClick={onResume}
             disabled={!row.canResume}
-            aria-label={`${hasSaleInProgress ? 'Hold current and resume' : 'Resume'} ${name}`}
+            aria-label={`${hasSaleInProgress ? 'Pause current and resume' : 'Resume'} ${name}`}
             className="flex-1"
           >
-            {hasSaleInProgress ? 'Hold current and resume' : 'Resume'}
+            {hasSaleInProgress ? 'Pause current and resume' : 'Resume'}
           </Button>
           <Button
             icon={Trash2}

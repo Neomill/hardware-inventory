@@ -58,10 +58,10 @@ export function DataCard() {
     { label: 'Products', value: products.length },
     { label: 'Customers', value: customers.length },
     { label: 'Sales', value: sales.length },
-    { label: 'Stock movements', value: movements.length },
+    { label: 'Stock changes', value: movements.length },
     { label: 'Customer payments', value: payments.length },
     { label: 'Supplier invoices', value: invoices.length },
-    { label: 'Held sales', value: heldSales.length },
+    { label: 'Paused sales', value: heldSales.length },
   ]
 
   function handleExport() {
@@ -97,7 +97,7 @@ export function DataCard() {
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {counts.map((count) => (
           <div key={count.label} className="rounded-xl border border-slate-200 px-4 py-3">
-            <dt className="text-xs text-muted">{count.label}</dt>
+            <dt className="text-sm text-muted">{count.label}</dt>
             <dd className="mt-1 text-xl font-bold tabular-nums text-navy-900">
               {formatNumber(count.value)}
             </dd>

@@ -42,7 +42,7 @@ export function Alert({ tone, children, id, action, className }: AlertProps) {
     <div
       role={tone === 'error' ? 'alert' : 'status'}
       className={cn(
-        'flex items-start gap-3 rounded-xl border px-4 py-3 text-sm',
+        'flex items-start gap-3 rounded-xl border px-4 py-3 text-base',
         action ? 'flex-wrap sm:flex-nowrap' : null,
         TONE_STYLES[tone],
         className,

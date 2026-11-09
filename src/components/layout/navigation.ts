@@ -6,6 +6,7 @@ import {
   Users,
   BarChart3,
   Settings,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -25,18 +26,35 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: 'Dashboard', title: 'Dashboard', path: ROUTES.dashboard, icon: Home },
   { label: 'Products', title: 'Products', path: ROUTES.products, icon: Package },
   {
-    label: 'Sales (POS)',
-    title: 'Sales (POS)',
+    label: 'Sell',
+    title: 'Sell',
     subtitle: 'Create new sales and view your recent transactions.',
     path: ROUTES.sales,
     icon: ShoppingCart,
   },
   { label: 'Inventory', title: 'Inventory', path: ROUTES.inventory, icon: Boxes },
-  { label: 'Customer Ledger', title: 'Customer Ledger', path: ROUTES.customers, icon: Users },
+  { label: 'Customer Credit', title: 'Customer Credit', path: ROUTES.customers, icon: Users },
   { label: 'Reports', title: 'Reports', path: ROUTES.reports, icon: BarChart3 },
 ]
 
+/** The tabs along the bottom on tablet portrait and phone; the rest sit behind More. */
+const BOTTOM_PATHS: readonly string[] = [
+  ROUTES.dashboard,
+  ROUTES.sales,
+  ROUTES.inventory,
+  ROUTES.customers,
+]
+
+export const BOTTOM_NAV: NavItem[] = PRIMARY_NAV.filter((item) => BOTTOM_PATHS.includes(item.path))
+
 export const SECONDARY_NAV: NavItem[] = [
+  {
+    label: 'Help',
+    title: 'How Do I…?',
+    subtitle: 'Step-by-step help for the everyday jobs.',
+    path: ROUTES.help,
+    icon: LifeBuoy,
+  },
   { label: 'Settings', title: 'Settings', path: ROUTES.settings, icon: Settings },
 ]
 

@@ -32,7 +32,7 @@ function buildColumns(
         return (
           <span className="flex flex-col">
             <span className="font-medium">{product?.name ?? movement.productId}</span>
-            <span className="text-xs text-muted">{product?.sku ?? 'Removed product'}</span>
+            <span className="text-sm text-muted">{product?.sku ?? 'Removed product'}</span>
           </span>
         )
       },
@@ -43,7 +43,7 @@ function buildColumns(
       cell: (movement) => (
         <span className="flex max-w-xs flex-col whitespace-normal">
           <span>{movement.description}</span>
-          {movement.note ? <span className="text-xs text-muted">Note: {movement.note}</span> : null}
+          {movement.note ? <span className="text-sm text-muted">Note: {movement.note}</span> : null}
         </span>
       ),
     },

@@ -52,12 +52,12 @@ export function saleRecordNote(sale: Sale, justCompleted: boolean): string {
 
   if (justCompleted) {
     return `Stock was reduced for ${products} and this sale is recorded in the sales history${
-      owing ? ', with the unpaid balance on the customer ledger' : ''
+      owing ? ', with the unpaid balance added to Customer Credit' : ''
     }.`
   }
 
   return `This sale reduced stock for ${products}${
-    owing ? ' and put its unpaid balance on the customer ledger' : ''
+    owing ? ' and added its unpaid balance to Customer Credit' : ''
   }.`
 }
 

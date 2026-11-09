@@ -6,7 +6,7 @@ import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { SearchInput } from '@/components/common/SearchInput'
 import { ROUTES } from '@/app/routes'
-import type { Product } from '@/domain/types'
+import type { CartLine, Product } from '@/domain/types'
 import { AddToCartDialog } from '@/features/sales/components/AddToCartDialog'
 import { CartBar } from '@/features/sales/components/CartBar'
 import { CartNoticePanel } from '@/features/sales/components/CartNoticePanel'
@@ -17,8 +17,11 @@ import { HeldSalesButton } from '@/features/sales/components/HeldSalesButton'
 import { HeldSalesDialog } from '@/features/sales/components/HeldSalesDialog'
 import { HoldSaleDialog } from '@/features/sales/components/HoldSaleDialog'
 import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
+import { SellTip } from '@/features/sales/components/SellTip'
+import { UndoBar } from '@/features/sales/components/UndoBar'
 import { useCart } from '@/features/sales/hooks/useCart'
 import { useStickyMaxHeight } from '@/features/sales/hooks/useStickyMaxHeight'
+import { orderByBestSellers } from '@/features/sales/lib/bestSellers'
 import { cartBarSummary } from '@/features/sales/lib/cartBar'
 import { POS_CART_BESIDE_GRID_QUERY, canProceedToCheckout } from '@/features/sales/lib/cartLayout'
 import {
@@ -49,8 +52,11 @@ export function PosPage() {
   const addToCart = useShopStore((state) => state.addToCart)
   const setCartQuantity = useShopStore((state) => state.setCartQuantity)
   const removeFromCart = useShopStore((state) => state.removeFromCart)
+  const restoreCartLine = useShopStore((state) => state.restoreCartLine)
   const clearCart = useShopStore((state) => state.clearCart)
   const cartLineCount = useShopStore((state) => state.cart.length)
+  const cartLines = useShopStore((state) => state.cart)
+  const sales = useShopStore((state) => state.sales)
   const heldCount = useShopStore((state) => state.heldSales.length)
 
   const { entries, unavailable, totals, taxRate } = useCart()
@@ -60,6 +66,11 @@ export function PosPage() {
   const [selected, setSelected] = useState<Product | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [resumedMessage, setResumedMessage] = useState<string | null>(null)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
+  // The line just removed, so it can be put back. Cleared by the next action.
+  const [removed, setRemoved] = useState<{ line: CartLine; index: number; name: string } | null>(
+    null,
+  )
   const [isHoldOpen, setHoldOpen] = useState(false)
   const [isHeldOpen, setHeldOpen] = useState(false)
   const [isClearOpen, setClearOpen] = useState(false)
@@ -159,10 +170,18 @@ export function PosPage() {
     [products],
   )
 
+  // Best sellers first, so the everyday items need no searching (Phase 5).
+  const ranked = useMemo(() => orderByBestSellers(products, sales, new Date()), [products, sales])
+
+  const inCartById = useMemo(
+    () => new Map(cartLines.map((line) => [line.productId, line.quantity])),
+    [cartLines],
+  )
+
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
 
-    return products.filter((product) => {
+    return ranked.filter((product) => {
       if (!product.isActive) {
         return false
       }
@@ -177,7 +196,16 @@ export function PosPage() {
 
       return product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term)
     })
-  }, [products, category, search])
+  }, [ranked, category, search])
+
+  // One tap adds one; Choose Quantity opens the dialog for bulk amounts.
+  function handleAddOne(product: Product) {
+    const result = addToCart(product.id, 1)
+    setMessage(result.ok ? null : result.message)
+    setResumedMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
+  }
 
   function handleConfirmAdd(quantity: number) {
     if (!selected) {
@@ -187,36 +215,70 @@ export function PosPage() {
     const result = addToCart(selected.id, quantity)
     setMessage(result.ok ? null : result.message)
     setResumedMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
     setSelected(null)
   }
 
   function handleQuantityChange(productId: string, quantity: number) {
     const result = setCartQuantity(productId, quantity)
     setMessage(result.ok ? null : result.message)
+    setInfoMessage(null)
+    setRemoved(null)
+  }
+
+  // No confirmation for one line: it goes at once and Undo puts it back
+  // (senior UX plan, Phase 4). A line whose product is gone gets no Undo.
+  function handleRemove(productId: string) {
+    const current = useShopStore.getState().cart
+    const index = current.findIndex((line) => line.productId === productId)
+    const entry = entries.find((candidate) => candidate.line.productId === productId)
+
+    removeFromCart(productId)
+    setMessage(null)
+    setInfoMessage(null)
+    setRemoved(
+      entry && index >= 0 ? { line: current[index], index, name: entry.line.productName } : null,
+    )
+  }
+
+  function handleUndoRemove() {
+    if (!removed) {
+      return
+    }
+
+    const result = restoreCartLine(removed.line, removed.index)
+    setRemoved(null)
+    setMessage(result.ok ? null : result.message)
+    setInfoMessage(result.ok ? result.message : null)
   }
 
   function handleConfirmClear() {
     clearCart()
     setMessage(null)
     setResumedMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
     focusAfterClearRef.current = true
     setClearOpen(false)
   }
 
   function handleHeld() {
     setHoldOpen(false)
-    const state: SalesRootNavState = { notice: 'Sale held.' }
+    const state: SalesRootNavState = { notice: 'Sale paused.' }
     navigate(ROUTES.sales, { state })
   }
 
-  // Resumed from the Held Sales list opened on this page: the store has loaded
+  // Resumed from the Paused Sales list opened on this page: the store has loaded
   // the cart, so stay here and show what changed (replacing notices about the
   // cart that was there before).
   function handleResumed(cartNotice: CartNotice | null) {
     setHeldOpen(false)
     setMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
     setNotices(cartNotice ? [cartNotice] : [])
-    setResumedMessage(cartNotice ? null : 'Held sale resumed.')
+    setResumedMessage(cartNotice ? null : 'Paused sale resumed.')
   }
 
   const cartItemCount =
@@ -228,6 +290,14 @@ export function PosPage() {
     ? (entries.find((entry) => entry.line.productId === selected.id)?.line.quantity ?? 0)
     : 0
 
+  const undoBar = removed ? (
+    <UndoBar
+      message={`Removed ${removed.name}.`}
+      undoLabel={`Undo: put ${removed.name} back in the cart`}
+      onUndo={handleUndoRemove}
+    />
+  ) : null
+
   const cart = (
     <CartPanel
       entries={entries}
@@ -235,7 +305,8 @@ export function PosPage() {
       totals={totals}
       taxRate={taxRate}
       onQuantityChange={handleQuantityChange}
-      onRemove={removeFromCart}
+      onRemove={handleRemove}
+      undo={undoBar}
       onClear={() => setClearOpen(true)}
       onCheckout={() => navigate(ROUTES.checkout)}
       onHold={() => setHoldOpen(true)}
@@ -252,8 +323,10 @@ export function PosPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-5">
+      <SellTip />
       {message ? <Alert tone="error">{message}</Alert> : null}
       {resumedMessage ? <Alert tone="success">{resumedMessage}</Alert> : null}
+      {infoMessage ? <Alert tone="info">{infoMessage}</Alert> : null}
 
       {notices.map((notice, index) => (
         <CartNoticePanel
@@ -271,7 +344,7 @@ export function PosPage() {
               value={search}
               onChange={setSearch}
               label="Search products"
-              placeholder="Search by product name or SKU..."
+              placeholder="Search by product name or code..."
               className="min-w-0 flex-1"
             />
             <HeldSalesButton
@@ -287,7 +360,7 @@ export function PosPage() {
               onClick={() => setCategory(ALL_CATEGORIES)}
               aria-pressed={category === ALL_CATEGORIES}
               className={cn(
-                'h-11 rounded-xl px-4 text-sm font-semibold transition-colors',
+                'h-12 rounded-xl px-4 text-base font-semibold transition-colors',
                 category === ALL_CATEGORIES
                   ? 'bg-navy-900 text-white'
                   : 'border border-slate-200 bg-white text-navy-700 hover:bg-navy-50',
@@ -303,7 +376,7 @@ export function PosPage() {
                 onClick={() => setCategory(name)}
                 aria-pressed={category === name}
                 className={cn(
-                  'h-11 rounded-xl px-4 text-sm font-semibold transition-colors',
+                  'h-12 rounded-xl px-4 text-base font-semibold transition-colors',
                   category === name
                     ? 'bg-navy-900 text-white'
                     : 'border border-slate-200 bg-white text-navy-700 hover:bg-navy-50',
@@ -314,7 +387,13 @@ export function PosPage() {
             ))}
           </div>
 
-          <PosProductGrid products={visible} onSelect={setSelected} />
+          <p className="-mb-2 text-sm text-muted">Best sellers first</p>
+          <PosProductGrid
+            products={visible}
+            inCart={inCartById}
+            onAdd={handleAddOne}
+            onChooseQuantity={setSelected}
+          />
         </div>
 
         {isCartBesideGrid ? (
@@ -340,6 +419,13 @@ export function PosPage() {
           canCheckout={canProceedToCheckout(entries.length, unavailable.length)}
           viewCartRef={viewCartRef}
         />
+      ) : null}
+
+      {/* The sheet closes when its last line goes: keep Undo in reach below the grid. */}
+      {!isCartBesideGrid && !isSheetShown && cartLineCount === 0 && undoBar ? (
+        <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 print:hidden">
+          {undoBar}
+        </div>
       ) : null}
 
       {isSheetShown ? (

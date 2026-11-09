@@ -51,7 +51,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
     watch,
     trigger,
     clearErrors,
-    formState: { errors, isSubmitted },
+    formState: { errors, isSubmitted, isSubmitting },
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { amount: '', note: '' },
@@ -129,7 +129,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
             <p className="truncate text-lg font-bold text-navy-900">{customer.name}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-brand-700">Outstanding balance</p>
+            <p className="text-sm text-brand-700">Still owed</p>
             <p className="text-2xl font-bold tabular-nums text-brand-700">
               {formatCurrency(outstanding)}
             </p>
@@ -137,7 +137,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
         </div>
 
         {outstanding <= 0 ? (
-          <Alert tone="info">This customer has no outstanding balance. Nothing to collect.</Alert>
+          <Alert tone="info">This customer owes nothing. Nothing to collect.</Alert>
         ) : (
           <>
             {/* No autoFocus: Dialog focuses the first control in its body, the amount. */}
@@ -202,6 +202,7 @@ export function RecordPaymentDialog({ customerId, onClose, onRecorded }: RecordP
             variant="primary"
             icon={Wallet}
             disabled={outstanding <= 0}
+            pending={isSubmitting}
             className="sm:w-56"
           >
             {preview.amount === null

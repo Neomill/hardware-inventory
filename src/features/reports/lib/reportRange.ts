@@ -35,7 +35,7 @@ export const REPORT_SECTIONS = [
   { id: 'daily-sales', label: 'Daily Sales' },
   { id: 'top-products', label: 'Top Products' },
   { id: 'payment-breakdown', label: 'Payments' },
-  { id: 'outstanding-credit', label: 'Outstanding Credit' },
+  { id: 'outstanding-credit', label: 'Credit Still Owed' },
 ] as const
 
 export type ReportSectionId = (typeof REPORT_SECTIONS)[number]['id']

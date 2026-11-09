@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Truck, Users } from 'lucide-react'
+import { LifeBuoy, Search, ShoppingCart, Truck, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -19,7 +19,7 @@ type QuickAction = {
 
 const VARIANT_STYLES: Record<ActionVariant, string> = {
   navy: 'bg-navy-800 text-white hover:bg-navy-700',
-  brand: 'bg-brand-500 text-white hover:bg-brand-600',
+  brand: 'bg-brand-700 text-white hover:bg-brand-800',
   outline: 'border border-slate-200 bg-white text-navy-900 hover:bg-slate-50',
 }
 
@@ -32,43 +32,46 @@ const SUBTITLE_STYLES: Record<ActionVariant, string> = {
 const ACTIONS: QuickAction[] = [
   {
     to: ROUTES.newSale,
-    title: 'New Sale',
-    subtitle: 'Open POS',
+    title: 'Sell',
+    subtitle: 'Start a new sale',
     icon: ShoppingCart,
     variant: 'navy',
   },
   {
     to: ROUTES.receiveStock,
-    title: 'Receive Stock',
-    subtitle: 'Add Inventory',
+    title: 'Receive Delivery',
+    subtitle: 'Add stock from a supplier',
     icon: Truck,
     variant: 'brand',
   },
   {
-    to: ROUTES.customers,
-    title: 'Customer Ledger',
-    subtitle: 'View Balances',
-    icon: Users,
-    variant: 'navy',
-  },
-  {
     to: ROUTES.products,
-    title: 'Search Product',
-    subtitle: 'Quick Lookup',
+    title: 'Check Stock',
+    subtitle: 'Find a product and its stock',
     icon: Search,
     variant: 'outline',
     // The Products page focuses its search box when it receives this state.
     state: { focusSearch: true },
   },
+  {
+    to: ROUTES.customers,
+    title: 'Who Owes Me',
+    subtitle: 'Customer credit and payments',
+    icon: Users,
+    variant: 'outline',
+  },
 ]
 
-/** The four primary jobs at the counter, one tap from the dashboard. */
+/**
+ * The four jobs done at the counter, as big buttons at the top of the home
+ * screen (senior UX plan, Phase 5). The figures come after them.
+ */
 export function QuickActions() {
   return (
     <section className="card px-5 py-5">
-      <h2 className="card-title">Quick Actions</h2>
+      <h2 className="card-title">What would you like to do?</h2>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {ACTIONS.map((action) => {
           const Icon = action.icon
 
@@ -78,14 +81,14 @@ export function QuickActions() {
               to={action.to}
               state={action.state}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-5 py-4 transition-colors',
+                'flex min-h-24 items-center gap-4 rounded-xl px-5 py-4 transition-colors',
                 VARIANT_STYLES[action.variant],
               )}
             >
-              <Icon className="h-6 w-6 shrink-0" aria-hidden />
+              <Icon className="h-8 w-8 shrink-0" aria-hidden />
               <span className="min-w-0">
-                <span className="block truncate font-semibold">{action.title}</span>
-                <span className={cn('block truncate text-xs', SUBTITLE_STYLES[action.variant])}>
+                <span className="block text-xl font-bold">{action.title}</span>
+                <span className={cn('block text-base', SUBTITLE_STYLES[action.variant])}>
                   {action.subtitle}
                 </span>
               </span>
@@ -93,6 +96,14 @@ export function QuickActions() {
           )
         })}
       </div>
+
+      <Link
+        to={ROUTES.help}
+        className="mt-4 inline-flex h-12 items-center gap-2 rounded-xl px-2 text-base font-semibold text-navy-700 underline-offset-4 hover:underline"
+      >
+        <LifeBuoy className="h-5 w-5" aria-hidden />
+        Not sure how? See step-by-step help
+      </Link>
     </section>
   )
 }

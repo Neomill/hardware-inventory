@@ -125,7 +125,7 @@ test.describe('Cancel a sale (spec 04 sale cancellation)', () => {
     const reversal = page
       .getByRole('row')
       .filter({ hasText: sale.saleNumber })
-      .filter({ hasText: 'Reversal' })
+      .filter({ hasText: 'Sale Cancelled' })
     await expect(reversal).toHaveCount(1)
     await expect(reversal).toContainText(/\+2\b/)
 

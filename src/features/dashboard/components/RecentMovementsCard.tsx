@@ -50,7 +50,7 @@ type RecentMovementsCardProps = {
 export function RecentMovementsCard({ movements }: RecentMovementsCardProps) {
   return (
     <SectionCard
-      title="Recent Stock Movements"
+      title="Recent Stock History"
       className="min-w-0"
       action={<ViewAllLink to={ROUTES.stockMovements} />}
     >
@@ -58,7 +58,7 @@ export function RecentMovementsCard({ movements }: RecentMovementsCardProps) {
         columns={COLUMNS}
         rows={movements}
         rowKey={(movement) => movement.id}
-        emptyMessage="No stock movements recorded yet."
+        emptyMessage="No stock changes recorded yet."
       />
     </SectionCard>
   )

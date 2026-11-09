@@ -31,7 +31,7 @@ test.describe('Cash sale', () => {
 
     const cart = await openCart(page)
     const total = toCentavos(await cartTotal(cart).innerText())
-    await cart.getByRole('button', { name: 'Proceed to Checkout' }).click()
+    await cart.getByRole('button', { name: 'Checkout', exact: true }).click()
     await expect(page).toHaveURL(/#\/sales\/checkout$/)
 
     // Cash is the default method, and the customer is optional for cash (E5).
@@ -160,7 +160,6 @@ test.describe('VAT is inclusive (D1, E2)', () => {
 
     const total = toCentavos(await cartTotal(cart).innerText())
     expect(total).toBe(lineSum)
-    expect(toCentavos(await definition(cart, /^Subtotal/).innerText())).toBe(total)
 
     const vatNote = cart.getByText(/Includes VAT \((\d+(\.\d+)?)%\) of/)
     await expect(vatNote).toBeVisible()
@@ -170,10 +169,12 @@ test.describe('VAT is inclusive (D1, E2)', () => {
     expect(shownVat).toBe(total - Math.round(total / (1 + rate)))
 
     // No "+ Tax" line anywhere on checkout, and the total is unchanged there.
-    await cart.getByRole('button', { name: 'Proceed to Checkout' }).click()
+    await cart.getByRole('button', { name: 'Checkout', exact: true }).click()
     const main = page.getByRole('main')
     await expect(main.getByText(/^Tax\b/)).toHaveCount(0)
     expect(toCentavos(await cartTotal(main).innerText())).toBe(lineSum)
+    // Checkout shows the Subtotal row; the cart leaves it out while there is no discount.
+    expect(toCentavos(await definition(main, /^Subtotal/).innerText())).toBe(lineSum)
     await expect(main.getByText(/Includes VAT/)).toBeVisible()
 
     // The receipt keeps Subtotal = Total, VAT listed as included.
@@ -228,8 +229,8 @@ test.describe('POS cart on narrow screens: bar and bottom sheet', () => {
       const sheet = cartSheet(page)
       await expect(sheet).toBeVisible()
       await expect(sheet.getByRole('heading', { name: /^Current Sale \(2 items\)/ })).toBeFocused()
-      await expect(sheet.getByRole('button', { name: 'Proceed to Checkout' })).toBeInViewport()
-      await expect(sheet.getByRole('button', { name: 'Hold Sale' })).toBeInViewport()
+      await expect(sheet.getByRole('button', { name: 'Checkout', exact: true })).toBeInViewport()
+      await expect(sheet.getByRole('button', { name: 'Pause Sale' })).toBeInViewport()
       // Same figure as the bar, both from store data.
       expect(toCentavos(await cartTotal(sheet).innerText())).toBe(barTotal)
       await expectNoSidewaysScroll(page)
@@ -275,6 +276,25 @@ test.describe('POS cart on narrow screens: bar and bottom sheet', () => {
     await expect(page.getByRole('searchbox', { name: 'Search products' })).toBeFocused()
   })
 
+  test('Undo puts a removed line back, also after the sheet closed', async ({ page }) => {
+    test.skip(test.info().project.name !== 'desktop', 'Viewport is set by the test')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await gotoRoute(page, '/sales/new')
+    await addToCart(page, HAMMER, 2)
+
+    const cart = await openCart(page)
+    await cart.getByRole('button', { name: `Remove ${HAMMER}` }).click()
+    await expect(cartSheet(page)).toBeHidden()
+
+    // The last line went, so the sheet closed: Undo waits below the grid.
+    await expect(page.getByRole('status').filter({ hasText: `Removed ${HAMMER}.` })).toBeVisible()
+    await page.getByRole('button', { name: `Undo: put ${HAMMER} back in the cart` }).click()
+
+    const bar = page.getByRole('region', { name: 'Cart summary' })
+    await expect(bar).toContainText('2 items')
+    await expect(page.getByRole('button', { name: /^Undo/ })).toHaveCount(0)
+  })
+
   test('is not shown at desktop width, where the cart is beside the grid', async ({ page }) => {
     test.skip(test.info().project.name !== 'desktop', 'Desktop layout only')
     await page.setViewportSize({ width: 1280, height: 800 })
@@ -315,8 +335,8 @@ test.describe('POS cart beside the grid (xl)', () => {
 
       const cart = cartPanel(page)
       const heading = cart.getByRole('heading', { name: /^Current Sale/ })
-      const checkout = cart.getByRole('button', { name: 'Proceed to Checkout' })
-      const hold = cart.getByRole('button', { name: 'Hold Sale' })
+      const checkout = cart.getByRole('button', { name: 'Checkout', exact: true })
+      const hold = cart.getByRole('button', { name: 'Pause Sale' })
       const lines = cart.getByRole('list', { name: 'Cart lines' })
       await expect(lines.getByRole('listitem')).toHaveCount(PRODUCTS.length)
 
@@ -345,4 +365,27 @@ test.describe('POS cart beside the grid (xl)', () => {
       await expect(page).toHaveURL(/#\/sales\/checkout$/)
     })
   }
+})
+
+test.describe('First-time help on Sell', () => {
+  test('the tip stays until Got it, then stays gone after a reload', async ({ page }) => {
+    await gotoRoute(page, '/sales/new')
+    const tip = page.getByRole('complementary', { name: 'Tip' })
+    await expect(tip).toContainText('Add 1')
+
+    await tip.getByRole('link', { name: 'More help' }).click()
+    await expect(page.getByRole('heading', { level: 1, name: 'How Do I…?' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Sell for cash' })).toBeVisible()
+
+    await gotoRoute(page, '/sales/new')
+    await page
+      .getByRole('complementary', { name: 'Tip' })
+      .getByRole('button', { name: 'Got it' })
+      .click()
+    await expect(page.getByRole('complementary', { name: 'Tip' })).toHaveCount(0)
+
+    await page.reload()
+    await expect(page.getByRole('searchbox', { name: 'Search products' })).toBeVisible()
+    await expect(page.getByRole('complementary', { name: 'Tip' })).toHaveCount(0)
+  })
 })

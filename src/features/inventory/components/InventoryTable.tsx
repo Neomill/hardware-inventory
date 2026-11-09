@@ -10,11 +10,8 @@ import type { Product } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
 
-const ICON_LINK =
-  'flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-navy-700 transition-colors hover:bg-navy-50'
-
 const TEXT_ACTION =
-  'inline-flex h-10 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-navy-800 transition-colors hover:bg-navy-50'
+  'inline-flex h-12 items-center gap-2 rounded-lg border border-slate-200 px-3 text-base font-semibold text-navy-800 transition-colors hover:bg-navy-50'
 
 function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Product>[] {
   return [
@@ -24,7 +21,7 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
       cell: (product) => (
         <span className="flex flex-col">
           <span className="font-medium">{product.name}</span>
-          <span className="text-xs text-muted">
+          <span className="text-sm text-muted">
             {product.sku}
             {product.isActive ? null : ' · Inactive'}
           </span>
@@ -39,7 +36,7 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
     },
     {
       id: 'stock',
-      header: 'On Hand',
+      header: 'Stock',
       cell: (product) => (
         <span
           className={cn(
@@ -59,7 +56,7 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
     },
     {
       id: 'reorder',
-      header: 'Reorder Level',
+      header: 'Low-Stock Alert At',
       cell: (product) => formatNumber(product.reorderLevel),
       cellClassName: 'tabular-nums text-muted',
     },
@@ -84,33 +81,33 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
             aria-label={`Receive stock for ${product.name}`}
             className={TEXT_ACTION}
           >
-            <PackagePlus className="h-4 w-4" aria-hidden />
+            <PackagePlus className="h-5 w-5" aria-hidden />
             Receive
           </Link>
           <button
             type="button"
             onClick={() => onAdjust(product)}
-            aria-label={`Adjust stock for ${product.name}`}
+            aria-label={`Correct stock for ${product.name}`}
             className={TEXT_ACTION}
           >
-            <SlidersVertical className="h-4 w-4" aria-hidden />
-            Adjust
+            <SlidersVertical className="h-5 w-5" aria-hidden />
+            Correct Stock
           </button>
           <Link
             to={ROUTES.movementsFor(product.id)}
-            aria-label={`Stock movements for ${product.name}`}
-            title="Stock movements"
-            className={ICON_LINK}
+            aria-label={`Stock history for ${product.name}`}
+            className={TEXT_ACTION}
           >
-            <History className="h-4 w-4" aria-hidden />
+            <History className="h-5 w-5" aria-hidden />
+            History
           </Link>
           <Link
             to={ROUTES.productDetail(product.id)}
             aria-label={`View ${product.name}`}
-            title="Product details"
-            className={ICON_LINK}
+            className={TEXT_ACTION}
           >
-            <Eye className="h-4 w-4" aria-hidden />
+            <Eye className="h-5 w-5" aria-hidden />
+            View
           </Link>
         </span>
       ),

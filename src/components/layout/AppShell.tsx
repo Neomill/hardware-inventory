@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
+import { BottomNav } from '@/components/layout/BottomNav'
 import { DataRecoveryNotice } from '@/components/layout/DataRecoveryNotice'
 import { MobileNavDrawer } from '@/components/layout/MobileNavDrawer'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -13,8 +14,8 @@ import { DESKTOP_NAV_QUERY, useMediaQuery } from '@/hooks/useMediaQuery'
 const DRAWER_ID = 'mobile-navigation'
 
 /**
- * Application frame: fixed sidebar on tablet/desktop, slide-over drawer on
- * narrow screens. Only the content column scrolls, so the nav and the page
+ * Application frame: fixed sidebar from `lg` up; below it, labelled tabs along
+ * the bottom with a More button for the full drawer. Only the content column scrolls, so the nav and the page
  * heading stay reachable during long sessions at the counter.
  *
  * In print the frame lets go of the viewport height and its scroll container,
@@ -48,27 +49,33 @@ export function AppShell() {
         <MobileNavDrawer id={DRAWER_ID} onClose={closeMenu} returnFocusRef={menuButtonRef} />
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto print:block print:overflow-visible">
-        <TopBar
-          title={title}
-          subtitle={subtitle}
-          showBreadcrumb={location.pathname !== ROUTES.dashboard}
-          onOpenMenu={() => setMenuOpen(true)}
-          menuButtonRef={menuButtonRef}
-          menuControls={DRAWER_ID}
-          isMenuOpen={showDrawer}
+      <div className="flex min-w-0 flex-1 flex-col print:block">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto print:block print:overflow-visible">
+          <TopBar
+            title={title}
+            subtitle={subtitle}
+            showBreadcrumb={location.pathname !== ROUTES.dashboard}
+          />
+
+          <DataRecoveryNotice />
+
+          <main className="flex-1 px-4 pb-6 sm:px-6 lg:px-8 print:px-0 print:pb-0">
+            <Outlet />
+          </main>
+
+          <footer className="flex items-center print:hidden justify-between border-t border-slate-200 px-4 py-4 text-sm text-muted sm:px-6 lg:px-8">
+            <span>{APP_NAME}</span>
+            <span>{APP_VERSION}</span>
+          </footer>
+        </div>
+
+        {/* Outside the scroll area, so sticky bars on a page sit just above it. */}
+        <BottomNav
+          onOpenMore={() => setMenuOpen(true)}
+          moreButtonRef={menuButtonRef}
+          moreControls={DRAWER_ID}
+          isMoreOpen={showDrawer}
         />
-
-        <DataRecoveryNotice />
-
-        <main className="flex-1 px-4 pb-6 sm:px-6 lg:px-8 print:px-0 print:pb-0">
-          <Outlet />
-        </main>
-
-        <footer className="flex items-center print:hidden justify-between border-t border-slate-200 px-4 py-4 text-xs text-muted sm:px-6 lg:px-8">
-          <span>{APP_NAME}</span>
-          <span>{APP_VERSION}</span>
-        </footer>
       </div>
     </div>
   )
