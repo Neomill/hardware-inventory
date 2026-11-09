@@ -330,6 +330,9 @@ cart now shows about 2.6 lines at Large (it was 1.5), 3.2 at Normal and 2.1 at E
 
 ### Phase 7: Test with the real owner (do this after Phase 1, and again at the end)
 
+The full script, the five tasks with the supplier invoice slip, and a notes sheet to print are in
+[04-test-session-guide.md](04-test-session-guide.md).
+
 - **Five tasks, with the owner and the cashier separately, at the counter on the real tablet:**
   1. Sell 3 items for cash.
   2. Sell on credit to a customer.
