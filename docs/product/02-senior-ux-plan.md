@@ -307,6 +307,27 @@ cart now shows about 2.6 lines at Large (it was 1.5), 3.2 at Normal and 2.1 at E
 - Add a first-time hint on Sell ("Tap a product to add it").
 - Use friendly empty states that tell the user what to do next. Most already do.
 
+*Status: built 2026-11-09.*
+
+- **Help page** (`/help`, "How Do I…?").
+  - **Where it is:** in the menu (behind More on a tablet held upright), plus a link under the big
+    buttons on the home screen.
+  - **Seven jobs:** sell for cash, sell on credit, receive a delivery, fix a wrong stock count, see
+    who owes and take a payment, pause a sale, and make the text bigger. A box underneath covers
+    what to do if something goes wrong.
+  - **Format:** the steps are numbered, and each button name is drawn like the button itself. Each
+    job has a button that opens the screen it starts on.
+  - **Wording:** the text lives in `features/help/lib/helpTopics.ts`. A test fails if old jargon
+    (Ledger, SKU, Adjust, Hold, Outstanding, POS) comes back.
+- **Cheat sheet.** "Print Cheat Sheet" prints the steps in two columns with no navigation, sized to
+  fit one A4 page. This has not been checked on a real printer yet.
+- **First-time tip on Sell.** "Tap Add 1… Choose Quantity… Undo", with "More help" and "Got it"
+  buttons. After "Got it", it stays hidden on that device.
+- **Bottom tabs.** On pages behind More (Products, Reports, Settings, Help), the More tab lights up,
+  so one tab always shows where you are.
+- **Changed from the plan:** there are no screenshots. Pictures of screens go out of date with every
+  change, while the drawn button names stay correct because they come from the same word list.
+
 ### Phase 7: Test with the real owner (do this after Phase 1, and again at the end)
 
 - **Five tasks, with the owner and the cashier separately, at the counter on the real tablet:**
