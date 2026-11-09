@@ -61,7 +61,7 @@ export function testSale(overrides: {
     changeGiven: 0,
     balanceDue: overrides.balanceDue ?? (paymentMethod === 'cash' ? 0 : total - amountPaid),
     customerId: overrides.customerId ?? null,
-    customerName: overrides.customerId ? `Customer ${overrides.customerId}` : 'Walk-in Customer',
+    customerName: overrides.customerId ? `Customer ${overrides.customerId}` : 'No-name customer',
     status: overrides.status ?? 'completed',
     recordedBy: 'Tester',
     cancellation: overrides.cancellation ?? null,

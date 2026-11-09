@@ -35,16 +35,16 @@ function isCartBesideGrid(page: Page): boolean {
 /** Hold the current cart from the POS page; lands on the Sales root. */
 async function holdCart(page: Page, label: string): Promise<void> {
   const cart = await openCart(page)
-  await cart.getByRole('button', { name: 'Hold Sale', exact: true }).click()
+  await cart.getByRole('button', { name: 'Pause Sale', exact: true }).click()
 
-  const dialog = page.getByRole('dialog', { name: 'Hold Sale' })
+  const dialog = page.getByRole('dialog', { name: 'Pause Sale' })
   await expect(dialog).toBeVisible()
   await dialog.getByLabel('Label').fill(label)
   await dialog.getByLabel('Label').press('Enter')
 
   await expect(dialog).toBeHidden()
   await expect(page).toHaveURL(/#\/sales$/)
-  await expect(page.getByText('Sale held.')).toBeVisible()
+  await expect(page.getByText('Sale paused.')).toBeVisible()
 }
 
 /** Start a sale with the given products and hold it under `label`. */
@@ -62,13 +62,13 @@ async function holdNewSale(
 
 /** The Held Sales button, on the Sales root or the POS page. */
 function heldSalesButton(page: Page): Locator {
-  return page.getByRole('button', { name: /^Held Sales, / })
+  return page.getByRole('button', { name: /^Paused Sales, / })
 }
 
 async function openHeldSales(page: Page): Promise<Locator> {
   await heldSalesButton(page).click()
 
-  const dialog = page.getByRole('dialog', { name: 'Held Sales' })
+  const dialog = page.getByRole('dialog', { name: 'Paused Sales' })
   await expect(dialog).toBeVisible()
 
   return dialog
@@ -152,14 +152,14 @@ async function tabTo(page: Page, target: Locator, maxPresses = 150): Promise<voi
 test.describe('Holding and resuming', () => {
   test('B1, B9: a held sale is listed with its label and survives a reload', async ({ page }) => {
     await gotoRoute(page, '/sales')
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, none waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, none waiting')
 
     await holdNewSale(page, 'Pedro', [
       [HAMMER, 2],
       [TAPE, 1],
     ])
 
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 1 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 1 waiting')
 
     let dialog = await openHeldSales(page)
     let row = heldRow(dialog, 'Pedro')
@@ -167,32 +167,32 @@ test.describe('Holding and resuming', () => {
     await expect(row).toContainText('3 items')
     await expect(row).toContainText(HAMMER)
     await expect(row).toContainText(TAPE)
-    const heldAt = (await row.getByText(/^Held /).innerText()).trim()
+    const heldAt = (await row.getByText(/^Paused /).innerText()).trim()
 
     // Holding emptied the cart.
-    await dialog.getByRole('button', { name: 'Close Held Sales' }).click()
+    await dialog.getByRole('button', { name: 'Close Paused Sales' }).click()
     await gotoRoute(page, '/sales/new')
     await expectEmptyCart(page)
 
     await page.reload()
     await gotoRoute(page, '/sales')
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 1 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 1 waiting')
     dialog = await openHeldSales(page)
     row = heldRow(dialog, 'Pedro')
     await expect(row).toContainText('3 items')
-    await expect(row.getByText(/^Held /)).toHaveText(heldAt)
+    await expect(row.getByText(/^Paused /)).toHaveText(heldAt)
   })
 
   test('B2: any held sale can be resumed, not only the newest', async ({ page }) => {
     await holdNewSale(page, 'First', [[HAMMER, 2]])
     await holdNewSale(page, 'Second', [[TAPE, 3]])
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 2 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 2 waiting')
 
     const dialog = await openHeldSales(page)
     // Newest first.
     await expect(dialog.getByRole('listitem').first()).toContainText('Second')
     await heldRow(dialog, 'First')
-      .getByRole('button', { name: /^Resume First, held / })
+      .getByRole('button', { name: /^Resume First, paused / })
       .click()
 
     await expect(page).toHaveURL(/#\/sales\/new$/)
@@ -200,7 +200,7 @@ test.describe('Holding and resuming', () => {
     await expectInCart(page, TAPE, 0)
 
     await gotoRoute(page, '/sales')
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 1 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 1 waiting')
   })
 
   test('B7: with a sale in progress, hold it and resume another in one step', async ({ page }) => {
@@ -215,12 +215,12 @@ test.describe('Holding and resuming', () => {
     await expect(dialog.getByText(/You have a sale in progress \(2 items\)/)).toBeVisible()
 
     await heldRow(dialog, 'Waiting')
-      .getByRole('button', { name: /^Hold current and resume Waiting, held / })
+      .getByRole('button', { name: /^Pause current and resume Waiting, paused / })
       .click()
     const label = dialog.getByLabel('Label for the sale in progress')
     await expect(label).toBeFocused()
     await label.fill('Swapped out')
-    await dialog.getByRole('button', { name: 'Hold current and resume', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Pause current and resume', exact: true }).click()
 
     await expect(page).toHaveURL(/#\/sales\/new$/)
     await expectInCart(page, HAMMER, 1)
@@ -228,7 +228,7 @@ test.describe('Holding and resuming', () => {
 
     // One went out, one came in: the count is unchanged.
     await gotoRoute(page, '/sales')
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 1 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 1 waiting')
     const list = await openHeldSales(page)
     await expect(heldRow(list, 'Swapped out')).toContainText('2 items')
   })
@@ -236,9 +236,9 @@ test.describe('Holding and resuming', () => {
   test('Held Sales on the POS page: resume and swap stay on the POS page', async ({ page }) => {
     // At zero the list opens from POS too, and says where Hold Sale is.
     await gotoRoute(page, '/sales/new')
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, none waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, none waiting')
     let dialog = await openHeldSales(page)
-    await expect(dialog.getByText(/Use Hold Sale in the cart/)).toBeVisible()
+    await expect(dialog.getByText(/Use Pause Sale in the cart/)).toBeVisible()
     await expect(dialog.getByRole('link', { name: 'New Sale' })).toHaveCount(0)
     await page.keyboard.press('Escape')
     await expect(heldSalesButton(page)).toBeFocused()
@@ -248,29 +248,29 @@ test.describe('Holding and resuming', () => {
 
     // Resume with an empty cart.
     await gotoRoute(page, '/sales/new')
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 2 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 2 waiting')
     dialog = await openHeldSales(page)
     await heldRow(dialog, 'Morning')
-      .getByRole('button', { name: /^Resume Morning, held / })
+      .getByRole('button', { name: /^Resume Morning, paused / })
       .click()
     await expect(dialog).toBeHidden()
     await expect(page).toHaveURL(/#\/sales\/new$/)
-    await expect(page.getByRole('status').filter({ hasText: 'Held sale resumed.' })).toBeVisible()
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 1 waiting')
+    await expect(page.getByRole('status').filter({ hasText: 'Paused sale resumed.' })).toBeVisible()
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 1 waiting')
     await expectInCart(page, TAPE, 2)
 
     // With a sale in progress: hold it and resume the other, still on POS.
     dialog = await openHeldSales(page)
     await heldRow(dialog, 'Later')
-      .getByRole('button', { name: /^Hold current and resume Later, held / })
+      .getByRole('button', { name: /^Pause current and resume Later, paused / })
       .click()
     await dialog.getByLabel('Label for the sale in progress').fill('Was in progress')
-    await dialog.getByRole('button', { name: 'Hold current and resume', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Pause current and resume', exact: true }).click()
     await expect(dialog).toBeHidden()
     await expect(page).toHaveURL(/#\/sales\/new$/)
     await expectInCart(page, HAMMER, 1)
     await expectInCart(page, TAPE, 0)
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 1 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 1 waiting')
 
     const list = await openHeldSales(page)
     await expect(heldRow(list, 'Was in progress')).toContainText('2 items')
@@ -284,17 +284,17 @@ test.describe('Limits and reset', () => {
     for (let index = 1; index <= 10; index += 1) {
       await holdNewSale(page, `Held ${index}`, [[TAPE, 1]])
     }
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 10 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 10 waiting')
 
     await gotoRoute(page, '/sales/new')
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 10 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 10 waiting')
     await addToCart(page, HAMMER, 1)
 
     const cart = await openCart(page)
-    const hold = cart.getByRole('button', { name: 'Hold Sale', exact: true })
+    const hold = cart.getByRole('button', { name: 'Pause Sale', exact: true })
     await expect(hold).toBeDisabled()
-    await expect(hold).toHaveAccessibleDescription(/already have 10 held sales/)
-    await expect(cart.getByText(/already have 10 held sales/)).toBeVisible()
+    await expect(hold).toHaveAccessibleDescription(/already have 10 paused sales/)
+    await expect(cart.getByText(/already have 10 paused sales/)).toBeVisible()
 
     // Checkout is still possible; nothing else is blocked by the limit.
     await expect(cart.getByRole('button', { name: 'Proceed to Checkout' })).toBeEnabled()
@@ -302,7 +302,7 @@ test.describe('Limits and reset', () => {
 
   test('B10: Reset demo data clears held sales and hides the badge', async ({ page }) => {
     await holdNewSale(page, 'Before reset', [[HAMMER, 1]])
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, 1 waiting')
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, 1 waiting')
     await expect(heldSalesButton(page)).toHaveText(/1$/)
 
     await gotoRoute(page, '/settings')
@@ -313,14 +313,14 @@ test.describe('Limits and reset', () => {
 
     for (const route of ['/sales', '/sales/new']) {
       await gotoRoute(page, route)
-      await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, none waiting')
+      await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, none waiting')
       // No count badge, only the label.
-      await expect(heldSalesButton(page)).toHaveText('Held Sales')
+      await expect(heldSalesButton(page)).toHaveText('Paused Sales')
     }
 
     const list = await openHeldSales(page)
     await expect(list.getByRole('listitem')).toHaveCount(0)
-    await expect(list.getByText(/^No held sales\./)).toBeVisible()
+    await expect(list.getByText(/^No paused sales\./)).toBeVisible()
   })
 })
 
@@ -332,20 +332,20 @@ test.describe('Discarding', () => {
     let dialog = await openHeldSales(page)
     const row = heldRow(dialog, 'To discard')
 
-    await row.getByRole('button', { name: /^Discard To discard, held / }).click()
-    await expect(row.getByText(/^Discard this held sale\?/)).toBeVisible()
+    await row.getByRole('button', { name: /^Discard To discard, paused / }).click()
+    await expect(row.getByText(/^Discard this paused sale\?/)).toBeVisible()
     const keep = row.getByRole('button', { name: 'Keep', exact: true })
     await expect(keep).toBeFocused()
     await keep.click()
     await expect(row).toHaveCount(1)
 
-    await row.getByRole('button', { name: /^Discard To discard, held / }).click()
+    await row.getByRole('button', { name: /^Discard To discard, paused / }).click()
     await row.getByRole('button', { name: 'Discard', exact: true }).click()
     await expect(dialog.getByRole('listitem')).toHaveCount(0)
-    await expect(dialog.getByText(/^No held sales\./)).toBeVisible()
+    await expect(dialog.getByText(/^No paused sales\./)).toBeVisible()
 
-    await dialog.getByRole('button', { name: 'Close Held Sales' }).click()
-    await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, none waiting')
+    await dialog.getByRole('button', { name: 'Close Paused Sales' }).click()
+    await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, none waiting')
 
     // Holding and discarding never touch stock (AC7).
     expect(await productStock(page, HAMMER)).toBe(stockBefore)
@@ -380,10 +380,10 @@ test.describe('What changed while held', () => {
     const row = heldRow(dialog, 'All wrenches')
     await expect(row.getByText('Stock changed', { exact: true })).toBeVisible()
 
-    await row.getByRole('button', { name: /^Resume All wrenches, held / }).click()
+    await row.getByRole('button', { name: /^Resume All wrenches, paused / }).click()
     await expect(page).toHaveURL(/#\/sales\/new$/)
 
-    const notice = page.getByRole('status').filter({ hasText: 'changed since it was held' })
+    const notice = page.getByRole('status').filter({ hasText: 'changed since it was paused' })
     await expect(notice).toContainText(WRENCH)
     await expect(notice).toContainText(String(stock))
     await expect(notice).toContainText(String(stock - 1))
@@ -429,14 +429,14 @@ test.describe('What changed while held', () => {
     const row = heldRow(dialog, 'Price check')
     await expect(row.getByText('Prices changed', { exact: true })).toBeVisible()
 
-    await row.getByRole('button', { name: /^Resume Price check, held / }).click()
+    await row.getByRole('button', { name: /^Resume Price check, paused / }).click()
     await expect(page).toHaveURL(/#\/sales\/new$/)
 
-    const notice = page.getByRole('status').filter({ hasText: 'changed since it was held' })
+    const notice = page.getByRole('status').filter({ hasText: 'changed since it was paused' })
     const sentence = notice.getByText(new RegExp(`^${escapeRegExp(MEASURE)} is now `))
     await expect(sentence).toBeVisible()
     const [, now, was] =
-      (await sentence.innerText()).match(/is now (.+) \(was (.+) when held\)/) ?? []
+      (await sentence.innerText()).match(/is now (.+) \(was (.+) when paused\)/) ?? []
     expect(toCentavos(now)).toBe(prices.after)
     expect(toCentavos(was)).toBe(prices.before)
 
@@ -532,14 +532,14 @@ test.describe('Keyboard only, at phone, tablet and desktop widths (B11)', () => 
           await expectNoSidewaysScroll(page)
         }
 
-        await tabTo(page, cartPanel(page).getByRole('button', { name: 'Hold Sale', exact: true }))
+        await tabTo(page, cartPanel(page).getByRole('button', { name: 'Pause Sale', exact: true }))
         await page.keyboard.press('Enter')
-        const hold = page.getByRole('dialog', { name: 'Hold Sale' })
+        const hold = page.getByRole('dialog', { name: 'Pause Sale' })
         await expect(hold.getByLabel('Label')).toBeFocused()
         await page.keyboard.type(label)
         await page.keyboard.press('Enter')
         await expect(page).toHaveURL(/#\/sales$/)
-        await expect(page.getByText('Sale held.')).toBeVisible()
+        await expect(page.getByText('Sale paused.')).toBeVisible()
       }
 
       await holdWithKeyboard(HAMMER, 'Keyboard A')
@@ -550,7 +550,7 @@ test.describe('Keyboard only, at phone, tablet and desktop widths (B11)', () => 
       const button = heldSalesButton(page)
       await tabTo(page, button)
       await page.keyboard.press('Enter')
-      let dialog = page.getByRole('dialog', { name: 'Held Sales' })
+      let dialog = page.getByRole('dialog', { name: 'Paused Sales' })
       await expect(dialog).toBeVisible()
       await expectNoSidewaysScroll(page)
       for (let step = 0; step < 15; step += 1) {
@@ -566,8 +566,8 @@ test.describe('Keyboard only, at phone, tablet and desktop widths (B11)', () => 
 
       // Discard B: Keep has focus first, then the confirm.
       await page.keyboard.press('Enter')
-      dialog = page.getByRole('dialog', { name: 'Held Sales' })
-      await tabTo(page, dialog.getByRole('button', { name: /^Discard Keyboard B, held / }))
+      dialog = page.getByRole('dialog', { name: 'Paused Sales' })
+      await tabTo(page, dialog.getByRole('button', { name: /^Discard Keyboard B, paused / }))
       await page.keyboard.press('Enter')
       const rowB = heldRow(dialog, 'Keyboard B')
       await expect(rowB.getByRole('button', { name: 'Keep', exact: true })).toBeFocused()
@@ -576,11 +576,11 @@ test.describe('Keyboard only, at phone, tablet and desktop widths (B11)', () => 
       await expect(rowB).toHaveCount(0)
 
       // Resume A: lands on the POS page with its line in the cart.
-      await tabTo(page, dialog.getByRole('button', { name: /^Resume Keyboard A, held / }))
+      await tabTo(page, dialog.getByRole('button', { name: /^Resume Keyboard A, paused / }))
       await page.keyboard.press('Enter')
       await expect(page).toHaveURL(/#\/sales\/new$/)
       await expectInCart(page, HAMMER, 1)
-      await expect(heldSalesButton(page)).toHaveAccessibleName('Held Sales, none waiting')
+      await expect(heldSalesButton(page)).toHaveAccessibleName('Paused Sales, none waiting')
       await expectNoSidewaysScroll(page)
     })
   }

@@ -29,7 +29,7 @@ const LINE_COLUMNS: SummaryColumn<SupplierInvoiceLine>[] = [
     header: 'Product',
     cell: (line) => <LineProductLink line={line} />,
   },
-  { id: 'sku', header: 'SKU', cell: (line) => line.sku, cellClassName: 'text-muted' },
+  { id: 'sku', header: 'Product Code', cell: (line) => line.sku, cellClassName: 'text-muted' },
   {
     id: 'quantity',
     header: 'Quantity',

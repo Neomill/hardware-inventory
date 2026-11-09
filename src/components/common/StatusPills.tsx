@@ -18,7 +18,7 @@ import type { MovementType, PaymentMethod, StockStatus } from '@/domain/types'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-/** "Stock In", "Sale", "Reversal", "Adjustment", each with its own icon. */
+/** "Stock In", "Sale", "Sale Cancelled", "Correction", each with its own icon. */
 export function MovementTypePill({ type, className }: { type: MovementType; className?: string }) {
   return (
     <StatusPill

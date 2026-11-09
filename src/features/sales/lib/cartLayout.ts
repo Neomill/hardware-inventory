@@ -35,7 +35,7 @@ type StickyHeightInput = {
 
 /**
  * Tallest the sticky cart column can be and still show its footer (totals,
- * Proceed to Checkout, Hold Sale) inside the visible scroll area.
+ * Proceed to Checkout, Pause Sale) inside the visible scroll area.
  *
  * Before the page scrolls, the column starts lower (under the page title), so
  * it is shorter; once it sticks at `stickyTop` it gets the full height. At

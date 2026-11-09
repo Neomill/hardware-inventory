@@ -38,7 +38,7 @@ export function DashboardPage() {
         />
 
         <StatCard
-          label="Outstanding Credit"
+          label="Credit Still Owed"
           value={formatCurrency(kpis.outstandingCredit)}
           icon={Wallet}
           tone="orange"

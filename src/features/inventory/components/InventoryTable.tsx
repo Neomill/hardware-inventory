@@ -36,7 +36,7 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
     },
     {
       id: 'stock',
-      header: 'On Hand',
+      header: 'Stock',
       cell: (product) => (
         <span
           className={cn(
@@ -56,7 +56,7 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
     },
     {
       id: 'reorder',
-      header: 'Reorder Level',
+      header: 'Low-Stock Alert At',
       cell: (product) => formatNumber(product.reorderLevel),
       cellClassName: 'tabular-nums text-muted',
     },
@@ -87,11 +87,11 @@ function buildColumns(onAdjust: (product: Product) => void): SummaryColumn<Produ
           <button
             type="button"
             onClick={() => onAdjust(product)}
-            aria-label={`Adjust stock for ${product.name}`}
+            aria-label={`Correct stock for ${product.name}`}
             className={TEXT_ACTION}
           >
             <SlidersVertical className="h-5 w-5" aria-hidden />
-            Adjust
+            Correct Stock
           </button>
           <Link
             to={ROUTES.movementsFor(product.id)}

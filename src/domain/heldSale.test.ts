@@ -74,7 +74,7 @@ describe('validateHold', () => {
     const result = validateHold({ cartLineCount: 0, heldCount: 0 })
 
     expect(result.ok).toBe(false)
-    expect(result.message).toContain('nothing to hold')
+    expect(result.message).toContain('nothing to pause')
   })
 
   it('allows up to the limit and refuses at it (U3)', () => {
@@ -83,7 +83,7 @@ describe('validateHold', () => {
     const result = validateHold({ cartLineCount: 1, heldCount: HELD_SALE_LIMIT })
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('You already have 10 held sales. Resume or discard one first.')
+    expect(result.message).toBe('You already have 10 paused sales. Resume or discard one first.')
     expect(validateHold({ cartLineCount: 1, heldCount: 12 }).ok).toBe(false)
   })
 
@@ -315,7 +315,7 @@ describe('describeAdjustment (U16)', () => {
         { productId: CEMENT.id, productName: CEMENT.name, heldPrice: 26000, currentPrice: 26500 },
         peso,
       ),
-    ).toBe('Cement (Holcim) is now PHP 265.00 (was PHP 260.00 when held).')
+    ).toBe('Cement (Holcim) is now PHP 265.00 (was PHP 260.00 when paused).')
   })
 })
 

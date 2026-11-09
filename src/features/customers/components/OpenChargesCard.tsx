@@ -64,7 +64,7 @@ export function OpenChargesCard({ charges, now }: OpenChargesCardProps) {
 
   return (
     <SectionCard
-      title="Open Charges"
+      title="Unpaid Sales"
       action={<span className="text-sm text-muted">Payments clear the oldest first</span>}
     >
       <SummaryTable

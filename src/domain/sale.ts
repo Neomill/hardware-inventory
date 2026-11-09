@@ -88,7 +88,7 @@ export function validatePayment(input: {
   if (method !== 'cash' && !customerId) {
     return {
       ok: false,
-      message: 'Choose a customer. A balance cannot be recorded for a walk-in customer.',
+      message: 'Choose a customer. A balance cannot be recorded for a no-name customer.',
     }
   }
 

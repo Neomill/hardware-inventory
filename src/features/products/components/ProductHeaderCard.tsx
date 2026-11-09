@@ -16,11 +16,11 @@ type ProductHeaderCardProps = {
 /** Name, facts and actions for one product (spec 04 s.7.2). */
 export function ProductHeaderCard({ product, onEdit }: ProductHeaderCardProps) {
   const facts: [string, string][] = [
-    ['SKU', product.sku],
+    ['Product Code', product.sku],
     ['Category', product.category],
     ['Unit', product.unit],
     ['Price', formatCurrency(product.price)],
-    ['Reorder At', `${formatNumber(product.reorderLevel)} ${product.unit}`],
+    ['Low-Stock Alert At', `${formatNumber(product.reorderLevel)} ${product.unit}`],
   ]
 
   return (

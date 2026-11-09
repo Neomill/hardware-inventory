@@ -37,7 +37,7 @@ export function ProductSummaryStrip({ summary }: ProductSummaryStripProps) {
     {
       label: 'Low Stock Items',
       value: formatNumber(summary.lowStockCount),
-      caption: 'At or below reorder level',
+      caption: 'At or below the low-stock alert',
       icon: AlertTriangle,
       tone: 'amber',
     },

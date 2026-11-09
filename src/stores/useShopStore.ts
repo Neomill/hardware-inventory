@@ -364,7 +364,7 @@ export function createShopStore({
           })
 
           if (!validation.ok) {
-            return { ok: false, message: validation.message ?? 'This sale cannot be held.' }
+            return { ok: false, message: validation.message ?? 'This sale cannot be paused.' }
           }
 
           const heldSale = buildHeldSale({
@@ -391,7 +391,7 @@ export function createShopStore({
           }
 
           if (cart.length > 0) {
-            return { ok: false, message: 'Finish or hold the current sale first.' }
+            return { ok: false, message: 'Finish or pause the current sale first.' }
           }
 
           const reconciled = reconcileCartWithStock(held.lines, products)
@@ -418,7 +418,7 @@ export function createShopStore({
 
           set({ heldSales: heldSales.filter((candidate) => candidate.id !== heldSaleId) })
 
-          return { ok: true, message: 'Held sale discarded.' }
+          return { ok: true, message: 'Paused sale discarded.' }
         },
 
         swapWithHeldSale(heldSaleId, input = {}) {
@@ -441,7 +441,7 @@ export function createShopStore({
           })
 
           if (!validation.ok) {
-            return { ok: false, message: validation.message ?? 'This sale cannot be held.' }
+            return { ok: false, message: validation.message ?? 'This sale cannot be paused.' }
           }
 
           const reconciled = reconcileCartWithStock(held.lines, products)
@@ -537,7 +537,7 @@ export function createShopStore({
             changeGiven: computeChange(totals.total, paymentMethod === 'cash' ? amountPaid : 0),
             balanceDue: computeBalanceDue(paymentMethod, totals.total, amountPaid),
             customerId: customer?.id ?? null,
-            customerName: customer?.name ?? 'Walk-in Customer',
+            customerName: customer?.name ?? 'No-name customer',
             status: 'completed',
             recordedBy: CURRENT_USER.name,
             cancellation: null,
@@ -736,7 +736,7 @@ export function createShopStore({
           if (!validation.ok) {
             return {
               ok: false,
-              message: validation.message ?? 'This adjustment cannot be recorded.',
+              message: validation.message ?? 'This correction cannot be recorded.',
             }
           }
 
@@ -753,7 +753,7 @@ export function createShopStore({
             type: 'adjustment',
             quantityDelta,
             reference,
-            description: `Adjusted: ${statedReason}`,
+            description: `Corrected: ${statedReason}`,
             reason: statedReason,
             note: null,
             recordedBy: CURRENT_USER.name,

@@ -34,7 +34,7 @@ const COLUMNS: SummaryColumn<Product>[] = [
   },
   {
     id: 'sku',
-    header: 'SKU',
+    header: 'Product Code',
     cell: (product) => product.sku,
     cellClassName: 'text-muted',
   },

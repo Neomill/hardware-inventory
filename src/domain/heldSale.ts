@@ -22,11 +22,11 @@ export const HELD_SALE_LABEL_MAX = 40
 /** Shown for a held line whose product no longer exists. */
 export const UNKNOWN_PRODUCT_NAME = 'Unknown product'
 
-export const HOLD_EMPTY_MESSAGE = 'There is nothing to hold yet.'
-export const HOLD_LIMIT_MESSAGE = `You already have ${HELD_SALE_LIMIT} held sales. Resume or discard one first.`
+export const HOLD_EMPTY_MESSAGE = 'There is nothing to pause yet.'
+export const HOLD_LIMIT_MESSAGE = `You already have ${HELD_SALE_LIMIT} paused sales. Resume or discard one first.`
 export const HOLD_LABEL_TOO_LONG_MESSAGE = `Keep the label to ${HELD_SALE_LABEL_MAX} characters.`
-export const HELD_SALE_MISSING_MESSAGE = 'That held sale is no longer here.'
-export const HELD_SALE_UNSELLABLE_MESSAGE = 'None of the items in this held sale can be sold now.'
+export const HELD_SALE_MISSING_MESSAGE = 'That paused sale is no longer here.'
+export const HELD_SALE_UNSELLABLE_MESSAGE = 'None of the items in this paused sale can be sold now.'
 
 /** Trimmed; blank or missing is null. Length is checked by validateHold, not cut here. */
 export function normalizeHeldSaleLabel(raw: string | undefined): string | null {
@@ -225,7 +225,7 @@ export function findPriceChanges(held: HeldSale, products: Product[]): HeldPrice
 }
 
 /**
- * "Cement (Holcim) is now PHP 265.00 (was PHP 260.00 when held)." The money
+ * "Cement (Holcim) is now PHP 265.00 (was PHP 260.00 when paused)." The money
  * formatter is passed in (formatCurrency from '@/lib/format') so the domain
  * stays free of display code.
  */
@@ -233,7 +233,7 @@ export function describePriceChange(
   change: HeldPriceChange,
   formatMoney: (amount: Centavos) => string,
 ): string {
-  return `${change.productName} is now ${formatMoney(change.currentPrice)} (was ${formatMoney(change.heldPrice)} when held).`
+  return `${change.productName} is now ${formatMoney(change.currentPrice)} (was ${formatMoney(change.heldPrice)} when paused).`
 }
 
 /** True when the sale was held on an earlier local day than `now` (it gets a "From <day>" marker). */
@@ -241,7 +241,7 @@ export function isHeldBeforeToday(held: Pick<HeldSale, 'heldAt'>, now: Date): bo
   return new Date(held.heldAt).getTime() < startOfDay(now).getTime()
 }
 
-/** Newest first, as the Held Sales list shows them. Does not change the input. */
+/** Newest first, as the Paused Sales list shows them. Does not change the input. */
 export function sortHeldSalesNewestFirst(heldSales: HeldSale[]): HeldSale[] {
   return [...heldSales].sort((a, b) => new Date(b.heldAt).getTime() - new Date(a.heldAt).getTime())
 }

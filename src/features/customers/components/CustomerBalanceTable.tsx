@@ -40,7 +40,7 @@ export function CustomerBalanceTable({
     },
     {
       id: 'outstanding',
-      header: 'Outstanding',
+      header: 'Still Owed',
       cell: (row) =>
         row.outstanding > 0 ? (
           <span className="font-bold text-brand-700">{formatCurrency(row.outstanding)}</span>
@@ -51,7 +51,7 @@ export function CustomerBalanceTable({
     },
     {
       id: 'open',
-      header: 'Open Charges',
+      header: 'Unpaid Sales',
       cell: (row) =>
         row.openChargeCount > 0 ? (
           <span className="flex flex-col">
@@ -96,7 +96,7 @@ export function CustomerBalanceTable({
           ) : null}
           <Link
             to={ROUTES.customerDetail(row.customerId)}
-            aria-label={`View ledger for ${row.customerName}`}
+            aria-label={`View customer credit for ${row.customerName}`}
             className="inline-flex h-12 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-navy-700 transition-colors hover:bg-navy-50"
           >
             View

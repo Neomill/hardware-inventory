@@ -5,7 +5,7 @@ import { CustomerListPage } from '@/features/customers/pages/CustomerListPage'
 
 /**
  * Both /customers and /customers/:customerId render this page; the id decides
- * between the Outstanding Balances list and one customer's ledger.
+ * between the Customers Who Owe list and one customer's credit history.
  */
 export function CustomerLedgerPage() {
   const { customerId } = useParams()

@@ -58,7 +58,7 @@ export function CustomerHeaderCard({
             owes ? 'bg-brand-50 text-brand-700' : 'bg-emerald-50 text-emerald-700',
           )}
         >
-          <p className="text-sm font-semibold">Outstanding balance</p>
+          <p className="text-sm font-semibold">Still owed</p>
           <p className="text-3xl font-bold tabular-nums">{formatCurrency(outstanding)}</p>
           {owes ? null : (
             <StatusPill tone="success" className="mt-1">

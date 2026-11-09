@@ -42,7 +42,7 @@ const BALANCE_COLUMNS: SummaryColumn<CustomerBalance>[] = [
   },
   {
     id: 'outstanding',
-    header: 'Outstanding',
+    header: 'Still Owed',
     cell: (row) => formatCurrency(row.outstanding),
     cellClassName: 'font-semibold tabular-nums',
   },
@@ -60,7 +60,7 @@ const BALANCE_COLUMNS: SummaryColumn<CustomerBalance>[] = [
   },
   {
     id: 'open',
-    header: 'Open Charges',
+    header: 'Unpaid Sales',
     cell: (row) => formatNumber(row.openChargeCount),
     cellClassName: 'tabular-nums',
   },
@@ -103,7 +103,7 @@ export function OutstandingCreditSection({ credit, range }: OutstandingCreditSec
   return (
     <ReportSection
       id="outstanding-credit"
-      title="Outstanding Credit"
+      title="Credit Still Owed"
       description={`What customers owe right now, whatever the period, and the credit payments received ${
         range.preset === 'today' || range.preset === 'yesterday'
           ? range.phrase
@@ -112,7 +112,7 @@ export function OutstandingCreditSection({ credit, range }: OutstandingCreditSec
     >
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="Total Outstanding"
+          label="Total Still Owed"
           value={formatCurrency(credit.totalOutstanding)}
           icon={Wallet}
           tone="orange"

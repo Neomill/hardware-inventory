@@ -78,7 +78,7 @@ type ProductMovementsCardProps = {
 export function ProductMovementsCard({ product, rows }: ProductMovementsCardProps) {
   return (
     <SectionCard
-      title="Stock Movements"
+      title="Stock History"
       action={<ViewAllLink to={ROUTES.movementsFor(product.id)} label="View all" />}
     >
       <SummaryTable
@@ -87,7 +87,7 @@ export function ProductMovementsCard({ product, rows }: ProductMovementsCardProp
         rowKey={(row) => row.movement.id}
         minWidthClassName="min-w-[52rem]"
         hoverable
-        emptyMessage="No stock movements yet."
+        emptyMessage="No stock changes yet."
       />
     </SectionCard>
   )

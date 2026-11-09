@@ -218,7 +218,7 @@ const INVOICES: [
 /** Manual corrections, oldest first. Each carries the reason the audit trail needs. */
 const ADJUSTMENTS: [sku: string, quantityDelta: number, reason: string, at: SeedTime][] = [
   ['DK-001', -2, 'Damaged in storage', [3, '11:00']],
-  ['SCR-081', 25, 'Physical count correction', [2, '15:30']],
+  ['SCR-081', 25, 'Shelf count correction', [2, '15:30']],
   ['SP-120', -2, 'Torn during handling', [0, '08:40']],
 ]
 
@@ -340,7 +340,7 @@ export function buildSeedHistory(
       changeGiven: computeChange(totals.total, seed.method === 'cash' ? amountPaid : 0),
       balanceDue: computeBalanceDue(seed.method, totals.total, amountPaid),
       customerId: customer?.id ?? null,
-      customerName: customer?.name ?? 'Walk-in Customer',
+      customerName: customer?.name ?? 'No-name customer',
       status: 'completed',
       recordedBy: SEED_RECORDER,
       cancellation: null,
@@ -426,7 +426,7 @@ export function buildSeedHistory(
       type: 'adjustment',
       quantityDelta,
       reference,
-      description: `Adjusted: ${reason}`,
+      description: `Corrected: ${reason}`,
       reason,
       note: null,
       recordedBy: SEED_RECORDER,

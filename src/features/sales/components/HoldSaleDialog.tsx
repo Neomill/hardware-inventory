@@ -16,7 +16,7 @@ type HoldSaleDialogProps = {
   onHeld: (heldSale: HeldSale) => void
 }
 
-/** Hold Sale with an optional label (spec 03 s.7.4). Enter submits. */
+/** Pause Sale with an optional label (spec 03 s.7.4). Enter submits. */
 export function HoldSaleDialog({ onClose, onHeld }: HoldSaleDialogProps) {
   const cartLineCount = useShopStore((state) => state.cart.length)
   const heldCount = useShopStore((state) => state.heldSales.length)
@@ -47,7 +47,7 @@ export function HoldSaleDialog({ onClose, onHeld }: HoldSaleDialogProps) {
   }
 
   return (
-    <Dialog title="Hold Sale" onClose={onClose}>
+    <Dialog title="Pause Sale" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <p className="text-sm text-muted">
           The cart is set aside and emptied. Stock is not reserved; quantities are checked again
@@ -94,7 +94,7 @@ export function HoldSaleDialog({ onClose, onHeld }: HoldSaleDialogProps) {
             disabled={!availability.canHold || labelError !== null}
             className="flex-1"
           >
-            Hold Sale
+            Pause Sale
           </Button>
         </div>
       </form>

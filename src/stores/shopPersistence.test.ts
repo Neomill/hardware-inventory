@@ -604,7 +604,7 @@ describe('inspectPersistedShop: salvage rules', () => {
       heldSales: [held('HOLD-1', 'A'), held('HOLD-1', 'B'), held('HOLD-1', 'C'), { id: 'HOLD-9' }],
     })
 
-    expect(result.dropped).toEqual(['1 held sale'])
+    expect(result.dropped).toEqual(['1 paused sale'])
 
     const ids = result.data?.heldSales.map((sale) => sale.id) ?? []
 
@@ -1112,7 +1112,7 @@ describe('storage edge cases', () => {
     })
 
     expect(result.data?.heldSales.map((held) => held.id)).toEqual(['HOLD-2'])
-    expect(result.dropped).toEqual(['1 held sale'])
+    expect(result.dropped).toEqual(['1 paused sale'])
 
     // A held-sales value that is not a list reads as none, and is not reported.
     const notAList = inspectPersistedShop({ ...seed, heldSales: 'nope' })

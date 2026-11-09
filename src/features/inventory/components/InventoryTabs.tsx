@@ -19,8 +19,8 @@ const TABS: Tab[] = [
   { label: 'Current Inventory', shortLabel: 'Inventory', to: ROUTES.inventory, icon: Warehouse },
   { label: 'Receive Stock', shortLabel: 'Receive', to: ROUTES.receiveStock, icon: PackagePlus },
   {
-    label: 'Stock Movements',
-    shortLabel: 'Movements',
+    label: 'Stock History',
+    shortLabel: 'History',
     to: ROUTES.stockMovements,
     icon: ClipboardList,
   },

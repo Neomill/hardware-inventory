@@ -4,7 +4,7 @@ import type { PaymentMethod } from '@/domain/types'
 
 export const AMOUNT_FORMAT_MESSAGE = 'Enter an amount such as 500 or 1,250.50'
 export const WALK_IN_BALANCE_MESSAGE =
-  'Choose a customer. A balance cannot be recorded for a walk-in customer.'
+  'Choose a customer. A balance cannot be recorded for a no-name customer.'
 
 /**
  * What the amount field holds: nothing yet, something that is not an amount

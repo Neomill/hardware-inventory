@@ -20,7 +20,7 @@ import { formatNumber } from '@/lib/format'
 
 export const CUSTOMER_PAGE_SIZE = 15
 
-/** Outstanding Balances: who owes the store, largest balance first. */
+/** Customers Who Owe: who owes the store, largest balance first. */
 export function CustomerListPage() {
   const navigate = useNavigate()
   const now = useCurrentTime(60_000)
@@ -69,8 +69,8 @@ export function CustomerListPage() {
   const emptyMessage = search.trim()
     ? 'No customers match your search.'
     : includeSettled
-      ? 'No customers yet. Add one to start a ledger.'
-      : 'No outstanding balances. Every customer is settled.'
+      ? 'No customers yet. Add one to start selling on credit.'
+      : 'No customers owe anything. Every customer is settled.'
 
   return (
     <div className="flex flex-col gap-5">
@@ -88,9 +88,7 @@ export function CustomerListPage() {
         />
 
         <div className="flex items-center justify-between gap-3">
-          <h2 className="card-title">
-            {includeSettled ? 'All Customers' : 'Outstanding Balances'}
-          </h2>
+          <h2 className="card-title">{includeSettled ? 'All Customers' : 'Customers Who Owe'}</h2>
           <p className="text-sm text-muted">
             {formatNumber(visibleRows.length)} customer{visibleRows.length === 1 ? '' : 's'}
           </p>

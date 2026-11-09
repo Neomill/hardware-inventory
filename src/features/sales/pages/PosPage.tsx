@@ -205,18 +205,18 @@ export function PosPage() {
 
   function handleHeld() {
     setHoldOpen(false)
-    const state: SalesRootNavState = { notice: 'Sale held.' }
+    const state: SalesRootNavState = { notice: 'Sale paused.' }
     navigate(ROUTES.sales, { state })
   }
 
-  // Resumed from the Held Sales list opened on this page: the store has loaded
+  // Resumed from the Paused Sales list opened on this page: the store has loaded
   // the cart, so stay here and show what changed (replacing notices about the
   // cart that was there before).
   function handleResumed(cartNotice: CartNotice | null) {
     setHeldOpen(false)
     setMessage(null)
     setNotices(cartNotice ? [cartNotice] : [])
-    setResumedMessage(cartNotice ? null : 'Held sale resumed.')
+    setResumedMessage(cartNotice ? null : 'Paused sale resumed.')
   }
 
   const cartItemCount =
@@ -271,7 +271,7 @@ export function PosPage() {
               value={search}
               onChange={setSearch}
               label="Search products"
-              placeholder="Search by product name or SKU..."
+              placeholder="Search by product name or code..."
               className="min-w-0 flex-1"
             />
             <HeldSalesButton

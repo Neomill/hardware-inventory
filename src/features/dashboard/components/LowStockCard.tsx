@@ -37,7 +37,7 @@ const COLUMNS: SummaryColumn<Product>[] = [
   },
   {
     id: 'reorder',
-    header: 'Reorder At',
+    header: 'Low-Stock Alert At',
     cell: (product) => formatNumber(product.reorderLevel),
     cellClassName: 'tabular-nums',
   },
@@ -58,7 +58,7 @@ export function LowStockCard({ items }: LowStockCardProps) {
         columns={COLUMNS}
         rows={items}
         rowKey={(product) => product.id}
-        emptyMessage="Every product is above its reorder level."
+        emptyMessage="Every product is above its low-stock alert."
       />
     </SectionCard>
   )

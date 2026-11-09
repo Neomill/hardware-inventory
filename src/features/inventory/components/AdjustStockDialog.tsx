@@ -22,7 +22,7 @@ import { formatNumber } from '@/lib/format'
 import { useShopStore } from '@/stores/useShopStore'
 
 /** Common corrections, one tap each. Any other reason can be typed. */
-const QUICK_REASONS = ['Damaged', 'Physical count', 'Lost or missing', 'Returned to supplier']
+const QUICK_REASONS = ['Damaged', 'Counted on shelf', 'Lost or missing', 'Returned to supplier']
 
 const DIRECTIONS: { value: AdjustmentDirection; label: string; icon: typeof Plus }[] = [
   { value: 'remove', label: 'Remove stock', icon: Minus },
@@ -59,7 +59,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
   // Shown as soon as it is typed, not only on submit: the rule is the point.
   const belowZero =
     projected !== null && projected < 0
-      ? `Only ${formatNumber(product.stock)} ${product.unit} on hand. Stock cannot go below zero.`
+      ? `Only ${formatNumber(product.stock)} ${product.unit} in stock. Stock cannot go below zero.`
       : undefined
 
   function chooseDirection(value: AdjustmentDirection) {
@@ -101,7 +101,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
   }
 
   return (
-    <Dialog title="Adjust Stock" onClose={onClose} initialFocusRef={quantityRef}>
+    <Dialog title="Correct Stock" onClose={onClose} initialFocusRef={quantityRef}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3">
           <div className="min-w-0">
@@ -109,7 +109,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
             <p className="text-sm text-muted">{product.sku}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-muted">On hand</p>
+            <p className="text-sm text-muted">In stock</p>
             <p className="text-lg font-bold tabular-nums text-navy-900">
               {formatNumber(product.stock)} {product.unit}
             </p>
@@ -201,7 +201,7 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
             disabled={belowZero !== undefined}
             className="flex-1 sm:h-14"
           >
-            Save Adjustment
+            Save Correction
           </Button>
         </div>
       </form>

@@ -58,10 +58,10 @@ export function DataCard() {
     { label: 'Products', value: products.length },
     { label: 'Customers', value: customers.length },
     { label: 'Sales', value: sales.length },
-    { label: 'Stock movements', value: movements.length },
+    { label: 'Stock changes', value: movements.length },
     { label: 'Customer payments', value: payments.length },
     { label: 'Supplier invoices', value: invoices.length },
-    { label: 'Held sales', value: heldSales.length },
+    { label: 'Paused sales', value: heldSales.length },
   ]
 
   function handleExport() {

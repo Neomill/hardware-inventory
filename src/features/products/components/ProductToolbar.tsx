@@ -33,7 +33,7 @@ export function ProductToolbar({
         onChange={onSearchChange}
         label="Search products"
         // No barcode: the store does not label products (DESIGN-ERRATA E8).
-        placeholder="Search by product name or SKU..."
+        placeholder="Search by product name or code..."
         className="min-w-0 flex-1"
       />
 

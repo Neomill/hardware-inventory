@@ -23,9 +23,9 @@ type CartPanelProps = {
   /** Asks to clear: the page confirms before the cart is emptied. */
   onClear: () => void
   onCheckout: () => void
-  /** Opens the Hold Sale dialog. */
+  /** Opens the Pause Sale dialog. */
   onHold: () => void
-  /** Whether Hold Sale can be used now, and why not (spec 03 s.7.4). */
+  /** Whether Pause Sale can be used now, and why not (spec 03 s.7.4). */
   hold: { canHold: boolean; reason: string | null }
   /** Shows a close button in the header (the cart in a bottom sheet). */
   onClose?: () => void
@@ -40,7 +40,7 @@ type CartPanelProps = {
 
 /**
  * The running sale. The header (title, Clear) and the footer (totals,
- * Proceed to Checkout, Hold Sale) always stay in view; when the lines do not
+ * Proceed to Checkout, Pause Sale) always stay in view; when the lines do not
  * fit the height the panel is given, only the list of lines scrolls.
  */
 export function CartPanel({
@@ -216,7 +216,7 @@ export function CartPanel({
           disabled={!hold.canHold}
           aria-describedby={hold.reason ? holdHintId : undefined}
         >
-          Hold Sale
+          Pause Sale
         </Button>
         {hold.reason ? (
           <p id={holdHintId} className="-mt-1 text-center text-sm text-muted">

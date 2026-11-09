@@ -73,7 +73,7 @@ export function InvoiceConfirmation({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-muted">On hand now</dt>
+                  <dt className="text-sm text-muted">In stock now</dt>
                   <dd className="font-semibold tabular-nums text-navy-900">
                     {onHand === undefined ? '—' : `${formatNumber(onHand)} ${line.unit}`}
                   </dd>
@@ -96,7 +96,7 @@ export function InvoiceConfirmation({
           View invoice
         </Button>
         <Button icon={ClipboardList} to={ROUTES.stockMovements} className="sm:h-14">
-          Stock movements
+          Stock history
         </Button>
       </div>
     </section>

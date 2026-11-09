@@ -28,11 +28,11 @@ describe('describeDataRecovery', () => {
 
   it('lists what a salvaged load left out', () => {
     const message = describeDataRecovery(
-      recovery({ outcome: 'salvaged', dropped: ['1 customer record', '2 held sales'] }),
+      recovery({ outcome: 'salvaged', dropped: ['1 customer record', '2 paused sales'] }),
     )
     expect(message.heading).toBe('Some saved records could not be read.')
     expect(message.detail).toBe(
-      'These were left out: 1 customer record and 2 held sales. Everything else loaded as usual.',
+      'These were left out: 1 customer record and 2 paused sales. Everything else loaded as usual.',
     )
   })
 
@@ -40,10 +40,10 @@ describe('describeDataRecovery', () => {
     const message = describeDataRecovery(
       recovery({
         outcome: 'salvaged',
-        dropped: ['1 product record', '1 held sale', '3 supplier invoices'],
+        dropped: ['1 product record', '1 paused sale', '3 supplier invoices'],
       }),
     )
-    expect(message.detail).toContain('1 product record, 1 held sale and 3 supplier invoices.')
+    expect(message.detail).toContain('1 product record, 1 paused sale and 3 supplier invoices.')
   })
 
   it('still reads plainly when a salvage names nothing', () => {

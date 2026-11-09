@@ -54,7 +54,7 @@ export function ProductPicker({
           <p className="mt-0.5 flex items-center gap-2 text-sm text-muted">
             {selected.sku}
             <span aria-hidden>&middot;</span>
-            On hand <StockPill product={selected} />
+            In stock <StockPill product={selected} />
           </p>
         </div>
         <button
@@ -81,7 +81,7 @@ export function ProductPicker({
         value={search}
         onChange={setSearch}
         label="Search for the delivered product"
-        placeholder="Search by product name or SKU..."
+        placeholder="Search by product name or code..."
         aria-describedby={describedBy}
         invalid={invalid}
       />
@@ -127,7 +127,7 @@ export function ProductPicker({
 
       {products.length > RESULT_LIMIT && results.length === RESULT_LIMIT ? (
         <p className="text-sm text-muted">
-          Showing the first {RESULT_LIMIT}. Type more of the name or SKU to narrow it down.
+          Showing the first {RESULT_LIMIT}. Type more of the name or code to narrow it down.
         </p>
       ) : null}
     </div>

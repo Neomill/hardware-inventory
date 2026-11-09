@@ -80,7 +80,7 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
 
   return (
     <SectionCard
-      title="Ledger Statement"
+      title="Credit History"
       action={<span className="text-sm text-muted">Oldest first</span>}
     >
       <SummaryTable

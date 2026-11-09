@@ -5,8 +5,8 @@ import type { MovementType, Product, Sale, StockMovement, ValidationResult } fro
 export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
   stock_in: 'Stock In',
   sale: 'Sale',
-  sale_reversal: 'Reversal',
-  adjustment: 'Adjustment',
+  sale_reversal: 'Sale Cancelled',
+  adjustment: 'Correction',
 }
 
 /** Supplier invoices are "INV-10021": five digits, never a sale number (E6). */
@@ -43,13 +43,13 @@ export function validateStockAdjustment(input: {
   }
 
   if (reason.trim() === '') {
-    return { ok: false, message: 'Give a reason for this adjustment.' }
+    return { ok: false, message: 'Give a reason for this correction.' }
   }
 
   if (currentStock + quantityDelta < 0) {
     return {
       ok: false,
-      message: `Only ${currentStock} on hand. Stock cannot go below zero.`,
+      message: `Only ${currentStock} in stock. Stock cannot go below zero.`,
     }
   }
 
@@ -217,7 +217,7 @@ export function reconcileOpeningStock(input: {
       type: 'adjustment',
       quantityDelta: gap,
       reference,
-      description: `Adjusted: ${RECONCILE_REASON}`,
+      description: `Corrected: ${RECONCILE_REASON}`,
       reason: RECONCILE_REASON,
       note: null,
       recordedBy: RECONCILED_BY,

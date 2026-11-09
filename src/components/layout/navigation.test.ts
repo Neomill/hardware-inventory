@@ -12,7 +12,7 @@ describe('resolvePageTitle', () => {
   })
 
   it('returns the section title for a nested detail route', () => {
-    expect(resolvePageTitle('/sales/SALE-001')).toBe('Sales (POS)')
+    expect(resolvePageTitle('/sales/SALE-001')).toBe('Sell')
   })
 
   it('falls back to the dashboard title for unknown routes', () => {
@@ -25,9 +25,9 @@ describe('PRIMARY_NAV', () => {
     expect(PRIMARY_NAV.map((item) => item.label)).toEqual([
       'Dashboard',
       'Products',
-      'Sales (POS)',
+      'Sell',
       'Inventory',
-      'Customer Ledger',
+      'Customer Credit',
       'Reports',
     ])
   })

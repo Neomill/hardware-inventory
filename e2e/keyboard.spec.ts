@@ -43,14 +43,20 @@ test.describe('Dialog keyboard behaviour', () => {
     await expectModalFocusCycle(page, trigger, 'Add to Cart')
   })
 
-  test('Adjust Stock dialog traps focus and returns it to the Adjust button', async ({ page }) => {
+  test('Correct Stock dialog traps focus and returns it to the Correct Stock button', async ({
+    page,
+  }) => {
     await gotoRoute(page, '/inventory')
     await page.getByRole('searchbox', { name: 'Search inventory' }).fill('Masking Tape 2"')
 
     const row = page
       .getByRole('row')
       .filter({ has: page.getByText('Masking Tape 2"', { exact: true }) })
-    await expectModalFocusCycle(page, row.getByRole('button', { name: 'Adjust' }), 'Adjust Stock')
+    await expectModalFocusCycle(
+      page,
+      row.getByRole('button', { name: 'Correct Stock' }),
+      'Correct Stock',
+    )
   })
 
   test('Reset demo data dialog traps focus and returns it to its trigger', async ({ page }) => {

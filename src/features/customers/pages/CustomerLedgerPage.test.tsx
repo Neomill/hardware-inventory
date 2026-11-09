@@ -16,11 +16,11 @@ function renderAt(path: string, state?: unknown): string {
 }
 
 describe('CustomerLedgerPage', () => {
-  it('lists outstanding balances from the seeded store', () => {
+  it('lists customers who owe from the seeded store', () => {
     const html = renderAt('/customers')
 
-    expect(html).toContain('Outstanding Credit')
-    expect(html).toContain('Outstanding Balances')
+    expect(html).toContain('Credit Still Owed')
+    expect(html).toContain('Customers Who Owe')
     expect(html).toContain('ABC Construction')
   })
 
@@ -28,8 +28,8 @@ describe('CustomerLedgerPage', () => {
     const html = renderAt('/customers/CUS-006')
 
     expect(html).toContain('ABC Construction')
-    expect(html).toContain('Open Charges')
-    expect(html).toContain('Ledger Statement')
+    expect(html).toContain('Unpaid Sales')
+    expect(html).toContain('Credit History')
     expect(html).toContain('Payment History')
   })
 

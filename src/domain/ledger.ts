@@ -102,7 +102,7 @@ export type CustomerBalance = {
 }
 
 /**
- * One row per customer for the Outstanding Balances list, largest debt first.
+ * One row per customer for the Customers Who Owe list, largest debt first.
  * Customers who owe nothing are left out unless `includeSettled` is set.
  */
 export function listCustomerBalances(
@@ -226,7 +226,7 @@ export type SettlementStatus = 'paid' | 'partially_paid' | 'outstanding'
 export const SETTLEMENT_LABELS: Record<SettlementStatus, string> = {
   paid: 'Paid',
   partially_paid: 'Partially Paid',
-  outstanding: 'Outstanding',
+  outstanding: 'Unpaid',
 }
 
 /**
@@ -330,7 +330,7 @@ export function validateCustomerPayment(input: {
   const { amount, outstanding } = input
 
   if (outstanding <= 0) {
-    return { ok: false, message: 'This customer has no outstanding balance.' }
+    return { ok: false, message: 'This customer owes nothing.' }
   }
 
   if (!Number.isSafeInteger(amount) || amount <= 0) {

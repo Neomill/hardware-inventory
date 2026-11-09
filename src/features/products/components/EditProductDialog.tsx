@@ -79,7 +79,7 @@ export function EditProductDialog({ product, onClose, onSaved }: EditProductDial
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
         <dl className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm">
           <div>
-            <dt className="text-sm text-muted">SKU (cannot change)</dt>
+            <dt className="text-sm text-muted">Product code (cannot change)</dt>
             <dd className="font-semibold text-navy-900">{product.sku}</dd>
           </div>
           <div>
@@ -124,9 +124,9 @@ export function EditProductDialog({ product, onClose, onSaved }: EditProductDial
           </FormField>
 
           <FormField
-            label="Reorder At"
+            label="Low-stock alert at"
             error={errors.reorderLevel?.message}
-            hint={`Low at or below, in ${product.unit}.`}
+            hint={`Shown as Low Stock at or below this number, in ${product.unit}.`}
           >
             {(field) => (
               <TextInput

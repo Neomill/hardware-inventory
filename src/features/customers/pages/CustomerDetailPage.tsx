@@ -56,7 +56,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps) {
           There is no customer with this ID on this device. They may have been added on another
           device, or the store data on this one was reset.
         </p>
-        <Button to={ROUTES.customers}>Back to Customer Ledger</Button>
+        <Button to={ROUTES.customers}>Back to Customer Credit</Button>
       </div>
     )
   }

@@ -223,7 +223,7 @@ export function SaleCompletePage() {
       {cancelled ? (
         <Alert tone="info">
           {cancelled.stockReturned ? `${cancelled.stockReturned} ` : ''}This sale stays in the sales
-          history but no longer counts in sales, reports or the customer ledger.
+          history but no longer counts in sales, reports or Customer Credit.
         </Alert>
       ) : (
         <Alert tone="info">{saleRecordNote(sale, justCompleted)}</Alert>

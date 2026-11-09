@@ -49,7 +49,7 @@ describe('ProductPicker', () => {
     const html = render(LOW)
 
     expect(html).toContain('Change product. Selected: Cement')
-    expect(html).toContain('On hand')
+    expect(html).toContain('In stock')
     expect(html).toContain('8 bags')
     expect(html).toContain(STOCK_STATUS_LABELS.low_stock)
     expect(html).not.toContain('Matching products')

@@ -40,7 +40,7 @@ export function CurrentInventoryView() {
 
     setNotice(
       `${product.name}: ${formatQuantityDelta(movement.quantityDelta)} ${product.unit} (${movement.reason}). ` +
-        `Now ${formatNumber(newStock)} ${product.unit} on hand.`,
+        `Now ${formatNumber(newStock)} ${product.unit} in stock.`,
     )
     setAdjustingId(null)
   }
@@ -53,7 +53,7 @@ export function CurrentInventoryView() {
             value={list.filters.search}
             onChange={(value) => list.updateFilter('search', value)}
             label="Search inventory"
-            placeholder="Search by product name or SKU..."
+            placeholder="Search by product name or code..."
             className="flex-1"
           />
           <Button icon={PackagePlus} variant="primary" to={ROUTES.receiveStock}>

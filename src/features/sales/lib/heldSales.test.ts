@@ -60,9 +60,9 @@ const NOW = new Date(2026, 9, 5, 15, 0)
 
 describe('Sales root button (AC1)', () => {
   it('names the count for screen readers', () => {
-    expect(heldSalesButtonName(2)).toBe('Held Sales, 2 waiting')
-    expect(heldSalesButtonName(1)).toBe('Held Sales, 1 waiting')
-    expect(heldSalesButtonName(0)).toBe('Held Sales, none waiting')
+    expect(heldSalesButtonName(2)).toBe('Paused Sales, 2 waiting')
+    expect(heldSalesButtonName(1)).toBe('Paused Sales, 1 waiting')
+    expect(heldSalesButtonName(0)).toBe('Paused Sales, none waiting')
   })
 })
 
@@ -85,7 +85,7 @@ describe('holdAvailability (AC6, spec 7.4)', () => {
   })
 })
 
-describe('Held Sales list rows (AC2, AC11, AC17)', () => {
+describe('Paused Sales list rows (AC2, AC11, AC17)', () => {
   const products = [
     product('A', { price: 1200, stock: 2 }),
     product('B'),
@@ -128,7 +128,7 @@ describe('Held Sales list rows (AC2, AC11, AC17)', () => {
 
     expect(row.stockChanges).toEqual(['Product A: reduced from 5 to 2 pcs, only 2 left in stock.'])
     expect(row.priceChanges).toEqual([
-      `Product A is now ${formatCurrency(1200)} (was ${formatCurrency(1000)} when held).`,
+      `Product A is now ${formatCurrency(1200)} (was ${formatCurrency(1000)} when paused).`,
     ])
     expect(row.estimatedTotal).toBe(5 * 1200 + 1000)
     expect(row.canResume).toBe(true)
@@ -182,12 +182,12 @@ describe('notices after resume and on the live cart (AC8, spec 5.5, 7.3)', () =>
 
     const notice = buildResumeNotice(
       [{ kind: 'removed_out_of_stock', productId: 'X', productName: 'Door Knob', quantity: 1 }],
-      ['Cement is now ₱265.00 (was ₱260.00 when held).'],
+      ['Cement is now ₱265.00 (was ₱260.00 when paused).'],
     )
 
     expect(notice?.items).toEqual([
       'Door Knob removed: out of stock.',
-      'Cement is now ₱265.00 (was ₱260.00 when held).',
+      'Cement is now ₱265.00 (was ₱260.00 when paused).',
     ])
   })
 
@@ -230,7 +230,7 @@ describe('heldLabelError (AC5)', () => {
 
 describe('router state readers', () => {
   it('reads the Sales root notice', () => {
-    expect(readSalesRootNotice({ notice: 'Sale held.' })).toBe('Sale held.')
+    expect(readSalesRootNotice({ notice: 'Sale paused.' })).toBe('Sale paused.')
     expect(readSalesRootNotice(null)).toBeNull()
     expect(readSalesRootNotice({ notice: 3 })).toBeNull()
   })

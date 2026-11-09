@@ -45,7 +45,7 @@ const METHODS: MethodOption[] = [
     value: 'partial',
     label: 'Partial Payment',
     icon: HandCoins,
-    hint: 'Pays part now, rest on the ledger.',
+    hint: 'Pays part now, rest on credit.',
     selected: 'border-brand-500 bg-brand-50',
   },
   {
@@ -199,7 +199,7 @@ export function CheckoutPage() {
               setError(null)
             }}
             options={[
-              { value: WALK_IN, label: 'Walk-in Customer' },
+              { value: WALK_IN, label: 'No-name customer' },
               ...customers.map((customer) => ({ value: customer.id, label: customer.name })),
             ]}
           />
@@ -256,7 +256,7 @@ export function CheckoutPage() {
                 </span>
               </div>
               <p className="mt-2 text-sm text-violet-900">
-                No payment received. This is recorded on the customer&apos;s ledger.
+                No payment received. This is recorded under Customer Credit.
               </p>
             </div>
           ) : (
@@ -303,7 +303,7 @@ export function CheckoutPage() {
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-brand-700">
-                    Total due {formatCurrency(totals.total)}. The balance goes on the ledger.
+                    Total due {formatCurrency(totals.total)}. The balance goes to Customer Credit.
                   </p>
                 </div>
               )}
@@ -347,7 +347,7 @@ export function CheckoutPage() {
             <p className="text-sm text-navy-800">
               The {formatItemCount(totals.itemCount)} in the cart will be removed. Nothing is
               recorded and stock is not affected. To keep them for later, go back to the sale and
-              use Hold Sale instead.
+              use Pause Sale instead.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button onClick={() => setCancelOpen(false)} className="flex-1">

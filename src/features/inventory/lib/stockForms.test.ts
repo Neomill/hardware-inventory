@@ -40,13 +40,13 @@ describe('makeAdjustStockSchema', () => {
   it('blocks going below zero with the on-hand figure', () => {
     const result = schema.safeParse({ direction: 'remove', quantity: '5', reason: 'Damaged' })
 
-    expect(firstMessage(result)).toBe('Only 4 on hand. Stock cannot go below zero.')
+    expect(firstMessage(result)).toBe('Only 4 in stock. Stock cannot go below zero.')
     expect(result.success ? null : result.error.issues[0].path).toEqual(['quantity'])
   })
 
   it('requires a reason', () => {
     expect(firstMessage(schema.safeParse({ direction: 'add', quantity: '2', reason: '  ' }))).toBe(
-      'Give a reason for this adjustment.',
+      'Give a reason for this correction.',
     )
   })
 })

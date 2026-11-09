@@ -66,14 +66,14 @@ describe('saleRecordNote', () => {
       'Stock was reduced for 2 products and this sale is recorded in the sales history.',
     )
     expect(saleRecordNote(credit, true)).toBe(
-      'Stock was reduced for 1 product and this sale is recorded in the sales history, with the unpaid balance on the customer ledger.',
+      'Stock was reduced for 1 product and this sale is recorded in the sales history, with the unpaid balance added to Customer Credit.',
     )
   })
 
   it('uses neutral wording for a sale opened from the history', () => {
     expect(saleRecordNote(cash, false)).toBe('This sale reduced stock for 2 products.')
     expect(saleRecordNote(credit, false)).toBe(
-      'This sale reduced stock for 1 product and put its unpaid balance on the customer ledger.',
+      'This sale reduced stock for 1 product and added its unpaid balance to Customer Credit.',
     )
   })
 })

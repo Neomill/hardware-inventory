@@ -63,7 +63,7 @@ export function makeAdjustStockSchema(currentStock: number) {
       reason: z
         .string()
         .trim()
-        .min(1, 'Give a reason for this adjustment.')
+        .min(1, 'Give a reason for this correction.')
         .max(120, 'Keep the reason under 120 characters.'),
     })
     .superRefine((values, context) => {
@@ -83,7 +83,7 @@ export function makeAdjustStockSchema(currentStock: number) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['quantity'],
-          message: result.message ?? 'This adjustment cannot be recorded.',
+          message: result.message ?? 'This correction cannot be recorded.',
         })
       }
     })

@@ -33,7 +33,7 @@ const ACTIONS: QuickAction[] = [
   {
     to: ROUTES.newSale,
     title: 'New Sale',
-    subtitle: 'Open POS',
+    subtitle: 'Start a new sale',
     icon: ShoppingCart,
     variant: 'navy',
   },
@@ -46,7 +46,7 @@ const ACTIONS: QuickAction[] = [
   },
   {
     to: ROUTES.customers,
-    title: 'Customer Ledger',
+    title: 'Customer Credit',
     subtitle: 'View Balances',
     icon: Users,
     variant: 'navy',

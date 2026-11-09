@@ -17,7 +17,7 @@ export function ProductStockCard({ product, totals }: ProductStockCardProps) {
     ['Received (opening stock included)', formatNumber(totals.received)],
     ['Sold', formatNumber(totals.sold)],
     ['Returned from cancelled sales', formatNumber(totals.reversed)],
-    ['Adjusted (net)', formatSignedQuantity(totals.adjusted)],
+    ['Corrected (net)', formatSignedQuantity(totals.adjusted)],
   ]
 
   return (

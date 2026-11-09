@@ -229,7 +229,7 @@ test.describe('POS cart on narrow screens: bar and bottom sheet', () => {
       await expect(sheet).toBeVisible()
       await expect(sheet.getByRole('heading', { name: /^Current Sale \(2 items\)/ })).toBeFocused()
       await expect(sheet.getByRole('button', { name: 'Proceed to Checkout' })).toBeInViewport()
-      await expect(sheet.getByRole('button', { name: 'Hold Sale' })).toBeInViewport()
+      await expect(sheet.getByRole('button', { name: 'Pause Sale' })).toBeInViewport()
       // Same figure as the bar, both from store data.
       expect(toCentavos(await cartTotal(sheet).innerText())).toBe(barTotal)
       await expectNoSidewaysScroll(page)
@@ -316,7 +316,7 @@ test.describe('POS cart beside the grid (xl)', () => {
       const cart = cartPanel(page)
       const heading = cart.getByRole('heading', { name: /^Current Sale/ })
       const checkout = cart.getByRole('button', { name: 'Proceed to Checkout' })
-      const hold = cart.getByRole('button', { name: 'Hold Sale' })
+      const hold = cart.getByRole('button', { name: 'Pause Sale' })
       const lines = cart.getByRole('list', { name: 'Cart lines' })
       await expect(lines.getByRole('listitem')).toHaveCount(PRODUCTS.length)
 

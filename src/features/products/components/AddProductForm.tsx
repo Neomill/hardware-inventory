@@ -83,7 +83,8 @@ export function AddProductForm() {
       <header>
         <h2 className="text-xl font-bold text-navy-900">Add Product</h2>
         <p className="mt-1 text-sm text-muted">
-          The SKU is assigned for you. Stock already on the shelf is recorded as opening stock.
+          The product code is assigned for you. Stock already on the shelf is recorded as opening
+          stock.
         </p>
       </header>
 
@@ -113,8 +114,8 @@ export function AddProductForm() {
           <p className="text-sm text-muted" aria-live="polite">
             {sku ? (
               <>
-                SKU: <span className="font-semibold text-navy-900">{sku}</span>, assigned when you
-                save.
+                Product code: <span className="font-semibold text-navy-900">{sku}</span>, assigned
+                when you save.
               </>
             ) : null}
           </p>
@@ -149,7 +150,11 @@ export function AddProductForm() {
           )}
         </FormField>
 
-        <FormField label="Reorder At" error={errors.reorderLevel?.message} hint="Low at or below.">
+        <FormField
+          label="Low-stock alert at"
+          error={errors.reorderLevel?.message}
+          hint="Shown as Low Stock at or below this number."
+        >
           {(field) => (
             <TextInput
               {...field}

@@ -17,16 +17,16 @@ import type { CartAdjustment, CartLine, HeldSale, Product } from '@/domain/types
 import { formatCurrency, formatDateTimeShort, formatFromDay, formatTime } from '@/lib/format'
 import { formatItemCount } from '@/features/sales/lib/salesMetrics'
 
-export const HELD_SALE_FALLBACK_TITLE = 'Held sale'
-export const HOLD_NEEDS_ITEMS_HINT = 'Add items before holding'
+export const HELD_SALE_FALLBACK_TITLE = 'Paused sale'
+export const HOLD_NEEDS_ITEMS_HINT = 'Add items before pausing'
 export const NOTHING_SELLABLE_TEXT = 'None of these items can be sold now'
 
-/** "Held Sales, 2 waiting": the Sales root button's accessible name (spec 7.1). */
+/** "Paused Sales, 2 waiting": the Sales root button's accessible name (spec 7.1). */
 export function heldSalesButtonName(count: number): string {
-  return count === 0 ? 'Held Sales, none waiting' : `Held Sales, ${count} waiting`
+  return count === 0 ? 'Paused Sales, none waiting' : `Paused Sales, ${count} waiting`
 }
 
-/** Whether Hold Sale can be used now, and the reason shown when it cannot (spec 7.4). */
+/** Whether Pause Sale can be used now, and the reason shown when it cannot (spec 7.4). */
 export function holdAvailability(
   cartLineCount: number,
   heldCount: number,
@@ -92,7 +92,7 @@ export type HeldSaleRow = {
   canResume: boolean
 }
 
-/** One row of the Held Sales list, every figure from current store data (E3, E4). */
+/** One row of the Paused Sales list, every figure from current store data (E3, E4). */
 export function buildHeldSaleRow(held: HeldSale, products: Product[], now: Date): HeldSaleRow {
   const reconciled = reconcileCartWithStock(held.lines, products)
   const itemCount = heldSaleItemCount(held)
@@ -113,7 +113,7 @@ export function buildHeldSaleRow(held: HeldSale, products: Product[], now: Date)
   }
 }
 
-/** The Held Sales list, newest first (spec 5.7). */
+/** The Paused Sales list, newest first (spec 5.7). */
 export function buildHeldSaleRows(
   heldSales: HeldSale[],
   products: Product[],
@@ -138,7 +138,9 @@ export function buildResumeNotice(
 ): CartNotice | null {
   const items = [...adjustments.map(describeAdjustment), ...priceChanges]
 
-  return items.length === 0 ? null : { title: 'The resumed sale changed since it was held:', items }
+  return items.length === 0
+    ? null
+    : { title: 'The resumed sale changed since it was paused:', items }
 }
 
 /** Notice for the live cart corrected to current stock when the POS page opens (spec 5.5). */
@@ -179,7 +181,7 @@ export function planCartRepair(
 export type SalesRootNavState = { notice: string }
 export type PosNavState = { cartNotice: CartNotice }
 
-/** The success notice handed to the Sales root through router state ("Sale held."). */
+/** The success notice handed to the Sales root through router state ("Sale paused."). */
 export function readSalesRootNotice(state: unknown): string | null {
   if (typeof state !== 'object' || state === null) {
     return null

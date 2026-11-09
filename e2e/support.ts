@@ -166,7 +166,7 @@ export async function customerBalance(page: Page, customerId: string): Promise<n
 
   const value = page
     .getByRole('main')
-    .getByText('Outstanding balance', { exact: true })
+    .getByText('Still owed', { exact: true })
     .locator('xpath=following-sibling::p[1]')
 
   return toCentavos(await value.innerText())
@@ -175,13 +175,13 @@ export async function customerBalance(page: Page, customerId: string): Promise<n
 export async function dashboardOutstanding(page: Page): Promise<number> {
   await gotoRoute(page, '/')
 
-  return toCentavos(await statValue(page, 'Outstanding Credit').innerText())
+  return toCentavos(await statValue(page, 'Credit Still Owed').innerText())
 }
 
 export async function reportsOutstanding(page: Page): Promise<number> {
   await gotoRoute(page, '/reports')
 
-  return toCentavos(await statValue(page, 'Total Outstanding').innerText())
+  return toCentavos(await statValue(page, 'Total Still Owed').innerText())
 }
 
 function escape(text: string): string {
