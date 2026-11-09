@@ -31,7 +31,7 @@ test.describe('Cash sale', () => {
 
     const cart = await openCart(page)
     const total = toCentavos(await cartTotal(cart).innerText())
-    await cart.getByRole('button', { name: 'Proceed to Checkout' }).click()
+    await cart.getByRole('button', { name: 'Checkout', exact: true }).click()
     await expect(page).toHaveURL(/#\/sales\/checkout$/)
 
     // Cash is the default method, and the customer is optional for cash (E5).
@@ -160,7 +160,6 @@ test.describe('VAT is inclusive (D1, E2)', () => {
 
     const total = toCentavos(await cartTotal(cart).innerText())
     expect(total).toBe(lineSum)
-    expect(toCentavos(await definition(cart, /^Subtotal/).innerText())).toBe(total)
 
     const vatNote = cart.getByText(/Includes VAT \((\d+(\.\d+)?)%\) of/)
     await expect(vatNote).toBeVisible()
@@ -170,10 +169,12 @@ test.describe('VAT is inclusive (D1, E2)', () => {
     expect(shownVat).toBe(total - Math.round(total / (1 + rate)))
 
     // No "+ Tax" line anywhere on checkout, and the total is unchanged there.
-    await cart.getByRole('button', { name: 'Proceed to Checkout' }).click()
+    await cart.getByRole('button', { name: 'Checkout', exact: true }).click()
     const main = page.getByRole('main')
     await expect(main.getByText(/^Tax\b/)).toHaveCount(0)
     expect(toCentavos(await cartTotal(main).innerText())).toBe(lineSum)
+    // Checkout shows the Subtotal row; the cart leaves it out while there is no discount.
+    expect(toCentavos(await definition(main, /^Subtotal/).innerText())).toBe(lineSum)
     await expect(main.getByText(/Includes VAT/)).toBeVisible()
 
     // The receipt keeps Subtotal = Total, VAT listed as included.
@@ -228,7 +229,7 @@ test.describe('POS cart on narrow screens: bar and bottom sheet', () => {
       const sheet = cartSheet(page)
       await expect(sheet).toBeVisible()
       await expect(sheet.getByRole('heading', { name: /^Current Sale \(2 items\)/ })).toBeFocused()
-      await expect(sheet.getByRole('button', { name: 'Proceed to Checkout' })).toBeInViewport()
+      await expect(sheet.getByRole('button', { name: 'Checkout', exact: true })).toBeInViewport()
       await expect(sheet.getByRole('button', { name: 'Pause Sale' })).toBeInViewport()
       // Same figure as the bar, both from store data.
       expect(toCentavos(await cartTotal(sheet).innerText())).toBe(barTotal)
@@ -334,7 +335,7 @@ test.describe('POS cart beside the grid (xl)', () => {
 
       const cart = cartPanel(page)
       const heading = cart.getByRole('heading', { name: /^Current Sale/ })
-      const checkout = cart.getByRole('button', { name: 'Proceed to Checkout' })
+      const checkout = cart.getByRole('button', { name: 'Checkout', exact: true })
       const hold = cart.getByRole('button', { name: 'Pause Sale' })
       const lines = cart.getByRole('list', { name: 'Cart lines' })
       await expect(lines.getByRole('listitem')).toHaveCount(PRODUCTS.length)

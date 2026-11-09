@@ -135,10 +135,10 @@ export async function closeCart(page: Page): Promise<void> {
   }
 }
 
-/** Proceed to Checkout from the POS cart at any width; lands on the checkout page. */
+/** Checkout from the POS cart at any width; lands on the checkout page. */
 export async function proceedToCheckout(page: Page): Promise<void> {
   const cart = await openCart(page)
-  await cart.getByRole('button', { name: 'Proceed to Checkout' }).click()
+  await cart.getByRole('button', { name: 'Checkout', exact: true }).click()
   await expect(page).toHaveURL(/#\/sales\/checkout$/)
 }
 

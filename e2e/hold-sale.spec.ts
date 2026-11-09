@@ -297,7 +297,7 @@ test.describe('Limits and reset', () => {
     await expect(cart.getByText(/already have 10 paused sales/)).toBeVisible()
 
     // Checkout is still possible; nothing else is blocked by the limit.
-    await expect(cart.getByRole('button', { name: 'Proceed to Checkout' })).toBeEnabled()
+    await expect(cart.getByRole('button', { name: 'Checkout', exact: true })).toBeEnabled()
   })
 
   test('B10: Reset demo data clears held sales and hides the badge', async ({ page }) => {

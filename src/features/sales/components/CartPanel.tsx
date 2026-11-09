@@ -42,7 +42,7 @@ type CartPanelProps = {
 
 /**
  * The running sale. The header (title, Clear) and the footer (totals,
- * Proceed to Checkout, Pause Sale) always stay in view; when the lines do not
+ * Checkout, Pause Sale) always stay in view; when the lines do not
  * fit the height the panel is given, only the list of lines scrolls.
  */
 export function CartPanel({
@@ -203,26 +203,30 @@ export function CartPanel({
       )}
 
       <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
-        <CartTotals totals={totals} taxRate={taxRate} />
+        <CartTotals totals={totals} taxRate={taxRate} compact />
 
-        <Button
-          variant="primary"
-          icon={ArrowRight}
-          onClick={onCheckout}
-          disabled={!canProceedToCheckout(entries.length, unavailable.length)}
-          className="h-14 text-base"
-        >
-          Proceed to Checkout
-        </Button>
+        {/* Side by side when they fit, so more cart lines stay in view. */}
+        <div className="flex flex-wrap gap-3">
+          <Button
+            variant="primary"
+            icon={ArrowRight}
+            onClick={onCheckout}
+            disabled={!canProceedToCheckout(entries.length, unavailable.length)}
+            className="h-14 flex-[3_1_8rem] text-base"
+          >
+            Checkout
+          </Button>
 
-        <Button
-          icon={PauseCircle}
-          onClick={onHold}
-          disabled={!hold.canHold}
-          aria-describedby={hold.reason ? holdHintId : undefined}
-        >
-          Pause Sale
-        </Button>
+          <Button
+            icon={PauseCircle}
+            onClick={onHold}
+            disabled={!hold.canHold}
+            aria-describedby={hold.reason ? holdHintId : undefined}
+            className="h-14 flex-[2_1_8rem]"
+          >
+            Pause Sale
+          </Button>
+        </div>
         {hold.reason ? (
           <p id={holdHintId} className="-mt-1 text-center text-sm text-muted">
             {hold.reason}
