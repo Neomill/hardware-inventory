@@ -156,10 +156,7 @@ test('B4: Receive stock from a product row opens the invoice with that product',
 }) => {
   await gotoRoute(page, '/products')
   await page.getByRole('searchbox', { name: 'Search products' }).fill(CEMENT)
-  // Let the list settle first: the row menu closes on scroll, and the list
-  // shrinking can fire one right after the click.
   await expect(page.getByText('1-1 of 1')).toBeVisible()
-  await page.getByRole('button', { name: `More actions for ${CEMENT}` }).click()
   await page.getByRole('link', { name: `Receive stock for ${CEMENT}` }).click()
 
   await expect(page.getByRole('heading', { name: 'Receive Stock' })).toBeVisible()
