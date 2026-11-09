@@ -24,6 +24,7 @@ const PAGES = [
   { name: 'customers', route: '/customers' },
   { name: 'reports', route: '/reports' },
   { name: 'settings', route: '/settings' },
+  { name: 'help', route: '/help' },
 ] as const
 
 type Overflow = { element: string; scrollWidth: number; clientWidth: number }

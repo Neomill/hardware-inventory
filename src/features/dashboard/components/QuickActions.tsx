@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Truck, Users } from 'lucide-react'
+import { LifeBuoy, Search, ShoppingCart, Truck, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -96,6 +96,14 @@ export function QuickActions() {
           )
         })}
       </div>
+
+      <Link
+        to={ROUTES.help}
+        className="mt-4 inline-flex h-12 items-center gap-2 rounded-xl px-2 text-base font-semibold text-navy-700 underline-offset-4 hover:underline"
+      >
+        <LifeBuoy className="h-5 w-5" aria-hidden />
+        Not sure how? See step-by-step help
+      </Link>
     </section>
   )
 }

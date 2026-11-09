@@ -6,6 +6,7 @@ import {
   Users,
   BarChart3,
   Settings,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -47,6 +48,13 @@ const BOTTOM_PATHS: readonly string[] = [
 export const BOTTOM_NAV: NavItem[] = PRIMARY_NAV.filter((item) => BOTTOM_PATHS.includes(item.path))
 
 export const SECONDARY_NAV: NavItem[] = [
+  {
+    label: 'Help',
+    title: 'How Do I…?',
+    subtitle: 'Step-by-step help for the everyday jobs.',
+    path: ROUTES.help,
+    icon: LifeBuoy,
+  },
   { label: 'Settings', title: 'Settings', path: ROUTES.settings, icon: Settings },
 ]
 
