@@ -20,7 +20,7 @@ const COLUMNS: SummaryColumn<Product>[] = [
     header: 'Product',
     cell: (product) => (
       <span className="flex items-center gap-3">
-        <ProductThumbnail name={product.name} imageUrl={product.imageUrl} />
+        <ProductThumbnail imageUrl={product.imageUrl} />
         <Link
           to={ROUTES.productDetail(product.id)}
           className="font-medium text-navy-900 underline-offset-2 hover:text-brand-600 hover:underline"

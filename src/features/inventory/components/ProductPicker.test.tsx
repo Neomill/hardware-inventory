@@ -38,9 +38,11 @@ describe('ProductPicker', () => {
     expect(html).toContain('1,500 pcs')
     expect(html).toContain('8 bags')
     expect(html).toContain('0 pcs')
-    expect(html).toContain(`title="${STOCK_STATUS_LABELS.in_stock}"`)
-    expect(html).toContain(`title="${STOCK_STATUS_LABELS.low_stock}"`)
-    expect(html).toContain(`title="${STOCK_STATUS_LABELS.out_of_stock}"`)
+    // Status is in the text itself, never only in a hover tooltip.
+    expect(html).toContain(STOCK_STATUS_LABELS.in_stock)
+    expect(html).toContain(STOCK_STATUS_LABELS.low_stock)
+    expect(html).toContain(STOCK_STATUS_LABELS.out_of_stock)
+    expect(html).not.toContain('title=')
   })
 
   it('shows the stock on hand and status of the selected product', () => {

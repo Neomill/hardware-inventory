@@ -88,8 +88,9 @@ export function QuantityDeltaPill({
 
 /**
  * "In Stock" / "Low Stock" / "Out of Stock" with a per-status icon. With
- * `stock`, shows the figure instead ("12 pcs"); the icon still marks the
- * status, and its name stays available to screen readers and as a tooltip.
+ * `stock`, shows the figure ("12 pcs"). Low and out of stock also say so in
+ * words, never only in a tooltip; "In Stock" is left to the icon and to screen
+ * readers, to keep the pill short.
  */
 export function StockStatusPill({
   status,
@@ -122,11 +123,11 @@ export function StockStatusPill({
       icon={STOCK_STATUS_ICONS[status]}
       className={className}
     >
-      <span title={label}>
+      <span>
         {formatNumber(stock)}
         {unit ? ` ${unit}` : null}
       </span>
-      <span className="sr-only">, {label}</span>
+      {status === 'in_stock' ? <span className="sr-only">, {label}</span> : <span> · {label}</span>}
     </StatusPill>
   )
 }

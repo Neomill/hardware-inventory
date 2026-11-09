@@ -53,7 +53,7 @@ export function LedgerStatementCard({ entries }: LedgerStatementCardProps) {
           ) : (
             <span className="font-semibold text-navy-700">{entry.reference}</span>
           )}
-          <span title={entry.description} className="max-w-[14rem] truncate text-sm text-muted">
+          <span className="min-w-[12rem] max-w-[18rem] whitespace-normal text-sm text-muted">
             {entry.description}
           </span>
         </span>

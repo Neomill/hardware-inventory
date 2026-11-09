@@ -154,7 +154,7 @@ export function SalesRootPage() {
                 {metrics.topProducts.map((product, index) => (
                   <li key={product.productId} className="flex items-center gap-3 text-sm">
                     <span className="w-4 shrink-0 text-muted">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate text-navy-900" title={product.name}>
+                    <span className="min-w-0 flex-1 text-navy-900 [overflow-wrap:anywhere]">
                       {product.name}
                     </span>
                     <span className="shrink-0 whitespace-nowrap text-muted">
