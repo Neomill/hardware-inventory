@@ -275,6 +275,25 @@ test.describe('POS cart on narrow screens: bar and bottom sheet', () => {
     await expect(page.getByRole('searchbox', { name: 'Search products' })).toBeFocused()
   })
 
+  test('Undo puts a removed line back, also after the sheet closed', async ({ page }) => {
+    test.skip(test.info().project.name !== 'desktop', 'Viewport is set by the test')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await gotoRoute(page, '/sales/new')
+    await addToCart(page, HAMMER, 2)
+
+    const cart = await openCart(page)
+    await cart.getByRole('button', { name: `Remove ${HAMMER}` }).click()
+    await expect(cartSheet(page)).toBeHidden()
+
+    // The last line went, so the sheet closed: Undo waits below the grid.
+    await expect(page.getByRole('status').filter({ hasText: `Removed ${HAMMER}.` })).toBeVisible()
+    await page.getByRole('button', { name: `Undo: put ${HAMMER} back in the cart` }).click()
+
+    const bar = page.getByRole('region', { name: 'Cart summary' })
+    await expect(bar).toContainText('2 items')
+    await expect(page.getByRole('button', { name: /^Undo/ })).toHaveCount(0)
+  })
+
   test('is not shown at desktop width, where the cart is beside the grid', async ({ page }) => {
     test.skip(test.info().project.name !== 'desktop', 'Desktop layout only')
     await page.setViewportSize({ width: 1280, height: 800 })

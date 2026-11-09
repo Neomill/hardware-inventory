@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type CSSProperties, type Ref } from 'react'
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { ArrowRight, Package, PauseCircle, Trash2, X } from 'lucide-react'
 
 import { Button } from '@/components/common/Button'
@@ -36,6 +36,8 @@ type CartPanelProps = {
   className?: string
   /** Height cap measured from the layout; only the lines scroll inside it. */
   style?: CSSProperties
+  /** An Undo bar for the line just removed, shown under the header. */
+  undo?: ReactNode
 }
 
 /**
@@ -59,6 +61,7 @@ export function CartPanel({
   headingRef,
   className,
   style,
+  undo,
 }: CartPanelProps) {
   const holdHintId = useId()
   const listRef = useRef<HTMLUListElement>(null)
@@ -115,6 +118,8 @@ export function CartPanel({
           ) : null}
         </div>
       </header>
+
+      {undo ? <div className="shrink-0 px-5 pt-3">{undo}</div> : null}
 
       {!hasLines ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-5 py-14 text-center">

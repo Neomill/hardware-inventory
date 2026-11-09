@@ -1006,6 +1006,47 @@ describe('cart edge cases', () => {
     expect(useShopStore.getState().cart).toEqual([])
   })
 
+  it('puts a removed line back where it was', () => {
+    useShopStore.getState().addToCart(PVC, 2)
+    useShopStore.getState().addToCart('CEM-001', 1)
+    useShopStore.getState().removeFromCart(PVC)
+
+    const result = useShopStore.getState().restoreCartLine({ productId: PVC, quantity: 2 }, 0)
+
+    expect(result).toEqual({ ok: true, message: null })
+    expect(useShopStore.getState().cart).toEqual([
+      { productId: PVC, quantity: 2 },
+      { productId: 'CEM-001', quantity: 1 },
+    ])
+  })
+
+  it('caps a restored line at the stock there is now, and says so', () => {
+    const stock = stockOf(PVC)
+    useShopStore.setState({ cart: [] })
+
+    const result = useShopStore
+      .getState()
+      .restoreCartLine({ productId: PVC, quantity: stock + 5 }, 3)
+
+    expect(result.ok).toBe(true)
+    expect(result.message).toContain('left in stock')
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: stock }])
+  })
+
+  it('does not restore a line that is already back, or a product that is gone', () => {
+    useShopStore.getState().addToCart(PVC, 1)
+
+    expect(useShopStore.getState().restoreCartLine({ productId: PVC, quantity: 4 }, 0)).toEqual({
+      ok: true,
+      message: null,
+    })
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 1 }])
+
+    const gone = useShopStore.getState().restoreCartLine({ productId: 'NOPE-001', quantity: 1 }, 0)
+    expect(gone.ok).toBe(false)
+    expect(useShopStore.getState().cart).toEqual([{ productId: PVC, quantity: 1 }])
+  })
+
   it('refuses a sale whose cart names a product that is gone', () => {
     useShopStore.setState({ cart: [{ productId: 'NOPE-001', quantity: 1 }] })
     const before = useShopStore.getState()

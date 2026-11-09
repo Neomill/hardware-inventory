@@ -179,6 +179,11 @@ type ShopState = {
   addToCart: (productId: string, quantity: number) => ActionResult
   setCartQuantity: (productId: string, quantity: number) => ActionResult
   removeFromCart: (productId: string) => void
+  /**
+   * Undo for a removed line: puts it back where it was. The quantity is
+   * capped at the stock there is now; `message` says so when it was cut.
+   */
+  restoreCartLine: (line: CartLine, index: number) => ActionResult
   clearCart: () => void
   holdCart: (input?: HoldCartInput) => HoldCartResult
   resumeHeldSale: (heldSaleId: string) => ResumeHeldSaleResult
@@ -349,6 +354,48 @@ export function createShopStore({
 
         removeFromCart(productId) {
           set({ cart: get().cart.filter((line) => line.productId !== productId) })
+        },
+
+        restoreCartLine(line, index) {
+          const { products, cart } = get()
+          const product = products.find((candidate) => candidate.id === line.productId)
+
+          if (!product || !product.isActive) {
+            return {
+              ok: false,
+              message: 'That product is no longer for sale, so it cannot be put back.',
+            }
+          }
+
+          if (product.stock <= 0) {
+            return {
+              ok: false,
+              message: `${product.name} is out of stock now, so it cannot be put back.`,
+            }
+          }
+
+          if (cart.some((existing) => existing.productId === line.productId)) {
+            return { ok: true, message: null }
+          }
+
+          const quantity = Math.min(line.quantity, product.stock)
+          const at = Math.max(0, Math.min(index, cart.length))
+
+          set({
+            cart: [
+              ...cart.slice(0, at),
+              { productId: line.productId, quantity },
+              ...cart.slice(at),
+            ],
+          })
+
+          return {
+            ok: true,
+            message:
+              quantity < line.quantity
+                ? `Only ${product.stock} ${product.unit} of ${product.name} left in stock, so ${quantity} was put back.`
+                : null,
+          }
         },
 
         clearCart() {

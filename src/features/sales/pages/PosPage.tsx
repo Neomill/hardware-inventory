@@ -6,7 +6,7 @@ import { Alert } from '@/components/common/Alert'
 import { Button } from '@/components/common/Button'
 import { SearchInput } from '@/components/common/SearchInput'
 import { ROUTES } from '@/app/routes'
-import type { Product } from '@/domain/types'
+import type { CartLine, Product } from '@/domain/types'
 import { AddToCartDialog } from '@/features/sales/components/AddToCartDialog'
 import { CartBar } from '@/features/sales/components/CartBar'
 import { CartNoticePanel } from '@/features/sales/components/CartNoticePanel'
@@ -17,6 +17,7 @@ import { HeldSalesButton } from '@/features/sales/components/HeldSalesButton'
 import { HeldSalesDialog } from '@/features/sales/components/HeldSalesDialog'
 import { HoldSaleDialog } from '@/features/sales/components/HoldSaleDialog'
 import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
+import { UndoBar } from '@/features/sales/components/UndoBar'
 import { useCart } from '@/features/sales/hooks/useCart'
 import { useStickyMaxHeight } from '@/features/sales/hooks/useStickyMaxHeight'
 import { cartBarSummary } from '@/features/sales/lib/cartBar'
@@ -49,6 +50,7 @@ export function PosPage() {
   const addToCart = useShopStore((state) => state.addToCart)
   const setCartQuantity = useShopStore((state) => state.setCartQuantity)
   const removeFromCart = useShopStore((state) => state.removeFromCart)
+  const restoreCartLine = useShopStore((state) => state.restoreCartLine)
   const clearCart = useShopStore((state) => state.clearCart)
   const cartLineCount = useShopStore((state) => state.cart.length)
   const heldCount = useShopStore((state) => state.heldSales.length)
@@ -60,6 +62,11 @@ export function PosPage() {
   const [selected, setSelected] = useState<Product | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [resumedMessage, setResumedMessage] = useState<string | null>(null)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
+  // The line just removed, so it can be put back. Cleared by the next action.
+  const [removed, setRemoved] = useState<{ line: CartLine; index: number; name: string } | null>(
+    null,
+  )
   const [isHoldOpen, setHoldOpen] = useState(false)
   const [isHeldOpen, setHeldOpen] = useState(false)
   const [isClearOpen, setClearOpen] = useState(false)
@@ -187,18 +194,50 @@ export function PosPage() {
     const result = addToCart(selected.id, quantity)
     setMessage(result.ok ? null : result.message)
     setResumedMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
     setSelected(null)
   }
 
   function handleQuantityChange(productId: string, quantity: number) {
     const result = setCartQuantity(productId, quantity)
     setMessage(result.ok ? null : result.message)
+    setInfoMessage(null)
+    setRemoved(null)
+  }
+
+  // No confirmation for one line: it goes at once and Undo puts it back
+  // (senior UX plan, Phase 4). A line whose product is gone gets no Undo.
+  function handleRemove(productId: string) {
+    const current = useShopStore.getState().cart
+    const index = current.findIndex((line) => line.productId === productId)
+    const entry = entries.find((candidate) => candidate.line.productId === productId)
+
+    removeFromCart(productId)
+    setMessage(null)
+    setInfoMessage(null)
+    setRemoved(
+      entry && index >= 0 ? { line: current[index], index, name: entry.line.productName } : null,
+    )
+  }
+
+  function handleUndoRemove() {
+    if (!removed) {
+      return
+    }
+
+    const result = restoreCartLine(removed.line, removed.index)
+    setRemoved(null)
+    setMessage(result.ok ? null : result.message)
+    setInfoMessage(result.ok ? result.message : null)
   }
 
   function handleConfirmClear() {
     clearCart()
     setMessage(null)
     setResumedMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
     focusAfterClearRef.current = true
     setClearOpen(false)
   }
@@ -215,6 +254,8 @@ export function PosPage() {
   function handleResumed(cartNotice: CartNotice | null) {
     setHeldOpen(false)
     setMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
     setNotices(cartNotice ? [cartNotice] : [])
     setResumedMessage(cartNotice ? null : 'Paused sale resumed.')
   }
@@ -228,6 +269,14 @@ export function PosPage() {
     ? (entries.find((entry) => entry.line.productId === selected.id)?.line.quantity ?? 0)
     : 0
 
+  const undoBar = removed ? (
+    <UndoBar
+      message={`Removed ${removed.name}.`}
+      undoLabel={`Undo: put ${removed.name} back in the cart`}
+      onUndo={handleUndoRemove}
+    />
+  ) : null
+
   const cart = (
     <CartPanel
       entries={entries}
@@ -235,7 +284,8 @@ export function PosPage() {
       totals={totals}
       taxRate={taxRate}
       onQuantityChange={handleQuantityChange}
-      onRemove={removeFromCart}
+      onRemove={handleRemove}
+      undo={undoBar}
       onClear={() => setClearOpen(true)}
       onCheckout={() => navigate(ROUTES.checkout)}
       onHold={() => setHoldOpen(true)}
@@ -254,6 +304,7 @@ export function PosPage() {
     <div className="flex min-w-0 flex-col gap-5">
       {message ? <Alert tone="error">{message}</Alert> : null}
       {resumedMessage ? <Alert tone="success">{resumedMessage}</Alert> : null}
+      {infoMessage ? <Alert tone="info">{infoMessage}</Alert> : null}
 
       {notices.map((notice, index) => (
         <CartNoticePanel
@@ -340,6 +391,13 @@ export function PosPage() {
           canCheckout={canProceedToCheckout(entries.length, unavailable.length)}
           viewCartRef={viewCartRef}
         />
+      ) : null}
+
+      {/* The sheet closes when its last line goes: keep Undo in reach below the grid. */}
+      {!isCartBesideGrid && !isSheetShown && cartLineCount === 0 && undoBar ? (
+        <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 print:hidden">
+          {undoBar}
+        </div>
       ) : null}
 
       {isSheetShown ? (
