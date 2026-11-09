@@ -41,10 +41,11 @@ export function TopBar({
         aria-haspopup="dialog"
         aria-expanded={isMenuOpen}
         aria-controls={isMenuOpen ? menuControls : undefined}
-        className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-navy-800 lg:hidden print:hidden"
+        className="flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-navy-800 lg:hidden print:hidden"
         aria-label="Open navigation menu"
       >
         <Menu className="h-5 w-5" aria-hidden />
+        Menu
       </button>
 
       <div className="min-w-0 flex-1">

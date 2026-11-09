@@ -7,18 +7,18 @@ type QuantityStepperProps = {
   onChange: (value: number) => void
   min?: number
   max?: number
-  /** Larger control for the add-to-cart dialog. */
+  /** `sm` is still a full 48px tap target; `lg` is for the add-to-cart dialog. */
   size?: 'sm' | 'lg'
   label: string
 }
 
 const STEP_STYLES: Record<'sm' | 'lg', string> = {
-  sm: 'h-9 w-9',
+  sm: 'h-12 w-12',
   lg: 'h-14 w-16',
 }
 
 const VALUE_STYLES: Record<'sm' | 'lg', string> = {
-  sm: 'h-9 w-10 text-sm',
+  sm: 'h-12 w-12 text-base',
   lg: 'h-14 w-24 text-2xl',
 }
 
@@ -53,7 +53,7 @@ export function QuantityStepper({
           STEP_STYLES[size],
         )}
       >
-        <Minus className={size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'} aria-hidden />
+        <Minus className={size === 'lg' ? 'h-6 w-6' : 'h-5 w-5'} aria-hidden />
       </button>
 
       <output
@@ -75,7 +75,7 @@ export function QuantityStepper({
           STEP_STYLES[size],
         )}
       >
-        <Plus className={size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'} aria-hidden />
+        <Plus className={size === 'lg' ? 'h-6 w-6' : 'h-5 w-5'} aria-hidden />
       </button>
     </div>
   )
