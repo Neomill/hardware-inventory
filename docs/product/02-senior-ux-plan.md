@@ -237,6 +237,26 @@ that do not match how they talk.
 *Business rules are unchanged:* completed sales stay immutable. Undo covers only actions that are
 not yet saved, such as cart edits.
 
+*Status: built 2026-11-09.*
+
+1. **Undo.** Removing a cart line no longer asks first. A bar says "Removed Claw Hammer 16oz." with
+   an Undo button, and it stays until the next cart action. If the sheet closed because the last
+   line went, the bar waits at the bottom of the Sell screen. Undo puts the line back in its place.
+   If stock fell in the meantime, the quantity is capped at what is left and the screen says so. The
+   store action is `restoreCartLine`.
+2. **Final buttons say what happens:**
+   - Checkout: "Confirm Sale — ₱1,250.00".
+   - Correct Stock: "Set Stock to 32 sack" once a valid change is typed, otherwise "Save
+     Correction".
+   - Record Payment already said "Record ₱500.00".
+3. **Before and after.** The Correct Stock dialog shows "Now 35 sack → After saving 32 sack" in
+   large type.
+4. **Double taps.** Confirm Sale ignores a second tap. Receive Stock, Correct Stock, Record Payment,
+   Edit Product and Add Customer lock their save button while it saves.
+5. **Success messages.** After a correction, the message leads with the result: "Saved. Cement
+   (Holcim) now has 32 sack in stock (−3 sack, Damaged)." Receiving stock already had its own
+   confirmation screen, so it is unchanged.
+
 ### Phase 5: Fewer steps in the main flows
 
 1. **One-tap add in Sell.** Tapping a product card adds 1. Tapping again adds another. The card shows
