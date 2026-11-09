@@ -514,13 +514,10 @@ test.describe('Keyboard only, at phone, tablet and desktop widths (B11)', () => 
         await search.focus()
         await page.keyboard.type(product)
 
-        await tabTo(page, posCard(page, product).getByRole('button', { name: /^add/i }))
+        // One key press adds one (Phase 5); the badge on the card confirms it.
+        await tabTo(page, posCard(page, product).getByRole('button', { name: `Add 1 ${product}` }))
         await page.keyboard.press('Enter')
-        const add = page.getByRole('dialog', { name: 'Add to Cart' })
-        await expect(add).toBeVisible()
-        await tabTo(page, add.getByRole('button', { name: 'Add to Cart', exact: true }))
-        await page.keyboard.press('Enter')
-        await expect(add).toBeHidden()
+        await expect(posCard(page, product).getByText('1 in cart')).toBeVisible()
 
         if (!isCartBesideGrid(page)) {
           await tabTo(page, page.getByRole('button', { name: /^View cart/ }))

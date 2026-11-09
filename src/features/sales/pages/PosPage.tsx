@@ -20,6 +20,7 @@ import { PosProductGrid } from '@/features/sales/components/PosProductGrid'
 import { UndoBar } from '@/features/sales/components/UndoBar'
 import { useCart } from '@/features/sales/hooks/useCart'
 import { useStickyMaxHeight } from '@/features/sales/hooks/useStickyMaxHeight'
+import { orderByBestSellers } from '@/features/sales/lib/bestSellers'
 import { cartBarSummary } from '@/features/sales/lib/cartBar'
 import { POS_CART_BESIDE_GRID_QUERY, canProceedToCheckout } from '@/features/sales/lib/cartLayout'
 import {
@@ -53,6 +54,8 @@ export function PosPage() {
   const restoreCartLine = useShopStore((state) => state.restoreCartLine)
   const clearCart = useShopStore((state) => state.clearCart)
   const cartLineCount = useShopStore((state) => state.cart.length)
+  const cartLines = useShopStore((state) => state.cart)
+  const sales = useShopStore((state) => state.sales)
   const heldCount = useShopStore((state) => state.heldSales.length)
 
   const { entries, unavailable, totals, taxRate } = useCart()
@@ -166,10 +169,18 @@ export function PosPage() {
     [products],
   )
 
+  // Best sellers first, so the everyday items need no searching (Phase 5).
+  const ranked = useMemo(() => orderByBestSellers(products, sales, new Date()), [products, sales])
+
+  const inCartById = useMemo(
+    () => new Map(cartLines.map((line) => [line.productId, line.quantity])),
+    [cartLines],
+  )
+
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
 
-    return products.filter((product) => {
+    return ranked.filter((product) => {
       if (!product.isActive) {
         return false
       }
@@ -184,7 +195,16 @@ export function PosPage() {
 
       return product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term)
     })
-  }, [products, category, search])
+  }, [ranked, category, search])
+
+  // One tap adds one; Choose Quantity opens the dialog for bulk amounts.
+  function handleAddOne(product: Product) {
+    const result = addToCart(product.id, 1)
+    setMessage(result.ok ? null : result.message)
+    setResumedMessage(null)
+    setInfoMessage(null)
+    setRemoved(null)
+  }
 
   function handleConfirmAdd(quantity: number) {
     if (!selected) {
@@ -365,7 +385,13 @@ export function PosPage() {
             ))}
           </div>
 
-          <PosProductGrid products={visible} onSelect={setSelected} />
+          <p className="-mb-2 text-sm text-muted">Best sellers first</p>
+          <PosProductGrid
+            products={visible}
+            inCart={inCartById}
+            onAdd={handleAddOne}
+            onChooseQuantity={setSelected}
+          />
         </div>
 
         {isCartBesideGrid ? (

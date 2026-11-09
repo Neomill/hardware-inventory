@@ -71,7 +71,9 @@ export function posCard(page: Page, productName: string): Locator {
 /** Search the POS catalogue and open the Add to Cart dialog for one product. */
 export async function openAddDialog(page: Page, productName: string): Promise<Locator> {
   await page.getByRole('searchbox', { name: 'Search products' }).fill(productName)
-  await posCard(page, productName).getByRole('button', { name: /add/i }).click()
+  await posCard(page, productName)
+    .getByRole('button', { name: `Choose quantity of ${productName}` })
+    .click()
 
   const dialog = page.getByRole('dialog', { name: 'Add to Cart' })
   await expect(dialog).toBeVisible()

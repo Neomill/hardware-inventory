@@ -35,11 +35,13 @@ async function expectModalFocusCycle(page: Page, trigger: Locator, dialogName: s
 }
 
 test.describe('Dialog keyboard behaviour', () => {
-  test('Add to Cart dialog traps focus and returns it to the Add button', async ({ page }) => {
+  test('Add to Cart dialog traps focus and returns it to Choose Quantity', async ({ page }) => {
     await gotoRoute(page, '/sales/new')
     await page.getByRole('searchbox', { name: 'Search products' }).fill('Claw Hammer 16oz')
 
-    const trigger = posCard(page, 'Claw Hammer 16oz').getByRole('button', { name: /add/i })
+    const trigger = posCard(page, 'Claw Hammer 16oz').getByRole('button', {
+      name: 'Choose quantity of Claw Hammer 16oz',
+    })
     await expectModalFocusCycle(page, trigger, 'Add to Cart')
   })
 
