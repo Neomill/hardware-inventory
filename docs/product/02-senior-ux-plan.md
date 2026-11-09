@@ -275,6 +275,31 @@ not yet saved, such as cart edits.
 6. **Break long forms into short steps.** Receive Stock becomes 1) Supplier and invoice, 2) Products
    received, 3) Check and save, with a progress label ("Step 2 of 3").
 
+*Status: steps 1–5 built 2026-11-09; step 6 not started.*
+
+1. **One-tap add.** Each Sell card has "Add 1" and "Choose Quantity". Choose Quantity opens the
+   quantity dialog for bulk items, a visible button rather than a hidden long-press. The card shows
+   an "N in cart" badge. Add 1 becomes "All in Cart" once the cart holds every unit in stock.
+2. **Quick cash.** The amounts are the exact total, then the total rounded up to the next ₱100,
+   ₱500 and ₱1,000, without repeats. For ₱5,880 that is Exact ₱5,880.00, ₱5,900.00 and ₱6,000.00.
+   The change is shown in large type as before. The amounts come from `quickCashAmounts`.
+3. **Best sellers first.** The Sell grid lists the most units sold in the last 30 days first,
+   leaving out cancelled sales (`orderByBestSellers`). A small "Best sellers first" caption says so.
+   There are still no product photos, because the catalogue has none.
+4. **Home screen.** Sell, Receive Delivery, Check Stock and Who Owes Me are big buttons at the top
+   of the dashboard. Check Stock opens Products with the search box focused. The figures follow.
+5. **Bottom tabs.** Below `lg`, the tabs are Dashboard, Sell, Inventory, Customer Credit and More.
+   More opens the full menu, and the old Menu button in the top bar is gone. The tabs sit outside the
+   scroll area, so the Sell cart bar stays just above them.
+6. **Not started:** splitting Receive Stock into steps. The form already ends on a confirmation
+   screen. Deciding on steps should wait until we have watched the owner receive a delivery in a test
+   session.
+
+**Cart height on the laptop.** The cart beside the grid hides Subtotal and Discount while there is
+no discount, since they would repeat the total. Checkout still shows both. "Proceed to Checkout" is
+now "Checkout", which matches the tablet cart bar, and it sits beside Pause Sale. At 1280×800 the
+cart now shows about 2.6 lines at Large (it was 1.5), 3.2 at Normal and 2.1 at Extra large.
+
 ### Phase 6: Help and learning
 
 - Add a short "How do I…?" help page with 5–6 tasks, each with numbered steps and screenshots from
