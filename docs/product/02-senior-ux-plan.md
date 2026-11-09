@@ -150,8 +150,29 @@ before it scrolls. Phases 4 and 5 should revisit the cart layout.
    a details screen that lists them as large buttons.
 4. **No hover-only information.** Anything that is now in a `title` tooltip becomes visible text.
 
-*Owners:* `ui-platform-engineer` first (Button, QuantityStepper, Pagination, Dialog), then the
-`products`, `inventory` and `sales` engineers.
+*Status: built 2026-11-09.*
+
+- **48 px controls:** the quantity stepper, pagination, dialog close, cart Clear and Remove, category
+  chips, quick-quantity and quick-reason buttons, report filters and row actions are all at least
+  48 px (54 px at Large), with 8 px gaps.
+- **Labelled buttons:**
+  - Cart lines: "Remove".
+  - Inventory rows: "History" and "View".
+  - Customer rows: "View".
+  - Pagination: "Previous" and "Next".
+  - Cart notice: "Dismiss".
+  - The menu button on tablet portrait and phone: "Menu".
+- **Product rows:** the "⋮" menu is gone, replaced by View, Receive and History buttons. The
+  `menuPlacement` helper was removed with it.
+- **Tooltips:** none are left. Stock pills say "Low Stock" or "Out of Stock" in words, and long
+  ledger descriptions and top-seller names wrap instead of being cut off.
+
+Kept as icons: the "×" close buttons on dialogs and the cart sheet. They are 48 px, have accessible
+names, and the "×" is a sign both users know from their phones.
+
+Known limit: cart lines are taller now (stepper and Remove at 54 px). On a 1280×800 laptop at
+Large, the cart beside the products shows about one and a half lines before it scrolls. This adds
+to the cart-height item for Phases 4 and 5.
 
 ### Phase 3: Plain language
 
