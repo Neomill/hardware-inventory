@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { Menu } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, matchPath, useLocation } from 'react-router-dom'
 
 import { BOTTOM_NAV } from '@/components/layout/navigation'
 import { ROUTES } from '@/app/routes'
@@ -24,6 +24,13 @@ const TAB =
  * Phase 5). The sidebar takes over on tablet landscape and laptop.
  */
 export function BottomNav({ onOpenMore, moreButtonRef, moreControls, isMoreOpen }: BottomNavProps) {
+  const { pathname } = useLocation()
+  // Pages behind More (Products, Reports, Settings, Help) light up More, so
+  // there is always one tab saying where you are.
+  const onMorePage = !BOTTOM_NAV.some((item) =>
+    matchPath({ path: item.path, end: item.path === ROUTES.dashboard }, pathname),
+  )
+
   return (
     <nav
       aria-label="Main"
@@ -60,7 +67,12 @@ export function BottomNav({ onOpenMore, moreButtonRef, moreControls, isMoreOpen 
         aria-expanded={isMoreOpen}
         aria-controls={isMoreOpen ? moreControls : undefined}
         aria-label="More: open the full menu"
-        className={cn(TAB, 'text-navy-800 hover:bg-slate-50')}
+        className={cn(
+          TAB,
+          onMorePage
+            ? 'bg-brand-50 text-brand-800 shadow-[inset_0_3px_0_theme(colors.brand.700)]'
+            : 'text-navy-800 hover:bg-slate-50',
+        )}
       >
         <Menu className="h-6 w-6 shrink-0" aria-hidden />
         <span>More</span>
