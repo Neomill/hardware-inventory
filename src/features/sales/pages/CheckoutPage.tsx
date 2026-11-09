@@ -15,7 +15,12 @@ import { computeBalanceDue, computeChange } from '@/domain/sale'
 import type { PaymentMethod } from '@/domain/types'
 import { CartTotals } from '@/features/sales/components/CartTotals'
 import { useCart } from '@/features/sales/hooks/useCart'
-import { defaultAmountText, evaluateCheckout } from '@/features/sales/lib/checkout'
+import { formatAmountInput } from '@/domain/money'
+import {
+  defaultAmountText,
+  evaluateCheckout,
+  quickCashAmounts,
+} from '@/features/sales/lib/checkout'
 import type { SaleCompletedNavState } from '@/features/sales/lib/receipt'
 import { formatItemCount } from '@/features/sales/lib/salesMetrics'
 import { useShopStore } from '@/stores/useShopStore'
@@ -287,6 +292,30 @@ export function CheckoutPage() {
                   />
                 )}
               </FormField>
+
+              {method === 'cash' ? (
+                <div role="group" aria-label="Quick cash" className="flex flex-wrap gap-2">
+                  {quickCashAmounts(totals.total).map((amount, index) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => {
+                        setTyped(formatAmountInput(amount))
+                        setError(null)
+                      }}
+                      aria-pressed={checkout.amountPaid === amount}
+                      className={cn(
+                        'h-12 rounded-xl border px-4 text-base font-semibold tabular-nums transition-colors',
+                        checkout.amountPaid === amount
+                          ? 'border-navy-900 bg-navy-900 text-white'
+                          : 'border-slate-200 bg-white text-navy-800 hover:bg-navy-50',
+                      )}
+                    >
+                      {index === 0 ? `Exact ${formatCurrency(amount)}` : formatCurrency(amount)}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
 
               {method === 'cash' ? (
                 <div className="rounded-xl bg-emerald-50 px-4 py-4">

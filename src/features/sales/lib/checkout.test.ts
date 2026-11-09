@@ -5,6 +5,7 @@ import {
   AMOUNT_FORMAT_MESSAGE,
   WALK_IN_BALANCE_MESSAGE,
   defaultAmountText,
+  quickCashAmounts,
   evaluateCheckout,
   readAmountInput,
 } from '@/features/sales/lib/checkout'
@@ -20,6 +21,24 @@ describe('readAmountInput', () => {
     expect(readAmountInput('1.234')).toEqual({ kind: 'invalid' })
     expect(readAmountInput('0')).toEqual({ kind: 'amount', amount: 0 })
     expect(readAmountInput('1,250.50')).toEqual({ kind: 'amount', amount: 125050 })
+  })
+})
+
+describe('quickCashAmounts', () => {
+  it('offers the exact total, then the next ₱100, ₱500 and ₱1,000', () => {
+    expect(quickCashAmounts(125_000)).toEqual([125_000, 130_000, 150_000, 200_000])
+    expect(quickCashAmounts(9_050)).toEqual([9_050, 10_000, 50_000, 100_000])
+  })
+
+  it('does not repeat an amount that is already a round bill', () => {
+    expect(quickCashAmounts(50_000)).toEqual([50_000, 100_000])
+    expect(quickCashAmounts(200_000)).toEqual([200_000])
+  })
+
+  it('offers nothing for an empty or invalid total', () => {
+    expect(quickCashAmounts(0)).toEqual([])
+    expect(quickCashAmounts(-100)).toEqual([])
+    expect(quickCashAmounts(10.5)).toEqual([])
   })
 })
 

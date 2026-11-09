@@ -33,6 +33,24 @@ export function defaultAmountText(method: PaymentMethod, total: Centavos): strin
   return method === 'cash' ? formatAmountInput(total) : ''
 }
 
+/** Peso bills the quick-cash buttons round up to, in centavos. */
+const ROUND_UP_TO: readonly Centavos[] = [100_00, 500_00, 1000_00]
+
+/**
+ * Amounts for the quick-cash buttons: the exact total, then the total rounded
+ * up to the next ₱100, ₱500 and ₱1,000, without repeats. Tapping one beats
+ * typing the bill the customer hands over (senior UX plan, Phase 5).
+ */
+export function quickCashAmounts(total: Centavos): Centavos[] {
+  if (!Number.isInteger(total) || total <= 0) {
+    return []
+  }
+
+  const amounts = [total, ...ROUND_UP_TO.map((bill) => Math.ceil(total / bill) * bill)]
+
+  return [...new Set(amounts)].sort((a, b) => a - b)
+}
+
 export type CheckoutState = {
   /** Amount taken at the counter, or null while the field does not hold an amount. */
   amountPaid: Centavos | null
