@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Minus, Plus, SlidersVertical } from 'lucide-react'
+import { ArrowRight, Minus, Plus, SlidersVertical } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import { Alert } from '@/components/common/Alert'
@@ -61,6 +61,9 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
     projected !== null && projected < 0
       ? `Only ${formatNumber(product.stock)} ${product.unit} in stock. Stock cannot go below zero.`
       : undefined
+  // The new stock, once a valid change is typed: shown large and named on the
+  // save button, so the result is clear before anything is saved (Phase 4).
+  const after = projected !== null && projected >= 0 && delta !== 0 ? projected : null
 
   function chooseDirection(value: AdjustmentDirection) {
     setValue('direction', value, { shouldValidate: isSubmitted })
@@ -165,6 +168,27 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
           )}
         </FormField>
 
+        {after !== null ? (
+          <div
+            aria-live="polite"
+            className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-center tabular-nums"
+          >
+            <div>
+              <p className="text-sm text-muted">Now</p>
+              <p className="text-2xl font-bold text-navy-900">
+                {formatNumber(product.stock)} {product.unit}
+              </p>
+            </div>
+            <ArrowRight className="h-6 w-6 text-navy-700" aria-hidden />
+            <div>
+              <p className="text-sm text-muted">After saving</p>
+              <p className="text-2xl font-bold text-navy-900">
+                {formatNumber(after)} {product.unit}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <FormField label="Reason" error={errors.reason?.message}>
           {(field) => (
             <TextInput
@@ -201,7 +225,9 @@ export function AdjustStockDialog({ product, onClose, onAdjusted }: AdjustStockD
             disabled={belowZero !== undefined}
             className="flex-1 sm:h-14"
           >
-            Save Correction
+            {after !== null
+              ? `Set Stock to ${formatNumber(after)} ${product.unit}`
+              : 'Save Correction'}
           </Button>
         </div>
       </form>

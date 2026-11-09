@@ -326,7 +326,8 @@ export function CheckoutPage() {
               disabled={!canConfirm}
               className="h-14 flex-1 text-base"
             >
-              Confirm Sale
+              {/* Says exactly what happens and for how much (senior UX plan, Phase 4). */}
+              Confirm Sale — {formatCurrency(totals.total)}
             </Button>
           </div>
 
