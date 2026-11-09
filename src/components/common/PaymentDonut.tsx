@@ -83,7 +83,7 @@ export function PaymentDonut({ slices, total, label, size = 'md', className }: P
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center" aria-hidden>
-        <span className="text-xs text-muted">Total</span>
+        <span className="text-sm text-muted">Total</span>
         <span className="text-base font-bold tabular-nums text-navy-900">
           {formatCurrency(total)}
         </span>

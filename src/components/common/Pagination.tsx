@@ -37,7 +37,7 @@ export function Pagination({ page, pageCount, onChange, label = 'Pagination' }: 
 
       {pageItems(page, pageCount).map((value, index) =>
         value === null ? (
-          <span key={`gap-${index}`} className="px-1 text-sm text-muted" aria-hidden>
+          <span key={`gap-${index}`} className="px-1 text-base text-muted" aria-hidden>
             &hellip;
           </span>
         ) : (
@@ -48,7 +48,7 @@ export function Pagination({ page, pageCount, onChange, label = 'Pagination' }: 
             aria-label={`Page ${value}`}
             aria-current={value === page ? 'page' : undefined}
             className={cn(
-              'h-9 min-w-9 rounded-lg px-2 text-sm font-semibold transition-colors',
+              'h-9 min-w-9 rounded-lg px-2 text-base font-semibold transition-colors',
               value === page
                 ? 'bg-navy-900 text-white'
                 : 'border border-slate-200 text-navy-700 hover:bg-navy-50',

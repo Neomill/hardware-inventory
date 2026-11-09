@@ -65,7 +65,7 @@ export function AppShell() {
           <Outlet />
         </main>
 
-        <footer className="flex items-center print:hidden justify-between border-t border-slate-200 px-4 py-4 text-xs text-muted sm:px-6 lg:px-8">
+        <footer className="flex items-center print:hidden justify-between border-t border-slate-200 px-4 py-4 text-sm text-muted sm:px-6 lg:px-8">
           <span>{APP_NAME}</span>
           <span>{APP_VERSION}</span>
         </footer>

@@ -34,14 +34,14 @@ export function SummaryTable<T>({
   hoverable = false,
 }: SummaryTableProps<T>) {
   if (rows.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted">{emptyMessage}</p>
+    return <p className="py-8 text-center text-base text-muted">{emptyMessage}</p>
   }
 
   return (
     <div className="-mx-5 overflow-x-auto px-5 print:mx-0 print:overflow-visible print:px-0">
       <table
         className={cn(
-          'w-full border-collapse text-left text-sm',
+          'w-full border-collapse text-left text-base',
           minWidthClassName,
           'print:min-w-0',
         )}
@@ -52,7 +52,7 @@ export function SummaryTable<T>({
               <th
                 key={column.id}
                 scope="col"
-                className="whitespace-nowrap pb-3 pr-4 text-xs font-semibold uppercase tracking-wide text-muted"
+                className="whitespace-nowrap pb-3 pr-4 text-sm font-semibold text-navy-800"
               >
                 {column.header}
               </th>

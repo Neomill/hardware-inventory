@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 export type ButtonVariant = 'primary' | 'secondary' | 'navy' | 'ghost' | 'destructive'
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-500 text-white hover:bg-brand-600',
+  primary: 'bg-brand-700 text-white hover:bg-brand-800',
   secondary: 'border border-slate-200 bg-white text-navy-900 hover:bg-slate-50',
   navy: 'bg-navy-800 text-white hover:bg-navy-700',
   ghost: 'text-navy-700 hover:bg-navy-50',
@@ -17,7 +17,7 @@ const VARIANT_STYLES: Record<ButtonVariant, string> = {
 
 /** h-12 keeps every control a comfortable tap target on a tablet. */
 const BASE_STYLES =
-  'inline-flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50'
 
 export type ButtonProps = {
   children: ReactNode

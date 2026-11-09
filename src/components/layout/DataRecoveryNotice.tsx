@@ -28,7 +28,7 @@ export function DataRecoveryNoticeView({ recovery, onDismiss }: DataRecoveryNoti
     >
       <strong className="font-semibold">{heading}</strong> {detail} {backup}
       {recovery.backupKey !== null ? (
-        <span className="mt-1 block break-all text-xs">
+        <span className="mt-1 block break-all text-sm">
           Backup name, for whoever helps you restore it: {recovery.backupKey}
         </span>
       ) : null}

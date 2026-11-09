@@ -41,7 +41,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
         placeholder={placeholder}
         aria-invalid={ariaInvalid}
         className={cn(
-          'h-12 w-full rounded-xl border bg-white pl-12 pr-4 text-sm text-navy-900 placeholder:text-muted',
+          'h-12 w-full rounded-xl border bg-white pl-12 pr-4 text-base text-navy-900 placeholder:text-muted',
           isInvalid ? 'border-rose-400' : 'border-slate-200',
         )}
       />

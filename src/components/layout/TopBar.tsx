@@ -50,7 +50,7 @@ export function TopBar({
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">{title}</h1>
 
-        {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 text-base text-muted">{subtitle}</p> : null}
 
         {showBreadcrumb && !subtitle ? (
           <nav
@@ -70,7 +70,8 @@ export function TopBar({
       </div>
 
       {/* The page title prints; the clock and the menu button do not. */}
-      <div className="flex items-center gap-3 print:hidden">
+      {/* Wraps so the chips fit a phone at the larger text sizes. */}
+      <div className="flex flex-wrap items-center gap-3 print:hidden">
         <InfoChip icon={<CalendarDays className="h-5 w-5 text-navy-700" aria-hidden />}>
           {formatDateLabel(now)}
         </InfoChip>

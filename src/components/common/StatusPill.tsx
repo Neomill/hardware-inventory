@@ -11,7 +11,7 @@ export type PillTone = 'success' | 'info' | 'warning' | 'danger' | 'neutral' | '
 
 /**
  * Pill colours live here alone. Which tone a status uses is in statusTones.ts.
- * Every pair passes WCAG AA for the 12px semibold label.
+ * Every pair passes WCAG AA for the 14px semibold label.
  */
 const TONE_STYLES: Record<PillTone, string> = {
   success: 'bg-emerald-50 text-emerald-700',
@@ -35,12 +35,12 @@ export function StatusPill({ tone, children, icon: Icon, className }: StatusPill
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold',
+        'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-semibold',
         TONE_STYLES[tone],
         className,
       )}
     >
-      {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
+      {Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden /> : null}
       {children}
     </span>
   )

@@ -57,12 +57,12 @@ export function FormField({
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       <label htmlFor={controlId} className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-semibold text-navy-900">{label}</span>
-        {optional ? <span className="text-xs text-muted">Optional</span> : null}
+        <span className="text-base font-semibold text-navy-900">{label}</span>
+        {optional ? <span className="text-sm text-muted">Optional</span> : null}
       </label>
 
       {hasHint ? (
-        <p id={hintId} className="-mt-0.5 text-xs text-muted">
+        <p id={hintId} className="-mt-0.5 text-sm text-muted">
           {hint}
         </p>
       ) : null}

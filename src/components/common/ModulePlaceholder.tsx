@@ -17,7 +17,7 @@ export function ModulePlaceholder({ icon: Icon, title, description }: ModulePlac
         <Icon className="h-7 w-7" aria-hidden />
       </span>
       <h2 className="text-lg font-semibold text-navy-900">{title}</h2>
-      <p className="max-w-md text-sm text-muted">{description}</p>
+      <p className="max-w-md text-base text-muted">{description}</p>
     </section>
   )
 }

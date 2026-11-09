@@ -27,7 +27,8 @@
   }
 
   .card-title {
-    @apply text-xs font-semibold uppercase tracking-wide text-navy-800;
+    /* Sentence case and full size: small uppercase labels are the hardest text to read. */
+    @apply text-base font-semibold text-navy-900;
   }
 }
 

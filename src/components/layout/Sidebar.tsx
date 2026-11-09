@@ -55,7 +55,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">{CURRENT_USER.name}</span>
-            <span className="block text-xs text-navy-200">{CURRENT_USER.role}</span>
+            <span className="block text-sm text-navy-200">{CURRENT_USER.role}</span>
           </span>
           <ChevronDown className="h-4 w-4 text-navy-200" aria-hidden />
         </button>
@@ -75,7 +75,7 @@ function SidebarLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => v
       className={({ isActive }) =>
         cn(
           'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors',
-          isActive ? 'bg-brand-500 text-white shadow-sm' : 'text-navy-100 hover:bg-white/5',
+          isActive ? 'bg-brand-700 text-white shadow-sm' : 'text-navy-100 hover:bg-white/5',
         )
       }
     >

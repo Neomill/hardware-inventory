@@ -24,11 +24,11 @@ export function SelectField({ label, value, options, onChange, className }: Sele
         className,
       )}
     >
-      <span className="text-xs text-muted">{label}</span>
+      <span className="text-sm text-muted">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="appearance-none bg-transparent pr-6 text-sm font-medium text-navy-900 focus:outline-none"
+        className="appearance-none bg-transparent pr-6 text-base font-medium text-navy-900 focus:outline-none"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
