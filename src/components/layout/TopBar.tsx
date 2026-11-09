@@ -1,5 +1,5 @@
-import type { ReactNode, RefObject } from 'react'
-import { CalendarDays, ChevronRight, Clock, Menu } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { CalendarDays, ChevronRight, Clock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { ROUTES } from '@/app/routes'
@@ -13,41 +13,13 @@ type TopBarProps = {
   subtitle?: string
   /** Every section except the Dashboard shows a trail back to it. */
   showBreadcrumb: boolean
-  onOpenMenu: () => void
-  /** Lets the shell return focus here when the mobile drawer closes. */
-  menuButtonRef?: RefObject<HTMLButtonElement>
-  /** Id of the drawer the menu button opens. */
-  menuControls?: string
-  isMenuOpen?: boolean
 }
 
-export function TopBar({
-  title,
-  subtitle,
-  showBreadcrumb,
-  onOpenMenu,
-  menuButtonRef,
-  menuControls,
-  isMenuOpen,
-}: TopBarProps) {
+export function TopBar({ title, subtitle, showBreadcrumb }: TopBarProps) {
   const now = useCurrentTime()
 
   return (
     <header className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-6 lg:px-8 print:px-0 print:pt-0">
-      <button
-        ref={menuButtonRef}
-        type="button"
-        onClick={onOpenMenu}
-        aria-haspopup="dialog"
-        aria-expanded={isMenuOpen}
-        aria-controls={isMenuOpen ? menuControls : undefined}
-        className="flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-navy-800 lg:hidden print:hidden"
-        aria-label="Open navigation menu"
-      >
-        <Menu className="h-5 w-5" aria-hidden />
-        Menu
-      </button>
-
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">{title}</h1>
 

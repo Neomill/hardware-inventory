@@ -36,6 +36,16 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: 'Reports', title: 'Reports', path: ROUTES.reports, icon: BarChart3 },
 ]
 
+/** The tabs along the bottom on tablet portrait and phone; the rest sit behind More. */
+const BOTTOM_PATHS: readonly string[] = [
+  ROUTES.dashboard,
+  ROUTES.sales,
+  ROUTES.inventory,
+  ROUTES.customers,
+]
+
+export const BOTTOM_NAV: NavItem[] = PRIMARY_NAV.filter((item) => BOTTOM_PATHS.includes(item.path))
+
 export const SECONDARY_NAV: NavItem[] = [
   { label: 'Settings', title: 'Settings', path: ROUTES.settings, icon: Settings },
 ]

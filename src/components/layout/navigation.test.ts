@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { PRIMARY_NAV, resolvePageTitle } from '@/components/layout/navigation'
+import { BOTTOM_NAV, PRIMARY_NAV, resolvePageTitle } from '@/components/layout/navigation'
 
 describe('resolvePageTitle', () => {
   it('returns the dashboard title for the root route', () => {
@@ -17,6 +17,17 @@ describe('resolvePageTitle', () => {
 
   it('falls back to the dashboard title for unknown routes', () => {
     expect(resolvePageTitle('/does-not-exist')).toBe('Dashboard')
+  })
+})
+
+describe('BOTTOM_NAV', () => {
+  it('keeps the four everyday sections as bottom tabs', () => {
+    expect(BOTTOM_NAV.map((item) => item.label)).toEqual([
+      'Dashboard',
+      'Sell',
+      'Inventory',
+      'Customer Credit',
+    ])
   })
 })
 
