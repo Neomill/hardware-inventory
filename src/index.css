@@ -31,6 +31,13 @@
   }
 }
 
+/* Paper ignores the on-screen text size setting (see src/lib/textSize.ts). */
+@media print {
+  html {
+    font-size: 100% !important;
+  }
+}
+
 /*
  * Printing any page other than a receipt prints the whole page, not only the
  * first screen. On screen the shell is viewport-high with one scroll
