@@ -110,9 +110,11 @@ elements by their visible text, so Phase 3 (renaming) will need test updates.
 2. **Stop using small UPPERCASE grey for titles.** Card titles and table headers become sentence case,
    14–16 px, semibold, in dark ink. Uppercase at small sizes is the hardest text to read.
 3. **Add a text-size setting.** In Settings, add "Text size: Normal / Large / Extra large". It sets the
-   root font size to 16, 18 or 20 px. Tailwind sizes are in `rem`, so the whole UI scales with it. The
-   setting is saved with the store settings. The default is **Large**, because both users wear
-   reading glasses at the counter.
+   root font size to 100%, 112.5% or 125% of the browser default (16, 18 or 20 px). Tailwind sizes
+   are in `rem`, so the whole UI scales with it. The default is **Large**, because both users wear
+   reading glasses at the counter. It is saved **per device** under its own key, not in store data.
+   That way the tablet and the laptop can each keep their own size, and a data export or reset
+   leaves it alone. Printouts always use the browser default size.
 4. **Fix contrast.**
    - Darken the primary button orange to about `#C2410C` (about 5.2:1 with white), or use dark text on
      the current orange.
@@ -121,9 +123,21 @@ elements by their visible text, so Phase 3 (renaming) will need test updates.
 5. **Make numbers easy to read.** The cart total, change due and amount owed become the largest thing
    on their screen. Peso amounts use tabular figures, with the `₱` sign always shown.
 
-*Owners:* `ui-platform-engineer` (tokens, `index.css`, shared components), `data-layer-engineer` (the
-text-size setting in the settings domain), `settings-engineer` (the setting control), then feature
-engineers to remove local `text-xs`.
+*Status: built 2026-11-09.*
+
+- The text size logic is in `src/lib/textSize.ts`, with the `useTextSize` hook and the control in
+  `TextSizeCard` on Settings.
+- Primary buttons and the active nav item use `brand-700`, and `muted` is `#475569`.
+- Card titles and table headers are sentence case.
+- No `text-xs` is left in the app; the receipt keeps it for print only.
+- Sell and Checkout use `text-base`, with larger totals.
+
+Two layout fixes came out of the Large default:
+- The top bar's date and clock chips now wrap on phones.
+- The Sell product grid fits as many columns as the space beside the cart allows.
+
+Known limit: on a 1280×800 laptop at Large, the cart list beside the products shows about two lines
+before it scrolls. Phases 4 and 5 should revisit the cart layout.
 
 ### Phase 2: Tap targets and visible controls
 
